@@ -1,8 +1,8 @@
 package expr
 
 import (
-	"alex.peters/yew/fun"
-	"alex.peters/yew/str"
+	"github.com/petersalex27/yew-packages/fun"
+	"github.com/petersalex27/yew-packages/str"
 	"strings"
 )
 

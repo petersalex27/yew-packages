@@ -1,8 +1,8 @@
 package errors
 
 import (
-	"alex.peters/yew/str"
-	"alex.peters/yew/util"
+	"github.com/petersalex27/yew-packages/str"
+	"github.com/petersalex27/yew-packages/util"
 )
 
 type Pointable interface {

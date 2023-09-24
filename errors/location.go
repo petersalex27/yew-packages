@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"alex.peters/yew/str"
+	"github.com/petersalex27/yew-packages/str"
 	"strconv"
 )
 

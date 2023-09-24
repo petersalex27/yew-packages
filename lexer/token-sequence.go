@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"alex.peters/yew/token"
+	"github.com/petersalex27/yew-packages/token"
 )
 
 type TokenSequence struct {

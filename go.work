@@ -2,7 +2,7 @@ go 1.20
 
 use (
 	./
-	./types2
+	./types
 	./util
 	./strings
 	./fun

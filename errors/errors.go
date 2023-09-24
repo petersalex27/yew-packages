@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"alex.peters/yew/util"
+	"github.com/petersalex27/yew-packages/util"
 )
 
 type Err struct {

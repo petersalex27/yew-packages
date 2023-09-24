@@ -1,8 +1,8 @@
 package expr
 
 import (
-	"alex.peters/yew/equality"
-	"alex.peters/yew/str"
+	"github.com/petersalex27/yew-packages/equality"
+	"github.com/petersalex27/yew-packages/str"
 )
 
 type Expression interface {

@@ -1,3 +1,3 @@
-module alex.peters/yew/equality
+module github.com/petersalex27/yew-packages/equality
 
 go 1.20

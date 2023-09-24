@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"alex.peters/yew/source"
-	"alex.peters/yew/token"
+	"github.com/petersalex27/yew-packages/source"
+	"github.com/petersalex27/yew-packages/token"
 )
 
 func (lex *Lexer) AddError(e error) {
