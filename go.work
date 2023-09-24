@@ -1,0 +1,15 @@
+go 1.20
+
+use (
+	./
+	./types2
+	./util
+	./strings
+	./fun
+	./lexer
+	./expression
+	./equality
+	./token
+	./source
+	./errors
+)
