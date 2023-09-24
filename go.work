@@ -4,7 +4,7 @@ use (
 	./
 	./types
 	./util
-	./strings
+	./str
 	./fun
 	./lexer
 	./expression
