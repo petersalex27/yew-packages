@@ -2,7 +2,7 @@ package expr
 
 import (
 	"github.com/petersalex27/yew-packages/equality"
-	"github.com/petersalex27/yew-packages/str"
+	str "github.com/petersalex27/yew-packages/stringable"
 )
 
 type Expression interface {

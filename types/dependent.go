@@ -2,7 +2,7 @@ package types
 
 import (
 	"github.com/petersalex27/yew-packages/expr"
-	"github.com/petersalex27/yew-packages/str"
+	str "github.com/petersalex27/yew-packages/stringable"
 )
 
 type DependentTyped interface {

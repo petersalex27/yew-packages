@@ -1,6 +1,6 @@
 package types
 
-import "github.com/petersalex27/yew-packages/str"
+import str "github.com/petersalex27/yew-packages/stringable"
 
 type InfixApplication Application
 

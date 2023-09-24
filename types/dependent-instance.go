@@ -3,7 +3,7 @@ package types
 import (
 	"github.com/petersalex27/yew-packages/expr"
 	"github.com/petersalex27/yew-packages/fun"
-	"github.com/petersalex27/yew-packages/str"
+	str "github.com/petersalex27/yew-packages/stringable"
 )
 
 // picks out a monotype
