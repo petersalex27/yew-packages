@@ -1,7 +1,7 @@
 package types
 
 import (
-	expr "github.com/petersalex27/yew-packages/expression"
+	expr "github.com/petersalex27/yew-packages/expr"
 	"github.com/petersalex27/yew-packages/fun"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
