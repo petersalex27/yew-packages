@@ -1,0 +1,6 @@
+github.com/petersalex27/yew-packages/equality v0.0.0-20230924234246-6a45a1def054 h1:naBzbGbSyf6pHk0ajlo9RE08eh1ZYNKvXkmz77jJDPQ=
+github.com/petersalex27/yew-packages/equality v0.0.0-20230924234246-6a45a1def054/go.mod h1:9FSrD3+EndW0JShE7heNtzqxxCJzJS7qQI3AsEQ83Ew=
+github.com/petersalex27/yew-packages/fun v0.0.0-20230925190748-329f98bbf939 h1:c5e31ZIPCvOnTirB0qt65ZaAWSZnlHwbh1h1Ou1P9LA=
+github.com/petersalex27/yew-packages/fun v0.0.0-20230925190748-329f98bbf939/go.mod h1:IUku/vaCvNChsy43bc2Ztgm4jGyYZUJKmtY2oUAecIY=
+github.com/petersalex27/yew-packages/stringable v0.0.0-20230924234246-6a45a1def054 h1:BEb80KMsdXQ8tmViuF/oZdXfDHwEljNZenQPq8MMB10=
+github.com/petersalex27/yew-packages/stringable v0.0.0-20230924234246-6a45a1def054/go.mod h1:SR30aaaPS4DBu/akw9QURHNdnw0tT9/dliWjUyIatKs=
