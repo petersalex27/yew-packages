@@ -1,4 +1,4 @@
-github.com/petersalex27/yew-packages/source v0.0.0-20230924224811-54cf29ebeee4 h1:eJ8WMVCTN95/j6BDDLhNDwaPgIt1mrp769Im00X35mo=
-github.com/petersalex27/yew-packages/source v0.0.0-20230924224811-54cf29ebeee4/go.mod h1:Kqf+tQSWdIsH+ss0SWIZxUhsGGMAxe+zbLf9Iz8SgQU=
-github.com/petersalex27/yew-packages/token v0.0.0-20230924224811-54cf29ebeee4 h1:0+xYQxokxLJay86cNJqbBqAmPY/cevZQ8nMrvDDQEjI=
-github.com/petersalex27/yew-packages/token v0.0.0-20230924224811-54cf29ebeee4/go.mod h1:P1WuiSyoOleawWvEzWT3ZRWg/nQrv9AEXBn4DEWwgqQ=
+github.com/petersalex27/yew-packages/source v0.0.0-20230925192751-a649288ee782 h1:0DaB3PG8qCArQCTmUdQsi4oL6a8m6M3dKvSL+NeXC8U=
+github.com/petersalex27/yew-packages/source v0.0.0-20230925192751-a649288ee782/go.mod h1:Kqf+tQSWdIsH+ss0SWIZxUhsGGMAxe+zbLf9Iz8SgQU=
+github.com/petersalex27/yew-packages/token v0.0.0-20230925192751-a649288ee782 h1:Cc3nlRoqSaYbDW7nwnmq2ulliZOLJL5RZwdCQfZ/vlY=
+github.com/petersalex27/yew-packages/token v0.0.0-20230925192751-a649288ee782/go.mod h1:P1WuiSyoOleawWvEzWT3ZRWg/nQrv9AEXBn4DEWwgqQ=

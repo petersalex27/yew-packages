@@ -2,14 +2,14 @@ go 1.20
 
 use (
 	./
-	./types
-	./util
-	./stringable
+	./equality
+	./errors
+	./expr
 	./fun
 	./lexer
-	./expr
-	./equality
-	./token
 	./source
-	./errors
+	./stringable
+	./token
+	./types
+	./util
 )
