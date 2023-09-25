@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/petersalex27/yew-packages/expr"
+	expr "github.com/petersalex27/yew-packages/expression"
 )
 
 type TypeJudgement[E expr.Expression] struct{

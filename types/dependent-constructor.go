@@ -1,6 +1,6 @@
 package types
 
-import "github.com/petersalex27/yew-packages/expr"
+import expr "github.com/petersalex27/yew-packages/expression"
 
 
 type DependentTypeConstructor struct {
