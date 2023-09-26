@@ -131,7 +131,28 @@ var specTable = map[rune]func(*Err, any, int){
 		if !ok {
 			panic("argument " + num(position) + " does not match the format specifier p")
 		}
+		if e.ptr == nil {
+			e.ptr = Pointer{}
+		}
 		e.ptr = e.ptr.setTail(res)
+	},
+	'f': func(e *Err, path any, position int) {
+		res, ok := path.(string)
+		if !ok {
+			panic("argument " + num(position) + " does not match the format specifier f")
+		}
+		e.Locatable = e.SetPath(res)
+	},
+	'r': func(e *Err, rng any, position int) {
+		res, ok := rng.(int)
+		if !ok {
+			panic("argument " + num(position) + " does not match the format specifier f")
+		}
+		if e.ptr == nil {
+			e.ptr = PointerRange{rngLen: res}
+		} else {
+			e.ptr = PointerRange{rngLen: res, pointer_shared: e.ptr.getShared()}
+		}
 	},
 	'm': func(e *Err, msg any, position int) {
 		res, ok := msg.(string)
@@ -178,26 +199,27 @@ func (e Err) GetTail() string {
 	}
 
 	path, line, char := e.Locatable.GetLocation()
-	var tail string = "\n  "
+	var tail string = "  "
 	width := getLineStrWidth(path, line)
 	padding, _ := (pointer_shared{paddingLeft: width-line}).Strings()
 	tail = tail + padding + num(line) + " | "
+	if e.ptr == nil {
+		e.ptr = Pointer{}
+	}
 
 	if char < 0 {
 		char = 0
 	}
-
-	return tail + e.source + e.ptr.setPadding(len(tail)+char).String()
-
+	padLen := len(tail)+(char-1)
+	return "\n" + tail + e.source + "\n" + e.ptr.setPadding(padLen).String()
 }
-// Error()
 // [path:line:char] Error (Subtype): error message here
 //   line | source code here
 //                 ^^^^ tail message
 func (e Err) Error() string {
 	loc := e.Locatable.String()
 	
-	return fmt.Sprintf("%s%s%s%s\n", 
+	return fmt.Sprintf("%s%s%s%s", 
 			color.RedString("%s Error", loc),
 			e.subTypeString(), 
 			color.RedString(": %s", e.msg),

@@ -9,6 +9,7 @@ type Pointable interface {
 	str.Stringable
 	setPadding(int) Pointable
 	setTail(string) Pointable
+	getShared() pointer_shared
 }
 
 type pointer_shared struct {
@@ -26,8 +27,11 @@ func (p pointer_shared) Strings() (padding, tail string) {
 }
 
 type Pointer struct {
-	at int
 	pointer_shared
+}
+
+func (p Pointer) getShared() pointer_shared {
+	return p.pointer_shared
 }
 
 func (p Pointer) setTail(s string) Pointable {
@@ -49,6 +53,10 @@ func (p Pointer) String() string {
 type PointerRange struct {
 	rngLen int
 	pointer_shared
+}
+
+func (p PointerRange) getShared() pointer_shared {
+	return p.pointer_shared
 }
 
 func (p PointerRange) buildRange() string {
@@ -77,8 +85,5 @@ func (p PointerRange) setPadding(n int) Pointable {
 func (p PointerRange) String() string {
 	padding, msg := p.pointer_shared.Strings()
 	res := padding + p.buildRange() + msg
-	if res != "" {
-		return "\n" + res
-	}
 	return res
 }
