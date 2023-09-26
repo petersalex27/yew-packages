@@ -1,4 +1,14 @@
+github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
+github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
+github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
+github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
+github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
+github.com/mattn/go-isatty v0.0.17 h1:BTarxUcIeDqL27Mc+vyvdWYSL28zpIhv3RoTdsLMPng=
+github.com/mattn/go-isatty v0.0.17/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/petersalex27/yew-packages/stringable v0.0.0-20230925192751-a649288ee782 h1:9O3IgbAbNvNhb51yopWmGGd0sgPrMNTHaPZirURggWc=
 github.com/petersalex27/yew-packages/stringable v0.0.0-20230925192751-a649288ee782/go.mod h1:SR30aaaPS4DBu/akw9QURHNdnw0tT9/dliWjUyIatKs=
 github.com/petersalex27/yew-packages/util v0.0.0-20230925192751-a649288ee782 h1:FssYutDF5ExZttI/OO76u2TTY9joBZRkgOBEk7ZvL0k=
 github.com/petersalex27/yew-packages/util v0.0.0-20230925192751-a649288ee782/go.mod h1:zDtG3xFP3nukNZ1tVun7j5q9FhLediwYFLlXC/zTu0c=
+golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.6.0 h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=
+golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

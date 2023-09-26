@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/petersalex27/yew-packages/util"
+	"github.com/fatih/color"
 )
 
 type Err struct {
@@ -93,7 +94,7 @@ func (e Err) subTypeString() string {
 	if e.subtype == "" {
 		return ""
 	}
-	return " (" + e.subtype + ")"
+	return color.MagentaString(" (%s)", e.subtype)
 }
 
 var specTable = map[rune]func(*Err, any, int){
@@ -196,7 +197,10 @@ func (e Err) GetTail() string {
 func (e Err) Error() string {
 	loc := e.Locatable.String()
 	
-	return fmt.Sprintf("%s Error%s: %s%s\n", 
-			loc, e.subTypeString(), e.msg, e.GetTail())
+	return fmt.Sprintf("%s%s%s%s\n", 
+			color.RedString("%s Error", loc),
+			e.subTypeString(), 
+			color.RedString(": %s", e.msg),
+			e.GetTail())
 }
 
