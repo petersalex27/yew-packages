@@ -1,4 +1,4 @@
-package errors
+package notification
 
 import (
 	str "github.com/petersalex27/yew-packages/stringable"
@@ -12,21 +12,25 @@ type Locatable interface {
 	GetLocation() (path string, line, char int)
 }
 
-func updateLine(loc Locatable, line int) Locatable {
+func UpdateLine(loc Locatable, line int) Locatable {
 	_, _, char := loc.GetLocation()
 	return loc.SetLineChar(line, char)
 } 
 
-func updateChar(loc Locatable, char int) Locatable {
+func UpdateChar(loc Locatable, char int) Locatable {
 	_, line, _ := loc.GetLocation()
 	return loc.SetLineChar(line, char)
 } 
 
-func updatePath(loc Locatable, path string) Locatable {
+func UpdatePath(loc Locatable, path string) Locatable {
 	return loc.SetPath(path)
 } 
 
 type empty_location struct {}
+
+func EmptyLocation() empty_location {
+	return empty_location{}
+}
 
 func (loc empty_location) GetLocation() (path string, line, char int) {
 	return "", 0, 0
@@ -43,7 +47,6 @@ func (loc empty_location) SetLineChar(line, char int) Locatable {
 func (loc empty_location) String() string {
 	return ""
 }
-
 
 type Location struct {
 	path string

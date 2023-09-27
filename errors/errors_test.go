@@ -45,6 +45,10 @@ func TestGetTail(t *testing.T) {
 			"  1 | Maybe a = just a | nothing\n" +
 			"                ^^^^(11-14)",
 		},
+		{
+			Ferr(""),
+			"Error: unknown error",
+		},
 	}
 
 	for ti, test := range tests {
