@@ -17,6 +17,31 @@ const (
 	Bad // bad
 )
 
+func (stat Status) String() string {
+	switch stat {
+	case Eof:
+		return "Eof"
+	case Eol:
+		return "Eol"
+	case Ok:
+		return "Ok"
+	case OutOfBounds:
+		return "OutOfBounds"
+	case BadLineNumber:
+		return "BadLineNumber"
+	case BadCharNumber:
+		return "BadCharNumber"
+	case BadCharStart:
+		return "BadCharStart"
+	case BadCharRange:
+		return "BadCharRange"
+	case Bad:
+		return "Bad"
+	default:
+		return "StatusUndefined"
+	}
+}
+
 func (stat Status) Equals(stat2 Status) bool { return stat.Is(stat2) }
 
 func (stat Status) Is(stat2 Status) bool { return stat == stat2 }
