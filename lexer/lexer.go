@@ -272,15 +272,27 @@ func (lex *Lexer) stepDirection(n int) source.Status {
 		return stat
 	}
 
-	lex.char = lex.char + n
-	for lex.char <= 0 {
-		if lex.line-1 <= 0 {
-			return source.BadLineNumber
+	char := lex.char + n
+	line := lex.line
+	if char <= 0 {
+		for char <= 0 {
+			if line-1 <= 0 {
+				return source.BadLineNumber
+			}
+			line = line - 1
+			underflow := -char - 1
+			char = len(lex.source[line-1]) - underflow
 		}
-		lex.line = lex.line - 1
-		underflow := -lex.char - 1
-		lex.char = len(lex.source[lex.line-1]) - underflow
+	} else if char > len(lex.source[line-1]) + 1 {
+		for char > len(lex.source[line-1]) + 1 {
+			if line+1 > len(lex.source) {
+				return source.BadLineNumber
+			}
+			char = (char-1) - len(lex.source[line-1])
+			line = line + 1
+		}
 	}
+	lex.line, lex.char = line, char
 	return source.Ok
 }
 
