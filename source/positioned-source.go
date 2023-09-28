@@ -1,12 +1,93 @@
 package source
 
+import (
+	"strings"
+)
+
 type PositionedSource interface {
 	Source
 	SetLineChar(line, char int)
 	AdvanceChar() (char byte, stat Status)
 	UnadvanceChar() (stat Status)
 	WhitespaceLength() int
-	ReadUntil(char byte) (string, Status)
+	ReadUntil(byte) (string, Status)
+}
+
+type EscapeMap interface {
+	GetMapped(remainingLine string) (result string, found bool, readTo int)
+}
+
+type EscapeMap_s struct {
+	LookupSize uint
+	Map map[string]string
+}
+
+func (em EscapeMap_s) GetMapped(remainingLine string) (result string, found bool, readTo int) {
+	result, found, readTo = "", false, int(em.LookupSize)
+	
+	if len(remainingLine) < int(em.LookupSize) {
+		return
+	}
+
+	result, found = em.Map[remainingLine[:em.LookupSize]]
+	return
+}
+
+func readEscapable(em EscapeMap, line string, end byte, esc byte) (string, int, Status) {
+	index := 0
+	escaped := false
+	var builder strings.Builder
+
+	for ; index < len(line); {
+		c := line[index]
+		if escaped {
+			escaped = false
+
+			var res string
+			var found bool
+			var readTo int
+			if em == nil {
+				found = false
+			} else {
+				res, found, readTo = em.GetMapped(line[index:])
+			}
+
+			if !found {
+				return "", index, Bad
+			}
+			index = index + readTo
+			builder.WriteString(res)
+		} else if c == end {
+			return builder.String(), index, Ok
+		} else if c == esc {
+			escaped = true
+			index = index + 1
+		} else {
+			index = index + 1
+			builder.WriteByte(c)
+		}
+	}
+	// `end` not found
+	return "", index, Eol
+}
+
+func ReadUntil(em EscapeMap, p PositionedSource, end byte, esc byte) (string, Status) {
+	line, char := p.GetLineChar()
+	remainingLine, stat := CurrentLine(p)
+	if stat.NotOk() {
+		return "", stat
+	}
+
+	res, readLength, stat := readEscapable(em, remainingLine, end, esc)
+	if stat.NotOk() {
+		return "", stat
+	}
+
+	p.SetLineChar(line, char+readLength)
+	if _, stat = p.AdvanceChar(); stat.NotOk() { // remove closing `end`
+		return "", stat
+	}
+	return res, stat
 }
 
 /*
@@ -74,8 +155,8 @@ func UngetChars(p PositionedSource, nchars int) Status {
 	return Ok
 }
 
-func ReadThrough(p PositionedSource, char byte) (string, Status) {
-	res, stat := p.ReadUntil(char)
+func ReadThrough(p PositionedSource, end byte) (string, Status) {
+	res, stat := p.ReadUntil(end)
 	if stat.NotOk() {
 		return res, stat
 	}

@@ -115,6 +115,7 @@ func (lex *Lexer) AdvanceLine() source.Status {
 		return source.Eof
 	} 
 	lex.line = lex.line + 1
+	lex.char = 1
 	return source.Ok
 }
 
@@ -129,7 +130,6 @@ func (lex *Lexer) AdvanceChar() (char byte, stat source.Status) {
 		if stat.NotOk() {
 			return 0, stat
 		}
-		lex.char = 1
 	} else if stat.IsOk() {
 		lex.char = lex.char + 1
 	} else {
