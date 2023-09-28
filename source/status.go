@@ -1,10 +1,13 @@
 package source
 
 type Status byte
+
 const (
 	Eof Status = iota // end of file
-	Eol	// end of line
-	Ok // ok
+	Eol               // end of line
+	Ok                // ok
+
+	_invalids_  // do not use as status!! for comparison only!!
 	OutOfBounds // out of bounds char
 
 	BadLineNumber // line number is illegal
@@ -16,6 +19,10 @@ const (
 
 	Bad // bad
 )
+
+func (stat Status) IsInvalid() bool {
+	return stat >= _invalids_
+}
 
 func (stat Status) String() string {
 	switch stat {
@@ -50,9 +57,8 @@ func (stat Status) IsOk() bool { return stat.Is(Ok) }
 
 func (stat Status) NotOk() bool { return !stat.Is(Ok) }
 
-func (stat Status) IsOOB() bool { return stat.Is(OutOfBounds)}
+func (stat Status) IsOOB() bool { return stat.Is(OutOfBounds) }
 
 func (stat Status) IsEof() bool { return stat.Is(Eof) }
 
 func (stat Status) IsEol() bool { return stat.Is(Eol) }
-

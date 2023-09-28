@@ -11,6 +11,52 @@ import (
 //AdvanceChar() (char byte, stat Status)
 //WhitespaceLength() int
 
+func TestUnadvanceChar_invalid(t *testing.T) {
+	//UnadvanceChar() (stat Status)
+	type before struct{line, char int}
+	type after before
+	tests := []struct{
+		source []string
+		stat source.Status
+		before
+		after
+	}{
+		{
+			[]string{`.a`}, source.BadLineNumber, 
+			before{1,1}, after{1,1},
+		},
+		{
+			[]string{`.a`}, source.BadLineNumber, 
+			before{0,0}, after{0,0},
+		},
+		{
+			[]string{`.a`}, source.BadLineNumber, 
+			before{-100,135}, after{-100,135},
+		},
+	}
+
+	for i, test := range tests {
+		lex := NewLexer(lexerWhitespace_test)
+		// setup
+		lex.SetSource(test.source)
+		lex.SetPath("./test-lexer-unadvance-invalid.yew")
+		lex.SetLineChar(test.before.line, test.before.char)
+
+		stat := lex.UnadvanceChar()
+		if !stat.Is(test.stat) {
+			t.Fatal(testutil.TestMsg(i, "expected stat=%v,  actual stat=%v", test.stat, stat))
+		}
+
+		line, char := lex.GetLineChar()
+		if test.after.line != line {
+			t.Fatal(testutil.TestFail2("line", test.after.line, line, i))
+		}
+		if test.after.char != char {
+			t.Fatal(testutil.TestFail2("char", test.after.char, char, i))
+		}
+	}
+}
+
 func TestUnadvanceChar(t *testing.T) {
 	//UnadvanceChar() (stat Status)
 	type before struct{line, char int}

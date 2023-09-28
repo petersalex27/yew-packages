@@ -251,7 +251,27 @@ func (lex *Lexer) stepn(n uint32) {
 	}
 }
 
+func (lex *Lexer) Status() source.Status {
+	if lex.line < 1 || lex.line > len(lex.source) {
+		return source.BadLineNumber
+	}
+	if lex.char < 1 || lex.char - 1 > len(lex.source[lex.line-1]) {
+		return source.BadCharNumber
+	}
+	if lex.char + 1 == len(lex.source[lex.line-1]) {
+		if lex.line == len(lex.source) {
+			return source.Eof
+		}
+		return source.Eol
+	}
+	return source.Ok
+}
+
 func (lex *Lexer) stepDirection(n int) source.Status {
+	if stat := lex.Status(); stat.IsInvalid() {
+		return stat
+	}
+
 	lex.char = lex.char + n
 	for lex.char <= 0 {
 		if lex.line-1 <= 0 {
