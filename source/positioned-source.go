@@ -3,7 +3,6 @@ package source
 type PositionedSource interface {
 	Source
 	SetLineChar(line, char int)
-	AdvanceLine() Status
 	AdvanceChar() (char byte, stat Status)
 	UnadvanceChar() (stat Status)
 	WhitespaceLength() int
