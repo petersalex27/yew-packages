@@ -9,10 +9,67 @@ import (
 
 //SetLineChar(line, char int)
 //AdvanceChar() (char byte, stat Status)
-//UnadvanceChar() (stat Status)
 //WhitespaceLength() int
 
-//ReadUntil(char byte) (string, Status)
+func TestUnadvanceChar(t *testing.T) {
+	//UnadvanceChar() (stat Status)
+	type before struct{line, char int}
+	type after before
+	tests := []struct{
+		source []string
+		stat source.Status
+		peekExpect byte
+		before
+		after
+	}{
+		{
+			[]string{`.a`}, source.Ok, '.', 
+			before{1,2}, after{1,1},
+		},
+		{
+			[]string{`1 2 3`}, source.Ok, '3', 
+			before{1,6}, after{1,5},
+		},
+		{
+			[]string{`1 2 3`, `a b c`}, source.Ok, '3', 
+			before{1,6}, after{1,5},
+		},
+		{
+			[]string{`1 2 3`, `a b c`}, source.Ok, '\n', 
+			before{2,1}, after{1,6},
+		},
+		{
+			[]string{`1 2 3`, ` `}, source.Ok, ' ', 
+			before{2,2}, after{2,1},
+		},
+	}
+
+	for i, test := range tests {
+		lex := NewLexer(lexerWhitespace_test)
+		// setup
+		lex.SetSource(test.source)
+		lex.SetPath("./test-lexer-unadvance.yew")
+		lex.SetLineChar(test.before.line, test.before.char)
+
+		stat := lex.UnadvanceChar()
+		if !stat.Is(test.stat) {
+			t.Fatal(testutil.TestMsg(i, "expected stat=%v,  actual stat=%v", test.stat, stat))
+		}
+		actual, _ := lex.Peek()
+		if test.peekExpect != actual {
+			t.Fatal(testutil.TestFail2("peek", test.peekExpect, actual, i))
+		}
+
+		line, char := lex.GetLineChar()
+		if test.after.line != line {
+			t.Fatal(testutil.TestFail2("line", test.after.line, line, i))
+		}
+		if test.after.char != char {
+			t.Fatal(testutil.TestFail2("char", test.after.char, char, i))
+		}
+	}
+}
+
 func TestReadUntil(t *testing.T) {
 	tests := []struct{
 		source []string

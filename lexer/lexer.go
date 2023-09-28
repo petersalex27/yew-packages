@@ -258,7 +258,7 @@ func (lex *Lexer) stepDirection(n int) source.Status {
 			return source.BadLineNumber
 		}
 		lex.line = lex.line - 1
-		underflow := 1 - lex.char
+		underflow := -lex.char - 1
 		lex.char = len(lex.source[lex.line-1]) - underflow
 	}
 	return source.Ok
