@@ -3,9 +3,11 @@ package types
 import (
 	"errors"
 	"strconv"
+
+	"github.com/petersalex27/yew-packages/nameable"
 )
 
-func typeMismatch(a, b Type) error { 
+func typeMismatch[T nameable.Nameable](a, b Type[T]) error { 
 	return errors.New(
 		"the type " + a.String() + " is not in the same equivalence class as " + b.String())
 }

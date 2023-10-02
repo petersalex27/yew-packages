@@ -1,17 +1,18 @@
 package types
 
 import (
+	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type Type interface {
+type Type[T nameable.Nameable] interface {
 	str.Stringable
-	Equals(Type) bool
-	Generalize() Polytype
+	Equals(Type[T]) bool
+	Generalize(cxt *Context[T]) Polytype[T]
 }
 
-func MaybeReplace(ty Type, v Variable, m Monotyped) Type {
-	if mono, ok := ty.(Monotyped); ok {
+func MaybeReplace[T nameable.Nameable](ty Type[T], v Variable[T], m Monotyped[T]) Type[T] {
+	if mono, ok := ty.(Monotyped[T]); ok {
 		return mono.Replace(v, m)
 	}
 	return ty

@@ -1,31 +1,34 @@
 package types
 
 import (
-	expr "github.com/petersalex27/yew-packages/expr"
 	"strings"
 	"sync"
-	"github.com/petersalex27/yew-packages/util/stack"
+
+	expr "github.com/petersalex27/yew-packages/expr"
+	"github.com/petersalex27/yew-packages/nameable"
 	"github.com/petersalex27/yew-packages/util"
+	"github.com/petersalex27/yew-packages/util/stack"
 )
 
-type ruleElement[T Type] struct {
+type ruleElement[T Type[U], U nameable.Nameable] struct {
 	name string
-	rule func(cxt *Context) (T, error)
+	rule func(cxt *Context[U]) (T, error)
 }
 
-type equivalenceClassMap map[string]Monotyped
+type equivalenceClassMap[T nameable.Nameable] map[string]Monotyped[T]
 type expressionClassMap map[string]expr.Expression
 
-type Context struct {
+type Context[T nameable.Nameable] struct {
 	contextNumber int32
 	varCounter uint32
-	equivClasses equivalenceClassMap
+	makeName func(string)T
+	equivClasses equivalenceClassMap[T]
 	exprClasses expressionClassMap
-	stack *stack.Stack[Type]
+	stack *stack.Stack[Type[T]]
 }
 
-func InheritContext(parent *Context) *Context {
-	child := NewContext()
+func InheritContext[T nameable.Nameable](parent *Context[T]) *Context[T] {
+	child := NewContext[T]()
 
 	child.equivClasses = util.CopyMap(parent.equivClasses)
 	child.exprClasses = util.CopyMap(parent.exprClasses)
@@ -35,11 +38,16 @@ func InheritContext(parent *Context) *Context {
 	return child
 }
 
-func NewContext() *Context {
-	cxt := new(Context)
-	cxt.equivClasses = make(equivalenceClassMap)
+func NewContext[T nameable.Nameable]() *Context[T] {
+	cxt := new(Context[T])
+	cxt.equivClasses = make(equivalenceClassMap[T])
 	cxt.exprClasses = make(expressionClassMap)
-	cxt.stack = stack.NewStack[Type](1 << 5 /*cap=32*/)
+	cxt.stack = stack.NewStack[Type[T]](1 << 5 /*cap=32*/)
+	return cxt
+}
+
+func (cxt *Context[T]) SetNameMaker(f func(string)T) *Context[T] {
+	cxt.makeName = f
 	return cxt
 }
 
@@ -85,119 +93,122 @@ var ruleLookup = map[string]RuleID{
 	InstanceRule: InstanceID,
 	GeneralRule: GeneralID,
 }
-var rules = []ruleElement[Type]{
-	/*application*/ {
-		ApplyRule, func(cxt *Context) (Type, error) {
-			ms, e := PopTypes[Monotyped](cxt, 2)
-			if e != nil {
-				return nil, e
-			}
-			
-			return cxt.Apply(ms[1], ms[0])
+func rules_[T nameable.Nameable]() []ruleElement[Type[T], T] {
+	return []ruleElement[Type[T], T] {
+		/*application*/ {
+			ApplyRule, func(cxt *Context[T]) (Type[T], error) {
+				ms, e := PopTypes[Monotyped[T]](cxt, 2)
+				if e != nil {
+					return nil, e
+				}
+				
+				return cxt.Apply(ms[1], ms[0])
+			},
 		},
-	},
-	/*abstraction*/ {
-		AbstractRule, func(cxt *Context) (Type, error) {
-			// get arg
-			m, e := cxt.PopMonotype()
-			if e != nil {
-				return nil, e
-			}
-			return cxt.Abstract(m), nil
+		/*abstraction*/ {
+			AbstractRule, func(cxt *Context[T]) (Type[T], error) {
+				// get arg
+				m, e := cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
+				return cxt.Abstract(m), nil
+			},
 		},
-	},
-	/*construction*/ {
-		ConstructRule, func(cxt *Context) (Type, error) {
-			ms, e := PopTypes[Monotyped](cxt, 2)
-			if e != nil {
-				return nil, e
-			}
-			
-			return cxt.Cons(ms[1], ms[0]), nil
+		/*construction*/ {
+			ConstructRule, func(cxt *Context[T]) (Type[T], error) {
+				ms, e := PopTypes[Monotyped[T]](cxt, 2)
+				if e != nil {
+					return nil, e
+				}
+				
+				return cxt.ConsRule(ms[1], ms[0]), nil
+			},
 		},
-	},
-	/*head-separation*/ {
-		HeadRule, func(cxt *Context) (Type, error) {
-			m, e := cxt.PopMonotype()
-			if e != nil {
-				return nil, e
-			}
-			return cxt.Head(m)
+		/*head-separation*/ {
+			HeadRule, func(cxt *Context[T]) (Type[T], error) {
+				m, e := cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
+				return cxt.Head(m)
+			},
 		},
-	},
-	/*tail-separation*/ {
-		TailRule, func(cxt *Context) (Type, error) {
-			m, e := cxt.PopMonotype()
-			if e != nil {
-				return nil, e
-			}
-			return cxt.Tail(m)
+		/*tail-separation*/ {
+			TailRule, func(cxt *Context[T]) (Type[T], error) {
+				m, e := cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
+				return cxt.Tail(m)
+			},
 		},
-	},
-	/*disjunction*/ {
-		DisjunctRule, func(cxt *Context) (Type, error) {
-			m, e := cxt.PopMonotype()
-			if e != nil {
-				return nil, e
-			}
+		/*disjunction*/ {
+			DisjunctRule, func(cxt *Context[T]) (Type[T], error) {
+				m, e := cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
 
-			return cxt.Join(m), nil
+				return cxt.JoinRule(m), nil
+			},
 		},
-	},
-	/*expansion*/ {
-		ExpandRule, func(cxt *Context) (Type, error) {
-			ms, e := PopTypes[Monotyped](cxt, 2)
-			if e != nil {
-				return nil, e
-			}
-			
-			return cxt.Expansion(ms[1], ms[0]), nil
+		/*expansion*/ {
+			ExpandRule, func(cxt *Context[T]) (Type[T], error) {
+				ms, e := PopTypes[Monotyped[T]](cxt, 2)
+				if e != nil {
+					return nil, e
+				}
+				
+				return cxt.Expansion(ms[1], ms[0]), nil
+			},
 		},
-	},
-	/*realization*/ {
-		RealizeRule, func(cxt *Context) (Type, error) {
-			ms, e := PopTypes[Monotyped](cxt, 3)
-			if e != nil {
-				return nil, e
-			}
+		/*realization*/ {
+			RealizeRule, func(cxt *Context[T]) (Type[T], error) {
+				ms, e := PopTypes[Monotyped[T]](cxt, 3)
+				if e != nil {
+					return nil, e
+				}
 
-			return cxt.Realization(ms[2], ms[1], ms[0]) 
+				return cxt.Realization(ms[2], ms[1], ms[0]) 
+			},
 		},
-	},
-	/*contextualization*/ {
-		ContextRule, func(cxt *Context) (Type, error) {
-			ps, e := cxt.PopTypesAsPolys(2)
-			if e != nil {
-				return nil, e
-			}
-			
-			return cxt.Contextualization(ps[1], ps[0]), nil
+		/*contextualization*/ {
+			ContextRule, func(cxt *Context[T]) (Type[T], error) {
+				ps, e := cxt.PopTypesAsPolys(2)
+				if e != nil {
+					return nil, e
+				}
+				
+				return cxt.Contextualization(ps[1], ps[0]), nil
+			},
 		},
-	},
-	/*instantiation*/ {
-		InstanceRule, func(cxt *Context) (Type, error) {
-			m, eMono := cxt.PopMonotype()
-			if eMono != nil {
-				return nil, eMono
-			}
+		/*instantiation*/ {
+			InstanceRule, func(cxt *Context[T]) (Type[T], error) {
+				m, eMono := cxt.PopMonotype()
+				if eMono != nil {
+					return nil, eMono
+				}
 
-			p, ePoly := cxt.PopPolytype()
-			if ePoly != nil {
-				return nil, ePoly
-			}
-			
-			return p.Instantiate(m), nil
+				p, ePoly := cxt.PopPolytype()
+				if ePoly != nil {
+					return nil, ePoly
+				}
+				
+				return p.Instantiate(m), nil
+			},
 		},
-	},
-	/*generalization*/ {
-		GeneralRule, func(cxt *Context) (Type, error) {
-			t := cxt.Pop()
-			return t.Generalize(), nil
+		/*generalization*/ {
+			GeneralRule, func(cxt *Context[T]) (Type[T], error) {
+				t := cxt.Pop()
+				return t.Generalize(cxt), nil
+			},
 		},
-	},
+	}
 }
 
-func AddRule(name string, rule func(cxt *Context) (Type, error)) (RuleID, error) {
+/*
+func AddRule[T nameable.Nameable](name string, rule func(cxt *Context[T]) (Type[T], error)) (RuleID, error) {
 	ruleLock.Lock()
 	defer ruleLock.Unlock()
 
@@ -205,17 +216,17 @@ func AddRule(name string, rule func(cxt *Context) (Type, error)) (RuleID, error)
 		return 0, ruleAlreadyDefined(name)
 	}
 
-	id := RuleID(len(rules)) // get new rule id
+	id := RuleID(len(rules_[T]())) // get new rule id
 	ruleLookup[name] = id // add to lookup table
 
 	// add rule
-	newRule := ruleElement[Type]{name: name, rule: rule}
+	newRule := ruleElement[Type[T]]{name: name, rule: rule}
 	rules = append(rules, newRule)
 	
 	return id, nil
 }
 
-func (cxt *Context) Rule(id RuleID) (Type, error) {
+func (cxt *Context[T]) Rule(id RuleID) (Type[T], error) {
 	ruleLock.Lock()
 	defer ruleLock.Unlock()
 
@@ -225,9 +236,9 @@ func (cxt *Context) Rule(id RuleID) (Type, error) {
 	}
 	// call rule
 	return rules[id].rule(cxt)
-}
+}*/
 
-func (cxt *Context) FindExpression(e expr.Expression) expr.Expression {
+func (cxt *Context[T]) FindExpression(e expr.Expression) expr.Expression {
 	if v, ok := e.(expr.Variable); ok {
 		if out, found := cxt.exprClasses[v.String()]; found {
 			return out
@@ -238,7 +249,7 @@ func (cxt *Context) FindExpression(e expr.Expression) expr.Expression {
 }
 
 // returns representative for equiv. class
-func (cxt *Context) Find(m Monotyped) Monotyped {
+func (cxt *Context[T]) Find(m Monotyped[T]) Monotyped[T] {
 	name, _ := Name(m)
 	out, found := cxt.equivClasses[name]
 	if !found {
@@ -265,8 +276,8 @@ f: t -> u == -> t u
 
 // register returns a function that, for each monotype `t` given to the function, 
 // creates a map `t -> m`
-func (cxt *Context) register(m Monotyped) func(...Monotyped) {
-	return func(ts ...Monotyped) {
+func (cxt *Context[T]) register(m Monotyped[T]) func(...Monotyped[T]) {
+	return func(ts ...Monotyped[T]) {
 		for _, t := range ts {
 			/*if _, ok := t.(Variable); ok {
 				continue
@@ -279,7 +290,7 @@ func (cxt *Context) register(m Monotyped) func(...Monotyped) {
 	}
 }
 
-func (cxt *Context) registerExpression(e expr.Expression) func(...expr.Expression) {
+func (cxt *Context[T]) registerExpression(e expr.Expression) func(...expr.Expression) {
 	return func(exprs ...expr.Expression) {
 		for _, exp := range exprs {
 			if _, ok := exp.(expr.Variable); !ok {
@@ -290,7 +301,7 @@ func (cxt *Context) registerExpression(e expr.Expression) func(...expr.Expressio
 	}
 }
 
-func (cxt *Context) newType(name string, m Monotyped) error {
+func (cxt *Context[T]) newType(name string, m Monotyped[T]) error {
 	if _, found := cxt.equivClasses[name]; found {
 		return alreadyDefined(name)
 	}
@@ -307,7 +318,7 @@ case c reps a, b has no reps.
 
 // declares that `a` and `b` represent the same type--panics if at least
 // one of the types is not a type variable
-func (cxt *Context) union(a, b Monotyped) {
+func (cxt *Context[T]) union(a, b Monotyped[T]) {
 	if IsVariable(a) {
 		cxt.register(b)(a, b)
 	} else if IsVariable(b) {
@@ -317,7 +328,7 @@ func (cxt *Context) union(a, b Monotyped) {
 	}
 }
 
-func (cxt *Context) expressionUnion(e1, e2 expr.Expression) {
+func (cxt *Context[T]) expressionUnion(e1, e2 expr.Expression) {
 	if _, ok := e1.(expr.Variable); ok {
 		cxt.registerExpression(e1)(e1, e2)
 	} else if _, ok := e2.(expr.Variable); ok {
@@ -328,7 +339,7 @@ func (cxt *Context) expressionUnion(e1, e2 expr.Expression) {
 }
 
 // see Unify for description
-func (cxt *Context) unify(a, b Monotyped) bool {
+func (cxt *Context[T]) unify(a, b Monotyped[T]) bool {
 	ta := cxt.Find(a)
 	tb := cxt.Find(b)
 
@@ -357,7 +368,7 @@ func IsKindVariable(e expr.Expression) bool {
 	return ok
 }
 
-func (cxt *Context) tryToEquateExpressions(e1, e2 expr.Expression) bool {
+func (cxt *Context[T]) tryToEquateExpressions(e1, e2 expr.Expression) bool {
 	// f: [a; n+m] -> ([a; n], [a; m])
 	// f $ (x: [a; 6])
 	// => n+m=6 => n=6-m
@@ -365,7 +376,7 @@ func (cxt *Context) tryToEquateExpressions(e1, e2 expr.Expression) bool {
 	return true
 }
 
-func (cxt *Context) unifyExpression(a, b expr.Expression) bool {
+func (cxt *Context[T]) unifyExpression(a, b expr.Expression) bool {
 	ta := cxt.FindExpression(a)
 	tb := cxt.FindExpression(b)
 
@@ -387,14 +398,14 @@ func (cxt *Context) unifyExpression(a, b expr.Expression) bool {
 
 // Unify declares that two monotypes, i.e., tbe arguments given for `a` and `b`, are the same
 // type. On success, nil is returned; otherwise an error is returned.
-func (cxt *Context) Unify(a, b Monotyped) error {
+func (cxt *Context[T]) Unify(a, b Monotyped[T]) error {
 	if !cxt.unify(a, b) {
-		return typeMismatch(a, b)
+		return typeMismatch[T](a, b)
 	}
 	return nil
 }
 
-func (cxt *Context) StringClasses() string {
+func (cxt *Context[T]) StringClasses() string {
 	var builder strings.Builder
 	for k, v := range cxt.equivClasses {
 		builder.WriteString(k + " : " + v.String() + "\n")

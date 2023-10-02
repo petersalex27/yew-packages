@@ -2,14 +2,15 @@ package types
 
 import (
 	expr "github.com/petersalex27/yew-packages/expr"
+	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type TypeJudgement[E expr.Expression] struct{
+type TypeJudgement[T nameable.Nameable, E expr.Expression] struct{
 	expression E
-	ty Type
+	ty Type[T]
 }
 
-func (j TypeJudgement[_]) GetType() Type {
+func (j TypeJudgement[T,_]) GetType() Type[T] {
 	return j.ty
 }
 
@@ -33,22 +34,22 @@ let x = [] in
 decons$(Arr Int)(4): (Arr Int)(4) -> (Int, (Arr Int)(3))
 */
 
-func (j TypeJudgement[_]) String() string {
+func (j TypeJudgement[T,_]) String() string {
 	return "(" + j.expression.String() + ": " + j.ty.String() + ")"
 }
 
 // Judgement makes the trivial type judgement `𝚪, e: ty ⊢ e: ty`
-func Judgement[E expr.Expression](e E, ty Type) TypeJudgement[E] {
-	return TypeJudgement[E]{
+func Judgement[T nameable.Nameable, E expr.Expression](e E, ty Type[T]) TypeJudgement[T,E] {
+	return TypeJudgement[T,E]{
 		expression: e,
 		ty: ty,
 	}
 }
 
-func (j TypeJudgement[E]) Replace(v Variable, m Monotyped) TypeJudgement[E] {
+func (j TypeJudgement[T,E]) Replace(v Variable[T], m Monotyped[T]) TypeJudgement[T,E] {
 	return Judgement(j.expression, MaybeReplace(j.ty, v, m))
 }
 
-func Equals[T, U expr.Expression](j1 TypeJudgement[T], j2 TypeJudgement[U]) bool {
+func Equals[N nameable.Nameable, T, U expr.Expression](j1 TypeJudgement[N,T], j2 TypeJudgement[N,U]) bool {
 	return j1.ty.Equals(j2.ty) && j1.expression.Equals(j2.expression)
 }

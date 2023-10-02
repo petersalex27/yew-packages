@@ -1,20 +1,22 @@
 package types
 
-type Monotyped interface {
-	Type
-	DependentTyped
-	ReplaceKindVar(replacing Variable, with Monotyped) Monotyped
-	Replace(Variable, Monotyped) Monotyped
+import "github.com/petersalex27/yew-packages/nameable"
+
+type Monotyped[T nameable.Nameable] interface {
+	Type[T]
+	DependentTyped[T]
+	ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T]
+	Replace(Variable[T], Monotyped[T]) Monotyped[T]
 }
 
-type Splitable interface {
-	Monotyped
-	Split() (name string, params []Monotyped)
+type Splitable[T nameable.Nameable] interface {
+	Monotyped[T]
+	Split() (name string, params []Monotyped[T])
 }
 
-func Name(m Monotyped) (name string, hasName bool) {
-	var st Splitable
-	st, hasName = m.(Splitable)
+func Name[T nameable.Nameable](m Monotyped[T]) (name string, hasName bool) {
+	var st Splitable[T]
+	st, hasName = m.(Splitable[T])
 	if !hasName {
 		name = m.String()
 	} else {
@@ -23,13 +25,13 @@ func Name(m Monotyped) (name string, hasName bool) {
 	return
 }
 
-func IsVariable(m Monotyped) bool {
-	_, isVar := m.(Variable)
+func IsVariable[T nameable.Nameable](m Monotyped[T]) bool {
+	_, isVar := m.(Variable[T])
 	return isVar
 }
 
-func Split(m Monotyped) (name string, params []Monotyped) {
-	st, hasName := m.(Splitable)
+func Split[T nameable.Nameable](m Monotyped[T]) (name string, params []Monotyped[T]) {
+	st, hasName := m.(Splitable[T])
 	if !hasName {
 		name, params = m.String(), nil
 	} else {

@@ -1,41 +1,49 @@
 package types
 
-type Constant string
+import "github.com/petersalex27/yew-packages/nameable"
 
-func Con(name string) Constant {
-	return Constant(name)
-}
+type Constant[T nameable.Nameable] struct{ name T }
 
-// just returns receiver `c`
-func (c Constant) ReplaceKindVar(replacing Variable, with Monotyped) Monotyped {
-	return c 
-}
+type constantName string
 
-// Constant(x).Equals(y) = true iff y.(Constant) is true and string(y.(Constant)) == x
-func (c Constant) Equals(t Type) bool {
-	c2, ok := t.(Constant)
-	return ok && c == c2
-}
-
-// Constant("Type").String() = "Type"
-func (c Constant) String() string {
+func (c constantName) GetName() string {
 	return string(c)
 }
 
-// Constant("Type").Generalize() = `forall _ . Type`
-func (c Constant) Generalize() Polytype {
-	return Polytype{
-		typeBinders: []Variable{Var("_")},
-		bound: c,
+func (cxt *Context[T]) Con(name string) Constant[T] {
+	return Constant[T]{cxt.makeName(name)}
+}
+
+// just returns receiver `c`
+func (c Constant[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
+	return c
+}
+
+// Constant(x).Equals(y) = true iff y.(Constant) is true and string(y.(Constant)) == x
+func (c Constant[T]) Equals(t Type[T]) bool {
+	c2, ok := t.(Constant[T])
+	return ok && c.name.GetName() == c2.name.GetName()
+}
+
+// Constant("Type[T]").String() = "Type[T]"
+func (c Constant[T]) String() string {
+	return c.name.GetName()
+}
+
+// Constant("Type[T]").Generalize() = `forall _ . Type[T]`
+func (c Constant[T]) Generalize(cxt *Context[T]) Polytype[T] {
+	return Polytype[T]{
+		typeBinders: []Variable[T]{cxt.dummyName(Variable[T]{})},
+		bound:       c,
 	}
 }
 
 // c.Replace(_, _) = c
-func (c Constant) Replace(v Variable, m Monotyped) Monotyped { return c }
+func (c Constant[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] { return c }
 
 // c.FreeInstantiation() = c
-func (c Constant) FreeInstantiation() DependentTyped { return c }
+func (c Constant[T]) FreeInstantiation(*Context[T]) DependentTyped[T] { return c }
 
-func (c Constant) ReplaceDependent(v Variable, m Monotyped) DependentTyped {
+func (c Constant[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
 	return c
 }

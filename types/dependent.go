@@ -2,13 +2,14 @@ package types
 
 import (
 	expr "github.com/petersalex27/yew-packages/expr"
+	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type DependentTyped interface {
-	Type
-	FreeInstantiation() DependentTyped
-	ReplaceDependent(v Variable, with Monotyped) DependentTyped
+type DependentTyped[T nameable.Nameable] interface {
+	Type[T]
+	FreeInstantiation(cxt *Context[T]) DependentTyped[T]
+	ReplaceDependent(v Variable[T], with Monotyped[T]) DependentTyped[T]
 }
 
 /*
@@ -67,29 +68,29 @@ Arr = forall a . map n: Uint . {
 Int = 0 | Succ Int | Pred Int
 */
 
-type IndexerGenerator func(...expr.Expression) Monotyped
+type IndexerGenerator[T nameable.Nameable] func(...expr.Expression) Monotyped[T]
 
-// Dependent Type
-type DependentType struct {
-	indexForm DependentTypeInstance
-	indexedBy []TypeJudgement[expr.Variable]
-	indexConstruction []DependentTypeConstructor
+// Dependent Type[T]
+type DependentType[T nameable.Nameable] struct {
+	indexForm DependentTypeInstance[T]
+	indexedBy []TypeJudgement[T,expr.Variable]
+	indexConstruction []DependentTypeConstructor[T]
 }
 
-func (d DependentType) String() string {
+func (d DependentType[T]) String() string {
 	return "map " + str.Join(d.indexedBy, str.String(" ")) + " . "
 }
 
-func (d DependentType) KindInstantiation() DependentTypeInstance {
+func (d DependentType[T]) KindInstantiation() DependentTypeInstance[T] {
 	return d.indexForm
 }
 
-func (d DependentType) FreeInstantiation() DependentTyped {
-	cs := make([]DependentTypeConstructor, len(d.indexConstruction))
+func (d DependentType[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
+	cs := make([]DependentTypeConstructor[T], len(d.indexConstruction))
 	for i, c := range d.indexConstruction {
 		cs[i] = c.FreeInstantiateKinds(d.indexedBy...)
 	}
-	return DependentType{
+	return DependentType[T]{
 		indexedBy: nil,
 		indexConstruction: cs,
 	}
@@ -98,25 +99,26 @@ func (d DependentType) FreeInstantiation() DependentTyped {
 // Allows the following (as long as B does not depend on A (in the first operand) 
 // and A does not depend on B (in the second operand)):
 // (map (x: A) (y: B) . W(y)) == (map (y: B) (x: A) . W(y)) == (map (y: B) . W(y))
-func (d DependentType) Equals(t Type) bool {
-	d2, ok := t.(DependentType)
+func (d DependentType[T]) Equals(t Type[T]) bool {
+	d2, ok := t.(DependentType[T])
 	if !ok {
 		return false
 	}
-	return d.FreeInstantiation().Equals(d2.FreeInstantiation())
+	return d.indexForm.Equals(d2.indexForm)
+	//return d.FreeInstantiation().Equals(d2.FreeInstantiation())
 }
 
-func (d DependentType) Generalize() Polytype {
-	return Polytype{
-		typeBinders: MakeDummyVars(1),
+func (d DependentType[T]) Generalize(cxt *Context[T]) Polytype[T] {
+	return Polytype[T]{
+		typeBinders: cxt.MakeDummyVars(1),
 		bound: d,
 	}
 }
 
-func (d DependentType) ReplaceDependent(v Variable, m Monotyped) DependentTyped {
-	out := DependentType{
+func (d DependentType[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
+	out := DependentType[T]{
 		indexedBy: d.indexedBy,
-		indexConstruction: make([]DependentTypeConstructor, len(d.indexConstruction)),
+		indexConstruction: make([]DependentTypeConstructor[T], len(d.indexConstruction)),
 	}
 
 	for i, con := range d.indexConstruction {

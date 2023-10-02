@@ -1,98 +1,105 @@
 package types
 
 import (
-	"github.com/petersalex27/yew-packages/fun"
 	"strconv"
+
+	"github.com/petersalex27/yew-packages/fun"
+	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type Variable struct {
-	boundContext int32
-	name         string
+type Dummyable interface {
+	nameable.Nameable
+	SetDummy(*nameable.Nameable)
 }
 
-// ReplaceKindVar implements Monotyped.
-func (v Variable) ReplaceKindVar(replacing Variable, with Monotyped) Monotyped {
+type Variable[T nameable.Nameable] struct {
+	boundContext int32
+	name         T
+}
+
+// ReplaceKindVar implements Monotyped[T].
+func (v Variable[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
 	if varEquals(v, replacing) {
 		return with
 	}
 	return v
 }
 
-func NonBindableVar(name string) Variable {
-	return Variable{boundContext: -1, name: name}
+func NonBindableVar[T nameable.Nameable](name T) Variable[T] {
+	return Variable[T]{boundContext: -1, name: name}
 }
 
-func (v Variable) BoundIn(i int32) Variable {
+func (v Variable[T]) BoundIn(i int32) Variable[T] {
 	v.boundContext = i
 	return v
 }
 
-func Var(name string) Variable {
-	return Variable{boundContext: 0, name: name}
+func (cxt *Context[T]) Var(name string) Variable[T] {
+	return Variable[T]{boundContext: 0, name: cxt.makeName(name)}
 }
 
-func FreeVar(name string) Variable {
-	return Var(name)
+func (cxt *Context[T]) FreeVar(name string) Variable[T] {
+	return cxt.Var(name)
 }
 
-func dummyName(Variable) Variable { return Var("_") }
+func (cxt *Context[T]) dummyName(Variable[T]) Variable[T] { return cxt.Var("_") }
 
 // MakeDummyVars(n) = []Variable{v /*0*/, v /*1*/, .., v /*n-1*/} where
 // v = Var("_")
-func MakeDummyVars(n uint) []Variable {
-	return fun.FMap(make([]Variable, n), dummyName)
+func (cxt *Context[T]) MakeDummyVars(n uint) []Variable[T] {
+	return fun.FMap(make([]Variable[T], n), cxt.dummyName)
 }
 
 // Var("a").BoundBy(x).String() = "a"
-func (v Variable) String() string {
-	return v.name
+func (v Variable[T]) String() string {
+	return v.name.GetName()
 }
 
-func (v Variable) String2() (string, string) {
+func (v Variable[T]) String2() (string, string) {
 	return v.String(), "#(" + strconv.Itoa(int(v.boundContext)) + ")"
 }
 
-func (v Variable) ExtendedString() string {
+func (v Variable[T]) ExtendedString() string {
 	l, r := v.String2()
 	return l + r
 }
 
 // v.Capture(_) = v
-func (v Variable) Capture(w Variable) Monotyped { return v }
+func (v Variable[T]) Capture(w Variable[T]) Monotyped[T] { return v }
 
 // Replace all `w` in `v` with `m`; because v is just a variable,
 // if v == w, then return m; else return v. Formally, `v [w := m]`
-func (v Variable) Replace(w Variable, m Monotyped) Monotyped {
+func (v Variable[T]) Replace(w Variable[T], m Monotyped[T]) Monotyped[T] {
 	if varEquals(v, w) {
 		return m
 	}
 	return v
 }
 
-func (v Variable) ReplaceDependent(w Variable, m Monotyped) DependentTyped {
+func (v Variable[T]) ReplaceDependent(w Variable[T], m Monotyped[T]) DependentTyped[T] {
 	return v.Replace(w, m)
 }
 
 // Var("a").Generalize() = `forall _ . a`
-func (v Variable) Generalize() Polytype {
-	return Polytype{
-		typeBinders: MakeDummyVars(1),
+func (v Variable[T]) Generalize(cxt *Context[T]) Polytype[T] {
+	return Polytype[T]{
+		typeBinders: cxt.MakeDummyVars(1),
 		bound:       v,
 	}
 }
 
-func (v Variable) FreeInstantiation() DependentTyped {
+func (v Variable[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
 	if v.boundContext > 0 {
-		return Var("_")
+		return cxt.dummyName(Variable[T]{})
 	}
 	return v
 }
 
-func varEquals(v Variable, w Variable) bool {
-	return v.boundContext == w.boundContext && v.name == w.name
+func varEquals[T nameable.Nameable](v Variable[T], w Variable[T]) bool {
+	return v.boundContext == w.boundContext && v.name.GetName() == w.name.GetName()
 }
 
-func (v Variable) Equals(t Type) bool {
-	v2, ok := t.(Variable)
+func (v Variable[T]) Equals(t Type[T]) bool {
+	v2, ok := t.(Variable[T])
 	return ok && varEquals(v, v2)
 }

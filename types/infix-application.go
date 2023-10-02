@@ -1,42 +1,45 @@
 package types
 
-import str "github.com/petersalex27/yew-packages/stringable"
+import (
+	"github.com/petersalex27/yew-packages/nameable"
+	str "github.com/petersalex27/yew-packages/stringable"
+)
 
-type InfixApplication Application
+type InfixApplication[T nameable.Nameable] Application[T]
 
-func Function(left, right Monotyped) InfixApplication {
-	return InfixApplication{
-		c: Constant("->"),
-		ts: []Monotyped{left, right},
+func (cxt *Context[T]) Function(left, right Monotyped[T]) InfixApplication[T] {
+	return InfixApplication[T]{
+		c: cxt.Con("->"),
+		ts: []Monotyped[T]{left, right},
 	}
 }
 
-func Cons(left, right Monotyped) InfixApplication {
-	return InfixApplication{
-		c: Constant("&"),
-		ts: []Monotyped{left, right},
+func (cxt *Context[T]) Cons(left, right Monotyped[T]) InfixApplication[T] {
+	return InfixApplication[T]{
+		c: cxt.Con("&"),
+		ts: []Monotyped[T]{left, right},
 	}
 }
 
-func Join(left, right Monotyped) InfixApplication {
-	return InfixApplication{
-		c: Constant("|"),
-		ts: []Monotyped{left, right},
+func (cxt *Context[T]) Join(left, right Monotyped[T]) InfixApplication[T] {
+	return InfixApplication[T]{
+		c: cxt.Con("|"),
+		ts: []Monotyped[T]{left, right},
 	}
 }
 
-func Infix(left Monotyped, constant string, rights ...Monotyped) InfixApplication {
-	return InfixApplication{
-		c: Constant(constant),
-		ts: append([]Monotyped{left}, rights...),
+func (cxt *Context[T]) Infix(left Monotyped[T], constant string, rights ...Monotyped[T]) InfixApplication[T] {
+	return InfixApplication[T]{
+		c: cxt.Con(constant),
+		ts: append([]Monotyped[T]{left}, rights...),
 	}
 }
 
-func (a InfixApplication) Split() (string, []Monotyped) { 
-	return Application(a).Split()	
+func (a InfixApplication[T]) Split() (string, []Monotyped[T]) { 
+	return Application[T](a).Split()	
 }
 
-func (a InfixApplication) String() string {
+func (a InfixApplication[T]) String() string {
 	length := len(a.ts)
 	if length < 2 {
 		name := "(" + a.c.String() + ")"
@@ -49,40 +52,40 @@ func (a InfixApplication) String() string {
 }
 
 
-func (a InfixApplication) Replace(v Variable, m Monotyped) Monotyped {
-	res, _ := Application(a).Replace(v, m).(Application)
-	return InfixApplication(res)
+func (a InfixApplication[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] {
+	res, _ := Application[T](a).Replace(v, m).(Application[T])
+	return InfixApplication[T](res)
 }
 
-func (a InfixApplication) ReplaceDependent(v Variable, m Monotyped) DependentTyped {
-	res, _ := Application(a).ReplaceDependent(v, m).(Application)
-	return InfixApplication(res)
+func (a InfixApplication[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
+	res, _ := Application[T](a).ReplaceDependent(v, m).(Application[T])
+	return InfixApplication[T](res)
 }
 
-func (a InfixApplication) ReplaceKindVar(replacing Variable, with Monotyped) Monotyped {
-	res, _ := Application(a).ReplaceKindVar(replacing, with).(Application)
-	return InfixApplication(res)
+func (a InfixApplication[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
+	res, _ := Application[T](a).ReplaceKindVar(replacing, with).(Application[T])
+	return InfixApplication[T](res)
 }
 
-func (a InfixApplication) FreeInstantiation() DependentTyped {
-	res, _ := Application(a).FreeInstantiation().(Application)
-	return InfixApplication(res)
+func (a InfixApplication[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
+	res, _ := Application[T](a).FreeInstantiation(cxt).(Application[T])
+	return InfixApplication[T](res)
 }
 
-func (a InfixApplication) Generalize() Polytype {
-	return Polytype{
-		typeBinders: MakeDummyVars(1),
+func (a InfixApplication[T]) Generalize(cxt *Context[T]) Polytype[T] {
+	return Polytype[T]{
+		typeBinders: cxt.MakeDummyVars(1),
 		bound: a,
 	}
 }
 
-func (a InfixApplication) Equals(t Type) bool {
-	a2, ok := t.(InfixApplication)
+func (a InfixApplication[T]) Equals(t Type[T]) bool {
+	a2, ok := t.(InfixApplication[T])
 	if !ok {
 		return false
 	}
 
-	if a.c != a2.c || len(a.ts) != len(a2.ts) {
+	if a.c.name.GetName() != a2.c.name.GetName() || len(a.ts) != len(a2.ts) {
 		return false
 	}
 

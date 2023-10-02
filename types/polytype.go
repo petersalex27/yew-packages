@@ -1,37 +1,37 @@
 package types
 
 import (
+	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type Polytype struct {
-	typeBinders []Variable
-	bound DependentTyped
+type Polytype[T nameable.Nameable] struct {
+	typeBinders []Variable[T]
+	bound       DependentTyped[T]
 }
 
-type partialPoly Polytype
+type partialPoly[T nameable.Nameable] Polytype[T]
 
-func Forall(vs ...string) partialPoly {
-	out := partialPoly{
-		typeBinders: make([]Variable, len(vs)),
+func (cxt *Context[T]) Forall(vs ...string) partialPoly[T] {
+	out := partialPoly[T]{
+		typeBinders: make([]Variable[T], len(vs)),
 	}
 	for i, v := range vs {
-		out.typeBinders[i] = Var(v)
+		out.typeBinders[i] = cxt.Var(v)
 	}
 	return out
 }
 
-func (p partialPoly) Bind(t DependentTyped) Polytype {
-	return Polytype{
+func (p partialPoly[T]) Bind(t DependentTyped[T]) Polytype[T] {
+	return Polytype[T]{
 		typeBinders: p.typeBinders,
-		bound: t,
+		bound:       t,
 	}
 }
 
-
-// (Polytype{[]Variable{{0,"x"},{0,"y"}},nil,Application{Constant("Type"),[]Monotyped{Variable{0,"x"}}}}).String()
-// == "forall x y . (Type x)"
-func (p Polytype) String() string {
+// (Polytype[T]{[]Variable{{0,"x"},{0,"y"}},nil,Application{Constant("Type[T]"),[]Monotyped[T]{Variable{0,"x"}}}}).String()
+// == "forall x y . (Type[T] x)"
+func (p Polytype[T]) String() string {
 	if len(p.typeBinders) == 0 {
 		return p.bound.String()
 	}
@@ -43,53 +43,53 @@ func (p Polytype) String() string {
 		p.bound.String()
 }
 
-func (p Polytype) Generalize() Polytype {
-	var out Polytype
+func (p Polytype[T]) Generalize(*Context[T]) Polytype[T] {
+	var out Polytype[T]
 	out.bound = p.bound
-	out.typeBinders = make([]Variable, len(p.typeBinders)+1)
+	out.typeBinders = make([]Variable[T], len(p.typeBinders)+1)
 	copy(out.typeBinders, p.typeBinders)
 	return out
 }
 
-func (p Polytype) Equals(t Type) bool {
-	q, ok := t.(Polytype)
+func (p Polytype[T]) Equals(t Type[T]) bool {
+	q, ok := t.(Polytype[T])
 	if !ok {
 		return false
 	}
-	return p.freeInstantiate().Equals(q.freeInstantiate())
+	return p.bound.Equals(q.bound)
 }
 
-// func (p Polytype) Specialize() Type
+// func (p Polytype[T]) Specialize() Type[T]
 
-func (p Polytype) freeInstantiate() DependentTyped {
-	var t DependentTyped = p.bound
-	dummyVar := NonBindableVar("_")
+func (p Polytype[T]) freeInstantiate(cxt *Context[T]) DependentTyped[T] {
+	var t DependentTyped[T] = p.bound
+	dummyVar := cxt.dummyName(Variable[T]{})
 	for _, v := range p.typeBinders {
-		t = MaybeReplace(t, v, dummyVar).(DependentTyped)
+		t = MaybeReplace[T](t, v, dummyVar).(DependentTyped[T])
 	}
 	return t
 }
 
-func (p Polytype) Instantiate(m Monotyped) Type {
-	var t DependentTyped = p.bound
-	
+func (p Polytype[T]) Instantiate(m Monotyped[T]) Type[T] {
+	var t DependentTyped[T] = p.bound
+
 	binderLength := len(p.typeBinders)
 	if binderLength == 0 {
 		return t
 	}
 
-	if p.typeBinders[0].name != "_" { // if not non-binding binder
-		t = MaybeReplace(t, p.typeBinders[0], m).(DependentTyped)
+	if p.typeBinders[0].name.GetName() != "_" { // if not non-binding binder
+		t = MaybeReplace[T](t, p.typeBinders[0], m).(DependentTyped[T])
 	}
 
 	if binderLength == 1 {
 		return t
 	}
 
-	binders := make([]Variable, binderLength-1)
+	binders := make([]Variable[T], binderLength-1)
 	copy(binders, p.typeBinders[1:])
-	return Polytype{
+	return Polytype[T]{
 		typeBinders: binders,
-		bound: t,
+		bound:       t,
 	}
 }
