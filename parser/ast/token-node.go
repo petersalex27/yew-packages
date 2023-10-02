@@ -4,18 +4,18 @@ import (
 	"github.com/petersalex27/yew-packages/token"
 )
 
-type token_node struct{ token.Token }
+type Token struct{ token.Token }
 
-func (t token_node) NodeType() Type {
+func (t Token) NodeType() Type {
 	return Type(t.Token.GetType())
 }
 
-func TokenNode(tok token.Token) token_node {
-	return token_node{tok}
+func TokenNode(tok token.Token) Token {
+	return Token{tok}
 }
 
-func (t token_node) Equals(a Ast) bool {
-	t2, ok := a.(token_node)
+func (t Token) Equals(a Ast) bool {
+	t2, ok := a.(Token)
 	if !ok {
 		return false
 	}
@@ -24,4 +24,4 @@ func (t token_node) Equals(a Ast) bool {
 	return ty1 == ty2 && val1 == val2
 }
 
-func (t token_node) InOrderTraversal(f func(token.Token)) { f(t.Token) }
+func (t Token) InOrderTraversal(f func(token.Token)) { f(t.Token) }

@@ -5,7 +5,7 @@ import "github.com/petersalex27/yew-packages/nameable"
 type Constant[T nameable.Nameable] struct{ name T }
 
 func MakeConst[T nameable.Nameable](t T) Constant[T] {
-	return Constant[T]{t}
+	return Constant[T]{}
 }
 
 func (cxt *Context[T]) Con(name string) Constant[T] {
