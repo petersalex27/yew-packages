@@ -28,6 +28,15 @@ func (a Application[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] {
 	return Apply(a.c, fun.FMap(a.ts, f)...)
 }
 
+func (a Application[T]) Collect() []T {
+	res := make([]T, 0, len(a.ts)+1)
+	res = append(res, a.c.name)
+	for _, t := range a.ts {
+		res = append(res, t.Collect()...)
+	}
+	return res
+}
+
 func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.name.GetName(), a.ts }
 
 func (a Application[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {

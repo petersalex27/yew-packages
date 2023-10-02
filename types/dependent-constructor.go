@@ -24,3 +24,9 @@ func (c DependentTypeConstructor[T]) Replace(v Variable[T], m Monotyped[T]) Depe
 		index: c.index.Replace(v, m).(DependentTypeInstance[T]),
 	}
 }
+
+func (c DependentTypeConstructor[T]) Collect() []T {
+	res := c.Monotyped.Collect()
+	res = append(res, c.index.Collect()...)
+	return res
+}

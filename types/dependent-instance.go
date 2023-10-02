@@ -76,3 +76,11 @@ func (dti DependentTypeInstance[T]) FreeInstantiation(cxt *Context[T]) Dependent
 		index: dti.index,
 	}
 }
+
+func (dti DependentTypeInstance[T]) Collect() []T {
+	res := dti.Application.Collect()
+	for _, v := range dti.index {
+		res = append(res, v.Collect()...)
+	}
+	return res
+}

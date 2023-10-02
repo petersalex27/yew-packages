@@ -115,6 +115,18 @@ func (d DependentType[T]) Generalize(cxt *Context[T]) Polytype[T] {
 	}
 }
 
+func (d DependentType[T]) Collect() []T {
+	res := make([]T, 0, 1 + len(d.indexConstruction) + len(d.indexedBy))
+	res = append(res, d.indexForm.Collect()...)
+	for _, v := range d.indexedBy {
+		res = append(res, v.Collect()...)
+	}
+	for _, v := range d.indexConstruction {
+		res = append(res, v.Collect()...)
+	}
+	return res
+}
+
 func (d DependentType[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
 	out := DependentType[T]{
 		indexedBy: d.indexedBy,

@@ -53,3 +53,7 @@ func (j TypeJudgement[T,E]) Replace(v Variable[T], m Monotyped[T]) TypeJudgement
 func Equals[N nameable.Nameable, T, U expr.Expression](j1 TypeJudgement[N,T], j2 TypeJudgement[N,U]) bool {
 	return j1.ty.Equals(j2.ty) && j1.expression.Equals(j2.expression)
 }
+
+func (j TypeJudgement[T, E]) Collect() []T {
+	return j.ty.Collect()
+}

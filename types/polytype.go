@@ -51,6 +51,15 @@ func (p Polytype[T]) Generalize(*Context[T]) Polytype[T] {
 	return out
 }
 
+func (p Polytype[T]) Collect() []T {
+	res := make([]T, 0, len(p.typeBinders))
+	for _, v := range p.typeBinders {
+		res = append(res, v.Collect()...)
+	}
+	res = append(res, p.bound.Collect()...)
+	return res
+}
+
 func (p Polytype[T]) Equals(t Type[T]) bool {
 	q, ok := t.(Polytype[T])
 	if !ok {

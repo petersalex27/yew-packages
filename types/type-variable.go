@@ -95,6 +95,10 @@ func (v Variable[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
 	return v
 }
 
+func (v Variable[T]) Collect() []T {
+	return []T{v.name}
+}
+
 func varEquals[T nameable.Nameable](v Variable[T], w Variable[T]) bool {
 	return v.boundContext == w.boundContext && v.name.GetName() == w.name.GetName()
 }

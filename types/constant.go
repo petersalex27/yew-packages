@@ -47,3 +47,7 @@ func (c Constant[T]) FreeInstantiation(*Context[T]) DependentTyped[T] { return c
 func (c Constant[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
 	return c
 }
+
+func (c Constant[T]) Collect() []T {
+	return []T{c.name}
+}

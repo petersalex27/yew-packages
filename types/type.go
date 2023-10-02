@@ -5,10 +5,15 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
+type collectable[T nameable.Nameable] interface {
+	Collect() []T
+}
+
 type Type[T nameable.Nameable] interface {
 	str.Stringable
 	Equals(Type[T]) bool
 	Generalize(cxt *Context[T]) Polytype[T]
+	collectable[T]
 }
 
 func MaybeReplace[T nameable.Nameable](ty Type[T], v Variable[T], m Monotyped[T]) Type[T] {
