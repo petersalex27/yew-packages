@@ -1,11 +1,16 @@
 package source
 
+type StaticSource interface {
+	SourceLine(line int) (string, Status)
+	GetPath() string
+	NumLines() int
+}
+
 type Source interface {
 	// should return line as string or an empty string and one of two Stats: Eof when 
 	// line > number of lines; otherwise, Ok
-	SourceLine(line int) (string, Status)
 	GetLineChar() (line, char int)
-	NumLines() int
+	StaticSource
 }
 
 func CurrentLineLength(s Source) int {

@@ -8,21 +8,35 @@ func CopyMap[K comparable, V any](old map[K]V) map[K]V {
 	return new
 }
 
-func Max(a, b int) int {
+func Max[T ~int](a, b T) T {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func Min(a, b int) int {
+func Min[T ~int](a, b T) T {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func PowerOfTwoCeil(n uint32) uint32 {
+func UMax[T ~uint](a, b T) T {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func UMin[T ~uint](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func PowerOfTwoCeil(n uint) uint {
 	/*
 		n = 01001101011100001100110110110110 // initial
 		n = 01001101011100001100110110110101 // a

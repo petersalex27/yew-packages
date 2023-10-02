@@ -8,3 +8,8 @@ type Token interface {
 	SetValue(value string) (Token, error)
 	GetValue() string
 }
+
+func AddValue(t Token, v string) Token {
+	tok, _ := t.SetValue(v)
+	return tok
+}

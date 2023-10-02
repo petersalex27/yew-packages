@@ -19,15 +19,15 @@ func (cxt *Context) NewVar() Variable {
 }
 
 func (cxt *Context) PopMonotype() (Monotyped, error) {
-	m, ok := cxt.stack.Pop().(Monotyped)
+	m, ok := cxt.Pop().(Monotyped)
 	if !ok {
 		return nil, errors.New("tried to use a non-monotype as a monotype")
 	}
 	return m, nil
 }
 
-func (cxt *Context) PopTypesAsPolys(n uint32) ([]Polytype, error) {
-	ts := cxt.stack.MultiPop(n)
+func (cxt *Context) PopTypesAsPolys(n uint) ([]Polytype, error) {
+	ts, _ := cxt.stack.MultiPop(n)
 	out := make([]Polytype, len(ts))
 	var ok bool
 	for i, t := range ts {
@@ -44,8 +44,8 @@ func (cxt *Context) PopTypesAsPolys(n uint32) ([]Polytype, error) {
 	return out, nil
 }
 
-func PopTypes[T Type](cxt *Context, n uint32) ([]T, error) {
-	ts := cxt.stack.MultiPop(n)
+func PopTypes[T Type](cxt *Context, n uint) ([]T, error) {
+	ts, _ := cxt.stack.MultiPop(n)
 	out := make([]T, len(ts))
 	var ok bool
 	for i, t := range ts {
@@ -58,11 +58,15 @@ func PopTypes[T Type](cxt *Context, n uint32) ([]T, error) {
 }
 
 func (cxt *Context) Pop() Type {
-	return cxt.stack.Pop()
+	ty, stat := cxt.stack.Pop()
+	if stat.NotOk() {
+		panic("bug: empty stack")
+	}
+	return ty
 }
 
 func (cxt *Context) PopPolytype() (Polytype, error) {
-	p, ok := cxt.stack.Pop().(Polytype)
+	p, ok := cxt.Pop().(Polytype)
 	if !ok {
 		return p, errors.New("tried to use a non-polytype as a polytype")
 	}
@@ -70,7 +74,7 @@ func (cxt *Context) PopPolytype() (Polytype, error) {
 }
 
 func (cxt *Context) PopDependentTyped() (DependentTyped, error) {
-	d, ok := cxt.stack.Pop().(DependentTyped)
+	d, ok := cxt.Pop().(DependentTyped)
 	if !ok {
 		return nil, errors.New("tried to use a non-dependent-type as a dependent-type")
 	}

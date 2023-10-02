@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/petersalex27/yew-packages/source"
-	testutil "github.com/petersalex27/yew-packages/util/test"
+	"github.com/petersalex27/yew-packages/util/testutil"
 )
 
 var lexerWhitespace_test = regexp.MustCompile(` \t`)

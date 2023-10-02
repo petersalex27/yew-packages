@@ -4,6 +4,7 @@ import (
 	expr "github.com/petersalex27/yew-packages/expr"
 	"strings"
 	"sync"
+	"github.com/petersalex27/yew-packages/util/stack"
 	"github.com/petersalex27/yew-packages/util"
 )
 
@@ -20,7 +21,7 @@ type Context struct {
 	varCounter uint32
 	equivClasses equivalenceClassMap
 	exprClasses expressionClassMap
-	stack *util.Stack[Type]
+	stack *stack.Stack[Type]
 }
 
 func InheritContext(parent *Context) *Context {
@@ -38,7 +39,7 @@ func NewContext() *Context {
 	cxt := new(Context)
 	cxt.equivClasses = make(equivalenceClassMap)
 	cxt.exprClasses = make(expressionClassMap)
-	cxt.stack = util.NewStack[Type](1 << 5 /*cap=32*/)
+	cxt.stack = stack.NewStack[Type](1 << 5 /*cap=32*/)
 	return cxt
 }
 

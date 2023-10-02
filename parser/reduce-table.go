@@ -1,73 +1,134 @@
 package parser
 
 import (
-	"sort"
-
 	"github.com/petersalex27/yew-packages/parser/ast"
 )
 
-type Reduction func(nodes ...ast.Ast) ast.Ast
-
-type rule struct {
-	pattern
-	Reduction
+type ReduceTable struct {
+	root    *combinerTrieRoot
+	//classes map[ast.Type]reps
+	table   map[ast.Type]ruleSet
 }
 
-type pattern []ast.Type
+type reps []ast.Type
 
 /*
-RuleSet(
-	Rule(Id, TypeJudgement, Id, Assign, Value).Reduce(assignment),
-	Rule(Id, Assign, Value).Reduce(assignment),
-)
+func (rt *ReduceTable) SetClass(representative ast.Type, members ...ast.Type) {
+	for _, member := range members {
+		rs, found := rt.classes[member]
+		if found {
+			rs = append(rs, representative)
+		} else {
+			rs = reps{representative}
+		}
+		rt.classes[member] = rs
+	}
+}
+
+func (rt *ReduceTable) getMembers(ty ast.Type) reps {
+	if ty2, found := rt.classes[ty]; found {
+		return ty2
+	}
+	return reps{ty}
+}
 */
 
-func Rule(types ...ast.Type) pattern { return append(pattern{}, types...) }
+func (rt *ReduceTable) Match(pat pattern, nodes ...ast.Ast) bool {
+	if len(pat) != len(nodes) {
+		return false
+	}
 
-type ruleSet []rule
-
-func (rs ruleSet) Less(i, j int) bool { return len(rs[i].pattern) < len(rs[j].pattern) }
-
-func (rs ruleSet) Len() int { return len(rs) }
-
-func (rs ruleSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
-
-func (rs ruleSet) Union(rs2 ruleSet) ruleSet {
-	out := make(ruleSet, 0, len(rs)+len(rs2))
-	out = append(out, rs...)
-	out = append(out, rs2...)
-	sort.Sort(out)
-	return out
-}
-
-func RuleSet(rules ...rule) ruleSet {
-	out := append(ruleSet{}, rules...)
-	sort.Sort(out)
-	return out
-}
-
-func (p pattern) Reduce(f Reduction) rule { return rule{p, f} }
-
-func (p pattern) equals_len_known(q []ast.Ast) bool {
-	for i := range p {
-		if p[i] != q[i].NodeType() {
+	for i, node := range nodes {
+		if pat[i] != node.NodeType() {
 			return false
 		}
 	}
 	return true
-}
 
-type ReduceTable struct {
-	table map[ast.Type]ruleSet
-}
-
-func MakeTable(table map[ast.Type]ruleSet) ReduceTable {
-	return ReduceTable{
-		table: table,
+	/*
+	for i, node := range nodes {
+		rs := rt.getMembers(node.NodeType())
+		ok := false
+		for _, r := range rs {
+			if pat[i] == r {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return false
+		}
 	}
+	return true*/
 }
 
-func (rt *ReduceTable) ReductionExists(t ast.Type) bool {
-	r, found := rt.table[t]
-	return found && len(r) != 0
+type Mapper []ast.Type
+
+func Map(tys ...ast.Type) Mapper { return Mapper(tys) }
+
+type ReductionRules interface {
+	GetRuleSet() ruleSet
+}
+
+type endReductionRule ReductionRule
+
+func (r endReductionRule) GetRuleSet() ruleSet {
+	return r.ruleSet
+}
+
+type ReductionRule struct {
+	lookaheads Mapper
+	ruleSet
+}
+
+func (r ReductionRule) GetRuleSet() ruleSet {
+	return r.ruleSet
+}
+
+func (r ReductionRule) ElseShift() ReductionRule {
+	rule_set := r.ruleSet
+	rule_set.shiftAtEnd = true
+	return ReductionRule{lookaheads: r.lookaheads, ruleSet: rule_set}
+}
+
+var shiftRuleSet ruleSet = ruleSet{rules: nil, shiftAtEnd: true}
+
+func (tys Mapper) Shift() ReductionRule {
+	return ReductionRule{tys, shiftRuleSet}
+}
+
+func (tys Mapper) To(rs ruleSet) ReductionRule {
+	return ReductionRule{tys, rs}
+}
+
+type needEndReduction ReduceTable
+
+type ForTypesThrough ast.Type
+
+func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRule) needEndReduction {
+	m := ReduceTable{table: make(map[ast.Type]ruleSet)}
+	m.root = initRoot(ast.Type(lastType))
+
+	for _, rrule := range reductionRules {
+		ty := m.root.set(rrule.lookaheads...)
+		rs, found := m.table[ty]
+		var in ruleSet
+		if found {
+			in = rs.Union(rrule.ruleSet)
+		} else {
+			in = rrule.ruleSet
+		}
+		m.table[ty] = in
+	}
+	return needEndReduction(m)
+}
+
+func (m needEndReduction) Finally(rs ruleSet) ReduceTable {
+	ty := ast.None
+	if _, found := m.table[ty]; found {
+		panic("terminal reduction rule(s) already exist(s)")
+	}
+	
+	m.table[ty] = rs
+	return ReduceTable(m)
 }

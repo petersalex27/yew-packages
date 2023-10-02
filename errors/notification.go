@@ -131,7 +131,11 @@ func Fnotify(format string, args ...any) Notification {
 }
 
 func (n Notification) Notify(of string) string {
-	loc := n.Locatable.String()
+	loc := ""
+	if n.Locatable != nil {
+		loc = n.Locatable.String()
+	}
+	
 	if loc != "" {
 		loc = loc + " "
 	}

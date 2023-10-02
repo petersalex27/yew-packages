@@ -12,4 +12,6 @@ use (
 	./token
 	./types
 	./util
+	./parser
+	./status
 )
