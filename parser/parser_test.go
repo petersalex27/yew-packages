@@ -46,6 +46,8 @@ func TestParser(t *testing.T) {
 		From(assign_t, in_t).Reduce(context_fn), // assign In -> context
 	)
 
+	my_class := integer_t
+
 	table :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
@@ -54,6 +56,18 @@ func TestParser(t *testing.T) {
 				LA(integer_t).Then(set_decl_expr).ElseShift(),
 				LA(add_t).Then(set_decl_expr).ElseShift(),
 				LA(mul_t).Then(set_decl_expr).ElseShift()).
+			Finally(set_expr_assign)
+
+	table_withClasses :=
+		ForTypesThrough(lastType_t_).
+			UseReductions(
+				LA(let_t).Shift(),
+				LA(id_t).Then(set_id.Union(set_decl_expr)).ElseShift(),
+				LA(my_class).
+					ForN(3, integer_t).Or(add_t).Or(mul_t).
+						Then(set_decl_expr).
+						ElseShift(),
+			).
 			Finally(set_expr_assign)
 
 	table_2 :=
@@ -66,18 +80,33 @@ func TestParser(t *testing.T) {
 				LA(mul_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
 				LA(in_t).Then(set_expr_assign).ElseShift()).
 			Finally(set_expr_assign.Union(set_context, set_expr_w_cxt))
+	
+	
+	table_2_withClasses :=
+		ForTypesThrough(lastType_t_).
+			UseReductions(
+				LA(let_t).Then(set_context).ElseShift(),
+				LA(id_t).Then(set_id.Union(set_decl_expr, set_context)).ElseShift(),
+				LA(my_class).
+					ForN(3, integer_t).Or(add_t).Or(mul_t).
+						Then(set_decl_expr.Union(set_context)).
+						ElseShift(),
+				LA(in_t).Then(set_expr_assign).ElseShift()).
+			Finally(set_expr_assign.Union(set_context, set_expr_w_cxt))
 
 	id_a := token.AddValue(idTok, "a")
 	int_3 := token.AddValue(intTok, "3")
 
 	tests := []struct {
-		ReduceTable
+		table ReduceTable
+		classTable ReduceTable
 		src    source.StaticSource
 		stream []token.Token
 		expect ast.Ast
 	}{
 		{
 			table,
+			table_withClasses,
 			MakeSource("test", "let a + 3 3"),
 			[]token.Token{
 				letTok.SetLineChar(1, 1),
@@ -99,6 +128,7 @@ func TestParser(t *testing.T) {
 		},
 		{
 			table,
+			table_withClasses,
 			MakeSource("test", "let a * 3 3"),
 			[]token.Token{
 				letTok.SetLineChar(1, 1),
@@ -120,6 +150,7 @@ func TestParser(t *testing.T) {
 		},
 		{
 			table_2,
+			table_2_withClasses,
 			MakeSource("test", "let a * 3 3 in * a a"),
 			[]token.Token{
 				letTok.SetLineChar(1, 1),
@@ -154,28 +185,34 @@ func TestParser(t *testing.T) {
 		},
 	}
 
+	// marks whether class or not (indexes corr. to index `j` in loop below)
+	notOrClass := []string{"", "-c"}
+
 	for i, test := range tests {
-		p := New().
-			Ruleset(test.ReduceTable).
-			Load(test.stream, test.src, nil, nil).
-			LogActions()
-		actual := p.Parse()
+		for j, table := range []ReduceTable{test.table, test.classTable} {
+			p := New().
+				Ruleset(table).
+				Load(test.stream, test.src, nil, nil).
+				LogActions()
+			actual := p.Parse()
 
-		writeLog(p.FlushLog())
+			writeLog(p.FlushLog())
 
-		if p.HasErrors() {
-			es := p.GetErrors()
-			for _, e := range es {
-				fmt.Fprintf(os.Stderr, "%s\n", e.Error())
+			if p.HasErrors() {
+				es := p.GetErrors()
+				for _, e := range es {
+					fmt.Fprintf(os.Stderr, "%s\n", e.Error())
+				}
+
+				title := fmt.Sprintf("errors%s", notOrClass[j])
+				t.Fatal(testutil.TestFail2(title, nil, p.errors, i, j))
 			}
 
-			t.Fatal(testutil.TestFail2("errors", nil, p.errors, i))
-		}
-
-		if !actual.Equals(ast.AstRoot{test.expect}) {
-			act := ast.GetOrderedString(actual)
-			exp := ast.GetOrderedString(ast.AstRoot{test.expect})
-			t.Fatal(testutil.TestFail(exp, act, i))
+			if !actual.Equals(ast.AstRoot{test.expect}) {
+				act := ast.GetOrderedString(actual)
+				exp := ast.GetOrderedString(ast.AstRoot{test.expect})
+				t.Fatal(testutil.TestFail(exp, act, i, j))
+			}
 		}
 	}
 }

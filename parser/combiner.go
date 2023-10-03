@@ -92,9 +92,17 @@ func (node *combinerTrieNode) set(root *combinerTrieRoot, tys ...ast.Type) ast.T
 	return out
 }
 
+func (root *combinerTrieRoot) setMems(mems ...members) []ast.Type {
+	out := make([]ast.Type, len(mems))
+	for i, mem := range mems {
+		out[i] = root.set(mem...)
+	}
+	return out
+}
+
 func (root *combinerTrieRoot) set(tys ...ast.Type) ast.Type {
 	if len(tys) < 1 {
-		panic("must provide at least one types")
+		panic("must provide at least one type")
 	}
 
 	first := tys[0]

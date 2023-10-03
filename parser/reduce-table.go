@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/petersalex27/yew-packages/parser/ast"
+	"github.com/petersalex27/yew-packages/util/iterator"
 )
 
 type ReduceTable struct {
@@ -62,16 +63,12 @@ func (rt *ReduceTable) Match(pat pattern, nodes ...ast.Ast) bool {
 		return true*/
 }
 
-type Mapper []ast.Type
-
-func LA(tys ...ast.Type) Mapper { return Mapper(tys) }
-
 type ReductionRules interface {
 	GetRuleSet() ruleSet
 }
 
 type ReductionRule struct {
-	lookaheads Mapper
+	lookaheads mappable
 	ruleSet
 }
 
@@ -87,33 +84,47 @@ func (r ReductionRule) ElseShift() ReductionRule {
 
 var shiftRuleSet ruleSet = ruleSet{rules: nil, shiftAtEnd: true}
 
-func (tys Mapper) Shift() ReductionRule {
-	return ReductionRule{tys, shiftRuleSet}
-}
-
-func (tys Mapper) Then(rs ruleSet) ReductionRule {
-	return ReductionRule{tys, rs}
-}
-
 type needEndReduction ReduceTable
 
 type ForTypesThrough ast.Type
+
+// Note: mapping from an element of mems that already exists in the table will overwrite 
+// the previous map!
+func (m *ReduceTable) setInTable(ruleset ruleSet, rep ast.Type, mems []ast.Type) {
+	rs, found := m.table[rep]
+	var in ruleSet
+	if found {
+		in = rs.Union(ruleset)
+	} else {
+		in = ruleset
+	}
+
+	// iterator is used here and not `range` because the first iteration uses `rep` and
+	// not the first value from the iterator
+	ty, it := rep, iterator.Iterator(mems)
+	for tyExists := true; tyExists; ty, tyExists = it.Next() {
+		m.table[ty] = in
+	}
+}
 
 func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRule) needEndReduction {
 	m := ReduceTable{table: make(map[ast.Type]ruleSet)}
 	m.root = initRoot(ast.Type(lastType))
 
 	for _, rrule := range reductionRules {
-		ty := m.root.set(rrule.lookaheads...)
-		rs, found := m.table[ty]
-		var in ruleSet
-		if found {
-			in = rs.Union(rrule.ruleSet)
+		var mp Mapper
+		var tys []ast.Type = nil
+		if cls, isClass := class(rrule.lookaheads); isClass {
+			mp = cls.rep
+			tys = m.root.setMems(cls.mems...)
 		} else {
-			in = rrule.ruleSet
+			mp, _ = justMapper(rrule.lookaheads)
 		}
-		m.table[ty] = in
+
+		ty := m.root.set(mp...)
+		m.setInTable(rrule.ruleSet, ty, tys)
 	}
+
 	return needEndReduction(m)
 }
 
