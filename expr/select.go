@@ -13,6 +13,14 @@ type Selection[T nameable.Nameable] struct {
 	selections []Case[T]
 }
 
+func (s Selection[T]) Collect() []T {
+	res := s.selector.Collect()
+	for _, sel := range s.selections {
+		res = append(res, sel.Collect()...)
+	}
+	return res
+}
+
 func Select[T nameable.Nameable](selector Expression[T], selections ...Case[T]) Selection[T] {
 	return Selection[T]{ selector: selector, selections: selections, }
 }

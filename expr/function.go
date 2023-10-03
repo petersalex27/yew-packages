@@ -14,6 +14,15 @@ type Function[T nameable.Nameable] struct {
 	e    Expression[T]
 }
 
+func (f Function[T]) Collect() []T {
+	res := make([]T, 0, 1)
+	for _, v := range f.vars {
+		res = append(res, v.Collect()...)
+	}
+	res = append(res, f.e.Collect()...)
+	return res
+}
+
 var x_, y_ = Var(test_named("x")), Var(test_named("y"))
 var t_, f_ = Var(test_named("t")), Var(test_named("f"))
 var a_, b_ = Var(test_named("a")), Var(test_named("b"))
@@ -129,6 +138,14 @@ func (f Function[T]) Rebind() Expression[T] {
 }
 
 type BindersOnly[T nameable.Nameable] []Variable[T]
+
+func (bs BindersOnly[T]) Collect() []T {
+	res := make([]T, 0, len(bs))
+	for _, v := range bs {
+		res = append(res, v.Collect()...)
+	}
+	return res
+}
 
 func (bs BindersOnly[T]) String() string {
 	return str.Join(bs, str.String(" "))

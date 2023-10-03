@@ -9,6 +9,17 @@ import (
 
 type List[T nameable.Nameable] []Expression[T]
 
+func (ls List[T]) Collect() []T {
+	if len(ls) == 0 {
+		return []T{}
+	}
+	res := ls[0].Collect()
+	for i := 1; i < len(ls); i++ {
+		res = append(res, ls[i].Collect()...)
+	}
+	return res
+}
+
 func (ls List[T]) copy() List[T] {
 	out := make(List[T], len(ls))
 	for i, el := range ls {

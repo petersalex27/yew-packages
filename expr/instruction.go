@@ -24,6 +24,17 @@ type Instruction[T nameable.Nameable] struct {
 	InstructionArgs[T]
 }
 
+func (instr Instruction[T]) Collect() []T {
+	if len(instr.args) == 0 {
+		return []T{}
+	}
+	res := instr.args[0].Collect()
+	for i := 1; i < len(instr.args); i++ {
+		res = append(res, instr.args[i].Collect()...)
+	}
+	return res
+}
+
 func (instr Instruction[T]) IsCallReady() bool {
 	return len(instr.args) == int(instr.nArgs) && instr.action != nil
 }

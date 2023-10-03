@@ -21,6 +21,7 @@ type Expression[T nameable.Nameable] interface {
 	Rebind() Expression[T]
 	Copy() Expression[T]
 	ForceRequest() Expression[T]
+	Collect() []T
 }
 
 type ApplicableExpression[T nameable.Nameable] interface {

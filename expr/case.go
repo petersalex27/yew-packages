@@ -8,14 +8,24 @@ import (
 
 type Case[T nameable.Nameable] struct {
 	binders []Variable[T]
-	when Expression[T]
-	then Expression[T]
+	when    Expression[T]
+	then    Expression[T]
+}
+
+func (a Case[T]) Collect() []T {
+	res := make([]T, 0, len(a.binders))
+	for _, binder := range a.binders {
+		res = append(res, binder.Collect()...)
+	}
+	res = append(res, a.when.Collect()...)
+	res = append(res, a.then.Collect()...)
+	return res
 }
 
 type PartialCase_when[T nameable.Nameable] Case[T]
 
 func (bs BindersOnly[T]) InCase(when Expression[T], then Expression[T]) Case[T] {
-	out := Case[T]{ binders: bs, }
+	out := Case[T]{binders: bs}
 	out.when = when.Bind(bs)
 	out.then = then.Bind(bs)
 	return out
@@ -24,7 +34,7 @@ func (bs BindersOnly[T]) InCase(when Expression[T], then Expression[T]) Case[T] 
 func (bs BindersOnly[T]) When(e Expression[T]) PartialCase_when[T] {
 	return PartialCase_when[T]{
 		binders: bs,
-		when: e.Bind(bs),
+		when:    e.Bind(bs),
 	}
 }
 

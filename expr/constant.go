@@ -4,6 +4,10 @@ import "github.com/petersalex27/yew-packages/nameable"
 
 type Const[T nameable.Nameable] struct {Name T}
 
+func (c Const[T]) Collect() []T {
+	return []T{c.Name}
+}
+
 func (c Const[T]) ForceRequest() Expression[T] { return c }
 
 func constEquals[T nameable.Nameable](c1, c2 Const[T]) bool {

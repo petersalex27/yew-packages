@@ -38,6 +38,10 @@ type Prim[T nameable.Nameable] struct {
 	primIFace
 }
 
+func (Prim[T]) Collect() []T {
+	return []T{}
+}
+
 func (p Prim[T]) String() string {
 	switch p.getPrimType() {
 	case intPrim:

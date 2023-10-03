@@ -11,6 +11,10 @@ type Variable[T nameable.Nameable] struct {
 	depth int
 }
 
+func (v Variable[T]) Collect() []T {
+	return []T{v.name}
+}
+
 func (v Variable[T]) copy() Variable[T] {
 	return Variable[T]{
 		name:  v.name,

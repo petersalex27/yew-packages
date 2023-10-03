@@ -7,6 +7,10 @@ type Application[T nameable.Nameable] struct {
 	right Expression[T]
 }
 
+func (a Application[T]) Collect() []T {
+	return append(a.left.Collect(), a.right.Collect()...)
+}
+
 func (a Application[T]) Copy() Expression[T] {
 	return Apply(a.left.Copy(), a.right.Copy())
 }
