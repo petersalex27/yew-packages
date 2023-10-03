@@ -5,9 +5,9 @@ import (
 )
 
 type ReduceTable struct {
-	root    *combinerTrieRoot
+	root *combinerTrieRoot
 	//classes map[ast.Type]reps
-	table   map[ast.Type]ruleSet
+	table map[ast.Type]ruleSet
 }
 
 type reps []ast.Type
@@ -46,34 +46,28 @@ func (rt *ReduceTable) Match(pat pattern, nodes ...ast.Ast) bool {
 	return true
 
 	/*
-	for i, node := range nodes {
-		rs := rt.getMembers(node.NodeType())
-		ok := false
-		for _, r := range rs {
-			if pat[i] == r {
-				ok = true
-				break
+		for i, node := range nodes {
+			rs := rt.getMembers(node.NodeType())
+			ok := false
+			for _, r := range rs {
+				if pat[i] == r {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				return false
 			}
 		}
-		if !ok {
-			return false
-		}
-	}
-	return true*/
+		return true*/
 }
 
 type Mapper []ast.Type
 
-func Map(tys ...ast.Type) Mapper { return Mapper(tys) }
+func LA(tys ...ast.Type) Mapper { return Mapper(tys) }
 
 type ReductionRules interface {
 	GetRuleSet() ruleSet
-}
-
-type endReductionRule ReductionRule
-
-func (r endReductionRule) GetRuleSet() ruleSet {
-	return r.ruleSet
 }
 
 type ReductionRule struct {
@@ -97,7 +91,7 @@ func (tys Mapper) Shift() ReductionRule {
 	return ReductionRule{tys, shiftRuleSet}
 }
 
-func (tys Mapper) To(rs ruleSet) ReductionRule {
+func (tys Mapper) Then(rs ruleSet) ReductionRule {
 	return ReductionRule{tys, rs}
 }
 
@@ -128,7 +122,7 @@ func (m needEndReduction) Finally(rs ruleSet) ReduceTable {
 	if _, found := m.table[ty]; found {
 		panic("terminal reduction rule(s) already exist(s)")
 	}
-	
+
 	m.table[ty] = rs
 	return ReduceTable(m)
 }

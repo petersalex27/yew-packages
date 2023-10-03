@@ -25,47 +25,47 @@ func TestParser(t *testing.T) {
 	context_fn := test_reduce_fn(context_t).GiveName("context")
 
 	set_decl := RuleSet(
-		Rule(let_t, id_t).Reduce(decl_fn),
+		From(let_t, id_t).Reduce(decl_fn),
 	)
 
 	set_expr := RuleSet(
-		Rule(id_t).Reduce(expr_fn), // Id -> expr
-		Rule(integer_t).Reduce(expr_fn), // Id -> expr
-		Rule(add_t, expr_t, expr_t).Reduce(expr_fn), // Add expr expr -> expr
-		Rule(mul_t, expr_t, expr_t).Reduce(expr_fn), // Mul expr expr -> expr
+		From(id_t).Reduce(expr_fn),                  // Id -> expr
+		From(integer_t).Reduce(expr_fn),             // Id -> expr
+		From(add_t, expr_t, expr_t).Reduce(expr_fn), // Add expr expr -> expr
+		From(mul_t, expr_t, expr_t).Reduce(expr_fn), // Mul expr expr -> expr
 	)
 
-	set_id := RuleSet(Rule(let_t).Shift())
+	set_id := RuleSet(From(let_t).Shift())
 
-	set_assign := RuleSet(Rule(decl_t, expr_t).Reduce(assign_fn))
+	set_assign := RuleSet(From(decl_t, expr_t).Reduce(assign_fn))
 	set_decl_expr := set_decl.Union(set_expr)
 	set_expr_assign := set_expr.Union(set_assign)
-	set_expr_w_cxt := RuleSet(Rule(context_t, expr_t).Reduce(expr_fn))
+	set_expr_w_cxt := RuleSet(From(context_t, expr_t).Reduce(expr_fn))
 
 	set_context := RuleSet(
-		Rule(assign_t, in_t).Reduce(context_fn), // assign In -> context
+		From(assign_t, in_t).Reduce(context_fn), // assign In -> context
 	)
 
-	table := 
+	table :=
 		ForTypesThrough(lastType_t_).
-		UseReductions(
-			Map(let_t).Shift(),
-			Map(id_t).To(set_id.Union(set_decl_expr)).ElseShift(),
-			Map(integer_t).To(set_decl_expr).ElseShift(),
-			Map(add_t).To(set_decl_expr).ElseShift(),
-			Map(mul_t).To(set_decl_expr).ElseShift()).
-		Finally(set_expr_assign)
+			UseReductions(
+				LA(let_t).Shift(),
+				LA(id_t).Then(set_id.Union(set_decl_expr)).ElseShift(),
+				LA(integer_t).Then(set_decl_expr).ElseShift(),
+				LA(add_t).Then(set_decl_expr).ElseShift(),
+				LA(mul_t).Then(set_decl_expr).ElseShift()).
+			Finally(set_expr_assign)
 
 	table_2 :=
 		ForTypesThrough(lastType_t_).
-		UseReductions(
-			Map(let_t).To(set_context).ElseShift(),
-			Map(id_t).To(set_id.Union(set_decl_expr, set_context)).ElseShift(),
-			Map(integer_t).To(set_decl_expr.Union(set_context)).ElseShift(),
-			Map(add_t).To(set_decl_expr.Union(set_context)).ElseShift(),
-			Map(mul_t).To(set_decl_expr.Union(set_context)).ElseShift(),
-			Map(in_t).To(set_expr_assign).ElseShift()).
-		Finally(set_expr_assign.Union(set_context, set_expr_w_cxt))
+			UseReductions(
+				LA(let_t).Then(set_context).ElseShift(),
+				LA(id_t).Then(set_id.Union(set_decl_expr, set_context)).ElseShift(),
+				LA(integer_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
+				LA(add_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
+				LA(mul_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
+				LA(in_t).Then(set_expr_assign).ElseShift()).
+			Finally(set_expr_assign.Union(set_context, set_expr_w_cxt))
 
 	id_a := token.AddValue(idTok, "a")
 	int_3 := token.AddValue(intTok, "3")

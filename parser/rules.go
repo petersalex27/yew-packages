@@ -2,24 +2,12 @@ package parser
 
 import (
 	"fmt"
-	"sort"
-
-	"sync"
 
 	"github.com/petersalex27/yew-packages/errors"
 	"github.com/petersalex27/yew-packages/parser/ast"
 	"github.com/petersalex27/yew-packages/parser/status"
 	"github.com/petersalex27/yew-packages/stringable"
 )
-
-var sortLock sync.Mutex
-var doSort = false
-
-func RuleSetSort(sortRules bool) {
-	sortLock.Lock()
-	defer sortLock.Unlock()
-	doSort = sortRules
-}
 
 type Reduction interface {
 	stringable.Stringable
@@ -150,16 +138,6 @@ func (r shift_rule) String() string {
 	return fmt.Sprintf("rule(%v -> shift)", pattern(r))
 }
 
-type end_rule reduction
-
-func (r end_rule) getPattern() pattern {
-	return nil
-}
-
-func (r end_rule) call(p *parser, nodes ...ast.Ast) (stat status.Status) {
-	return reduction(r).call(p, nodes...)
-}
-
 type pattern []ast.Type
 
 /*
@@ -176,14 +154,6 @@ type ruleSet struct {
 	shiftAtEnd bool
 }
 
-func (rs ruleSet) Less(i, j int) bool {
-	return len(rs.rules[i].getPattern()) < len(rs.rules[j].getPattern())
-}
-
-func (rs ruleSet) Len() int { return len(rs.rules) }
-
-func (rs ruleSet) Swap(i, j int) { rs.rules[i], rs.rules[j] = rs.rules[j], rs.rules[i] }
-
 func (rs ruleSet) Union(ruleSets ...ruleSet) ruleSet {
 	out := make([]rule_interface, 0, len(rs.rules))
 	out = append(out, rs.rules...)
@@ -192,26 +162,32 @@ func (rs ruleSet) Union(ruleSets ...ruleSet) ruleSet {
 		ruleSetOut.rules = append(ruleSetOut.rules, set.rules...)
 		ruleSetOut.shiftAtEnd = ruleSetOut.shiftAtEnd || set.shiftAtEnd
 	}
-	if doSort {
-		sort.Sort(ruleSetOut)
-	}
 	return ruleSetOut
 }
 
 func RuleSet(rules ...rule_interface) (out ruleSet) {
 	out.rules = append([]rule_interface{}, rules...)
-	if doSort {
-		sort.Sort(out)
-	}
 	return out
-}
-
-func isShiftRule(rs ruleSet) bool {
-	return rs.rules == nil && rs.shiftAtEnd
 }
 
 // creates a reduce action
 func (p pattern) Reduce(f Reduction) rule_interface { return rule{p, reduction{f}} }
+
+func (p pattern) To(f func(...ast.Ast)ast.Ast) rule_interface {
+	return rule{p, reduction{ReductionFunction(f)}}
+}
+
+type need_pattern func(...ast.Ast)ast.Ast
+
+func Get(f func(...ast.Ast)ast.Ast) need_pattern {
+	return need_pattern(f)
+}
+
+func (p need_pattern) From(tys ...ast.Type) rule_interface {
+	return rule{pattern(tys), reduction{ReductionFunction(p)}}
+}
+
+func From(tys ...ast.Type) pattern { return pattern(tys) }
 
 // creates a shift action
 func (p pattern) Shift() rule_interface { return shift_rule(p) }
