@@ -7,11 +7,6 @@ import (
 	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type Dummyable interface {
-	nameable.Nameable
-	SetDummy(*nameable.Nameable)
-}
-
 type Variable[T nameable.Nameable] struct {
 	boundContext int32
 	name         T
@@ -32,6 +27,10 @@ func NonBindableVar[T nameable.Nameable](name T) Variable[T] {
 func (v Variable[T]) BoundIn(i int32) Variable[T] {
 	v.boundContext = i
 	return v
+}
+
+func Var[T nameable.Nameable](name T) Variable[T] {
+	return Variable[T]{boundContext: 0, name: name}
 }
 
 func (cxt *Context[T]) Var(name string) Variable[T] {
