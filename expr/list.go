@@ -1,50 +1,52 @@
 package expr
 
 import (
-	str "github.com/petersalex27/yew-packages/stringable"
 	"strings"
+
+	"github.com/petersalex27/yew-packages/nameable"
+	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type List []Expression
+type List[T nameable.Nameable] []Expression[T]
 
-func (ls List) copy() List {
-	out := make(List, len(ls))
+func (ls List[T]) copy() List[T] {
+	out := make(List[T], len(ls))
 	for i, el := range ls {
 		out[i] = el.Copy()
 	}
 	return out
 }
 
-func (ls List) Copy() Expression {
+func (ls List[T]) Copy() Expression[T] {
 	return ls.copy()
 }
 
-func (ls List) Head() Expression {
+func (ls List[T]) Head() Expression[T] {
 	if len(ls) > 0 {
-		return Const("()")
+		return nil
 	}
 	return ls[0].ForceRequest()
 }
 
-func (ls List) Tail() List {
+func (ls List[T]) Tail() List[T] {
 	if len(ls) <= 1 {
-		return List{}
+		return List[T]{}
 	}
 	return ls[1:]
 }
 
-func Cons(head Expression, tail List) List {
-	out := make(List, 1, len(tail)+1)
+func Cons[T nameable.Nameable](head Expression[T], tail List[T]) List[T] {
+	out := make(List[T], 1, len(tail)+1)
 	out[0] = head.Copy()
 	out = append(out, tail.copy()...)
 	return out
 }
 
-func (ls List) String() string {
+func (ls List[T]) String() string {
 	return list_l_enclose + str.Join(ls, str.String(list_split)) + list_r_enclose
 }
 
-func (ls List) StrictString() string {
+func (ls List[T]) StrictString() string {
 	strs := make([]string, len(ls))
 	for i, l := range ls {
 		strs[i] = l.StrictString()
@@ -52,21 +54,21 @@ func (ls List) StrictString() string {
 	return list_l_enclose + strings.Join(strs, list_split) + list_r_enclose
 }
 
-func (ls List) Equals(e Expression) bool {
-	ls2, ok := e.ForceRequest().(List)
+func (ls List[T]) Equals(cxt *Context[T], e Expression[T]) bool {
+	ls2, ok := e.ForceRequest().(List[T])
 	if !ok {
 		return false
 	}
 	for i := range ls {
-		if !ls[i].Equals(ls2[i]) {
+		if !ls[i].Equals(cxt, ls2[i]) {
 			return false
 		}
 	}
 	return true
 }
 
-func (ls List) StrictEquals(e Expression) bool {
-	ls2, ok := e.(List)
+func (ls List[T]) StrictEquals(e Expression[T]) bool {
+	ls2, ok := e.(List[T])
 	if !ok {
 		return false
 	}
@@ -81,35 +83,35 @@ func (ls List) StrictEquals(e Expression) bool {
 	return true
 }
 
-func (ls List) Replace(v Variable, e Expression) (Expression, bool) {
-	newLs := make(List, len(ls))
+func (ls List[T]) Replace(v Variable[T], e Expression[T]) (Expression[T], bool) {
+	newLs := make(List[T], len(ls))
 	for i := range ls {
 		newLs[i], _ = ls[i].Replace(v, e) // again is ignored b/c this will get out of hand
 	}
 	return newLs, false
 }
 
-func (ls List) UpdateVars(gt int, by int) Expression {
-	newLs := make(List, len(ls))
+func (ls List[T]) UpdateVars(gt int, by int) Expression[T] {
+	newLs := make(List[T], len(ls))
 	for i := range ls {
 		newLs[i] = ls[i].UpdateVars(gt, by) // again is ignored b/c this will get out of hand
 	}
 	return newLs
 }
 
-func (ls List) Again() (Expression, bool) {
+func (ls List[T]) Again() (Expression[T], bool) {
 	return ls, false // refuse to do it again :)
 }
 
-func (ls List) Bind(bs BindersOnly) Expression {
-	newLs := make(List, len(ls))
+func (ls List[T]) Bind(bs BindersOnly[T]) Expression[T] {
+	newLs := make(List[T], len(ls))
 	for i := range ls {
 		newLs[i] = ls[i].Bind(bs)
 	}
 	return newLs
 }
 
-func (ls List) Find(v Variable) bool {
+func (ls List[T]) Find(v Variable[T]) bool {
 	for _, el := range ls {
 		if el.Find(v) {
 			return true
@@ -118,22 +120,22 @@ func (ls List) Find(v Variable) bool {
 	return false
 }
 
-func (ls List) PrepareAsRHS() Expression {
-	newLs := make(List, len(ls))
+func (ls List[T]) PrepareAsRHS() Expression[T] {
+	newLs := make(List[T], len(ls))
 	for i := range ls {
 		newLs[i] = ls[i].PrepareAsRHS()
 	}
 	return newLs
 }
 
-func (ls List) Rebind() Expression {
-	newLs := make(List, len(ls))
+func (ls List[T]) Rebind() Expression[T] {
+	newLs := make(List[T], len(ls))
 	for i := range ls {
 		newLs[i] = ls[i].Rebind()
 	}
 	return newLs
 }
 
-func (ls List) ForceRequest() Expression {
+func (ls List[T]) ForceRequest() Expression[T] {
 	return ls
 }

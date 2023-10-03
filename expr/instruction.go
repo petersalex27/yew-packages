@@ -3,35 +3,37 @@ package expr
 import (
 	"fmt"
 	"strings"
+
+	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type InstructionHead struct {
+type InstructionHead[T nameable.Nameable] struct {
 	name   string
 	nArgs  int
-	action InstructionAction
+	action InstructionAction[T]
 }
 
-type InstructionAction func(instr InstructionArgs) Expression
+type InstructionAction[T nameable.Nameable] func(instr InstructionArgs[T]) Expression[T]
 
-type InstructionArgs struct {
-	args []Expression
+type InstructionArgs[T nameable.Nameable] struct {
+	args []Expression[T]
 }
 
-type Instruction struct {
-	InstructionHead
-	InstructionArgs
+type Instruction[T nameable.Nameable] struct {
+	InstructionHead[T]
+	InstructionArgs[T]
 }
 
-func (instr Instruction) IsCallReady() bool {
+func (instr Instruction[T]) IsCallReady() bool {
 	return len(instr.args) == int(instr.nArgs) && instr.action != nil
 }
 
-func (instr Instruction) TryCall(catchPanic func(any)) (e Expression, success bool) {
+func (instr Instruction[T]) TryCall(cxt *Context[T], catchPanic func(any)) (e Expression[T], success bool) {
 	defer func() {
 		if err := recover(); err != nil {
 			success = false
 			if catchPanic == nil {
-				e = Const(fmt.Sprint(err))
+				e = Const[T]{cxt.makeName(fmt.Sprint(err))}
 			} else {
 				e = nil
 				catchPanic(err)
@@ -44,11 +46,11 @@ func (instr Instruction) TryCall(catchPanic func(any)) (e Expression, success bo
 	return
 }
 
-func (instr Instruction) call() Expression {
+func (instr Instruction[T]) call() Expression[T] {
 	return instr.action(instr.InstructionArgs)
 }
 
-func (instr InstructionArgs) GetArgAtIndex(index int) Expression {
+func (instr InstructionArgs[T]) GetArgAtIndex(index int) Expression[T] {
 	if len(instr.args) <= index || index < 0 {
 		panic("tried to get a non-existent argument\n")
 	} else {
@@ -57,59 +59,59 @@ func (instr InstructionArgs) GetArgAtIndex(index int) Expression {
 	}
 }
 
-func (instr InstructionArgs) GetArgAtPosition(position int) Expression {
+func (instr InstructionArgs[T]) GetArgAtPosition(position int) Expression[T] {
 	if position < 1 {
-		panic("tried to get an argument at a position < 1; positions start at 1\n")
+		panic("tried to get an argument at a position[T] < 1; positions start at 1\n")
 	} else {
 		return instr.GetArgAtIndex(position-1)
 	}
 }
 
-func (instr Instruction) Again() (Expression, bool) {
+func (instr Instruction[T]) Again() (Expression[T], bool) {
 	if instr.IsCallReady() {
 		return instr.call(), false
 	}
 	return instr, false
 }
 
-func (instr Instruction) AgainApply(e Expression) (res Expression, again bool) {
+func (instr Instruction[T]) AgainApply(e Expression[T]) (res Expression[T], again bool) {
 	res = instr.DoApplication(e)
 	again = false
 	return
 }
 
-func (instr Instruction) Bind(bs BindersOnly) Expression {
+func (instr Instruction[T]) Bind(bs BindersOnly[T]) Expression[T] {
 	newArgs := instr.InstructionArgs.makeBlankCopy()
 	for i, arg := range instr.args {
 		newArgs[i] = arg.Bind(bs)
 	}
-	head := DefineInstruction(instr.name, instr.nArgs, instr.action)
-	return Instruction{
+	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
+	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
 	}
 }
 
-func (ih InstructionHead) Copy() InstructionHead {
-	return DefineInstruction(ih.name, ih.nArgs, ih.action)
+func (ih InstructionHead[T]) Copy() InstructionHead[T] {
+	return DefineInstruction[T](ih.name, ih.nArgs, ih.action)
 }
 
-func (instr Instruction) Copy() Expression {
-	return Instruction{
+func (instr Instruction[T]) Copy() Expression[T] {
+	return Instruction[T]{
 		InstructionHead: instr.InstructionHead.Copy(),
 		InstructionArgs: instr.InstructionArgs.Copy(),
 	}
 }
 
-func (instr Instruction) Equals(e Expression) bool {
-	instr2, ok := e.ForceRequest().(Instruction)
+func (instr Instruction[T]) Equals(cxt *Context[T], e Expression[T]) bool {
+	instr2, ok := e.ForceRequest().(Instruction[T])
 	if !ok {
 		return false
 	}
 	return instructionHeadEquals(instr.InstructionHead, instr2.InstructionHead)
 }
 
-func (instr Instruction) Find(v Variable) bool { 
+func (instr Instruction[T]) Find(v Variable[T]) bool { 
 	for _, arg := range instr.args {
 		if arg.Find(v) {
 			return true
@@ -118,7 +120,7 @@ func (instr Instruction) Find(v Variable) bool {
 	return false
 }
 
-func (instr Instruction) PrepareAsRHS() Expression {
+func (instr Instruction[T]) PrepareAsRHS() Expression[T] {
 	if len(instr.args) == 0 {
 		return instr
 	}
@@ -126,14 +128,14 @@ func (instr Instruction) PrepareAsRHS() Expression {
 	for i, arg := range instr.args {
 		newArgs[i] = arg.PrepareAsRHS()
 	}
-	head := DefineInstruction(instr.name, instr.nArgs, instr.action)
-	return Instruction{
+	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
+	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
 	}
 }
 
-func (instr Instruction) Rebind() Expression {
+func (instr Instruction[T]) Rebind() Expression[T] {
 	if len(instr.args) == 0 {
 		return instr
 	}
@@ -142,33 +144,33 @@ func (instr Instruction) Rebind() Expression {
 	for i, arg := range instr.args {
 		newArgs[i] = arg.Rebind()
 	}
-	head := DefineInstruction(instr.name, instr.nArgs, instr.action)
-	return Instruction{
+	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
+	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
 	}
 }
 
-func (instr Instruction) Replace(v Variable, e Expression) (Expression, bool) {
+func (instr Instruction[T]) Replace(v Variable[T], e Expression[T]) (Expression[T], bool) {
 	newArgs := instr.InstructionArgs.makeBlankCopy()
 	for i, arg := range instr.args {
 		newArgs[i], _ = arg.Replace(v, e)
 	}
-	head := DefineInstruction(instr.name, instr.nArgs, instr.action)
-	return Instruction{
+	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
+	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
 	}, false
 }
 
-func (instr Instruction) ForceRequest() Expression {
+func (instr Instruction[T]) ForceRequest() Expression[T] {
 	if instr.IsCallReady() {
 		return instr.call()
 	}
 	return instr
 }
 
-func (instr Instruction) DoApplication(e Expression) Expression {
+func (instr Instruction[T]) DoApplication(e Expression[T]) Expression[T] {
 	if instr.IsCallReady() {
 		return Apply(instr.call(), e).ForceRequest()
 	}
@@ -177,27 +179,27 @@ func (instr Instruction) DoApplication(e Expression) Expression {
 	return instr.ForceRequest()
 }
 
-func instructionHeadEquals(ih1, ih2 InstructionHead) bool {
+func instructionHeadEquals[T nameable.Nameable](ih1, ih2 InstructionHead[T]) bool {
 	return ih1.nArgs == ih2.nArgs && ih1.name == ih2.name && 
 		((ih1.action == nil && ih2.action == nil) || (ih1.action != nil && ih2.action != nil))
 }
 
-func instructionArgsEquals(ia1, ia2 InstructionArgs) bool {
+func instructionArgsEquals[T nameable.Nameable](ia1, ia2 InstructionArgs[T]) bool {
 	ok := len(ia1.args) == len(ia2.args) && cap(ia1.args) == cap(ia2.args)
 	if !ok {
 		return false
 	}
 
 	for i := range ia1.args {
-		if !ia1.args[i].Equals(ia2.args[i]) {
+		if !ia1.args[i].StrictEquals(ia2.args[i]) {
 			return false
 		}
 	}
 	return true
 }
 
-func (instr Instruction) StrictEquals(e Expression) bool {
-	instr2, ok := e.(Instruction)
+func (instr Instruction[T]) StrictEquals(e Expression[T]) bool {
+	instr2, ok := e.(Instruction[T])
 	if !ok {
 		return false
 	}
@@ -205,11 +207,11 @@ func (instr Instruction) StrictEquals(e Expression) bool {
 		instructionArgsEquals(instr.InstructionArgs, instr2.InstructionArgs)
 }
 
-func (instr Instruction) StrictString() string {
+func (instr Instruction[T]) StrictString() string {
 	return instr.String()
 }
 
-func (instr Instruction) String() string {
+func (instr Instruction[T]) String() string {
 	tmp := make([]string, cap(instr.args), instr.nArgs)
 	for i, e := range instr.args {
 		tmp[i] = e.String()
@@ -222,51 +224,51 @@ func (instr Instruction) String() string {
 	return "instruction[" + instr.name + " " + strings.Join(tmp, " ") + "]"
 }
 
-func (ia InstructionArgs) makeBlankCopy() []Expression {
+func (ia InstructionArgs[T]) makeBlankCopy() []Expression[T] {
 	ln, c := len(ia.args), cap(ia.args)
-	return make([]Expression, ln, c)
+	return make([]Expression[T], ln, c)
 }
 
-func (ia InstructionArgs) Copy() InstructionArgs {
+func (ia InstructionArgs[T]) Copy() InstructionArgs[T] {
 	out := ia.makeBlankCopy()
 	for i, arg := range ia.args {
 		out[i] = arg.Copy()
 	}
-	return InstructionArgs{ args: out, }
+	return InstructionArgs[T]{ args: out, }
 }
 
-func (instr Instruction) UpdateVars(gt int, by int) Expression { 
+func (instr Instruction[T]) UpdateVars(gt int, by int) Expression[T] { 
 	newArgs := instr.InstructionArgs.makeBlankCopy()
 	for i, arg := range instr.args {
 		newArgs[i] = arg.UpdateVars(gt, by)
 	}
-	return Instruction{
+	return Instruction[T]{
 		InstructionHead: instr.InstructionHead,
-		InstructionArgs: InstructionArgs{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
 	}
 }
 
 var EqualityInstruction = 
-	DefineInstruction("testEquality", 2, func(instr InstructionArgs) Expression {
+	DefineInstruction[test_named]("testEquality", 2, func(instr InstructionArgs[test_named]) Expression[test_named] {
 		e1, e2 := instr.GetArgAtIndex(0), instr.GetArgAtIndex(1)
-		if e1.Equals(e2) {
+		if e1.StrictEquals(e2) {
 			return TrueFunction
 		}
 		return FalseFunction
 	})
 
-func (ih InstructionHead) MakeInstance() Instruction {
-	return Instruction{
+func (ih InstructionHead[T]) MakeInstance() Instruction[T] {
+	return Instruction[T]{
 		InstructionHead: ih,
-		InstructionArgs: InstructionArgs{
-			args: make([]Expression, 0, ih.nArgs),
+		InstructionArgs: InstructionArgs[T]{
+			args: make([]Expression[T], 0, ih.nArgs),
 		},
 	}
 }
 
-func DefineInstruction(name string, nArgs int, action InstructionAction) InstructionHead {
+func DefineInstruction[T nameable.Nameable](name string, nArgs int, action InstructionAction[T]) InstructionHead[T] {
 	if nArgs < 0 {
-		panic("instruction cannot accept have than 0 arguments.\n")
+		panic("instruction[T] cannot accept have than 0 arguments.\n")
 	}
-	return InstructionHead{name: name, nArgs: nArgs, action: action}
+	return InstructionHead[T]{name: name, nArgs: nArgs, action: action}
 }

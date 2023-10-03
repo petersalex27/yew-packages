@@ -11,10 +11,10 @@ type DependentTypeConstructor[T nameable.Nameable] struct {
 	index DependentTypeInstance[T]
 }
 
-func (c DependentTypeConstructor[T]) FreeInstantiateKinds(vs ...TypeJudgement[T,expr.Variable]) DependentTypeConstructor[T] {
+func (c DependentTypeConstructor[T]) FreeInstantiateKinds(cxt *Context[T], vs ...TypeJudgement[T,expr.Variable[T]]) DependentTypeConstructor[T] {
 	return DependentTypeConstructor[T]{
 		Monotyped: c.Monotyped,
-		index: c.index.FreeInstantiateKinds(vs...),
+		index: c.index.FreeInstantiateKinds(cxt, vs...),
 	}
 }
 

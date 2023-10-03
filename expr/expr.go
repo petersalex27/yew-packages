@@ -2,39 +2,41 @@ package expr
 
 import (
 	"github.com/petersalex27/yew-packages/equality"
+	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type Expression interface {
+type Expression[T nameable.Nameable] interface {
 	str.Stringable
-	equality.Eq[Expression]
+	//equality.Eq[Expression[T]]
+	Equals(*Context[T], Expression[T]) bool
 	StrictString() string
-	StrictEquals(Expression) bool
-	Replace(Variable, Expression) (Expression, bool)
-	UpdateVars(gt int, by int) Expression
-	Again() (Expression, bool)
-	Bind(BindersOnly) Expression
-	Find(Variable) bool
-	PrepareAsRHS() Expression
-	Rebind() Expression
-	Copy() Expression
-	ForceRequest() Expression
+	StrictEquals(Expression[T]) bool
+	Replace(Variable[T], Expression[T]) (Expression[T], bool)
+	UpdateVars(gt int, by int) Expression[T]
+	Again() (Expression[T], bool)
+	Bind(BindersOnly[T]) Expression[T]
+	Find(Variable[T]) bool
+	PrepareAsRHS() Expression[T]
+	Rebind() Expression[T]
+	Copy() Expression[T]
+	ForceRequest() Expression[T]
 }
 
-type ApplicableExpression interface {
-	DoApplication(e Expression) Expression
-	AgainApply(e Expression) (res Expression, again bool)
+type ApplicableExpression[T nameable.Nameable] interface {
+	DoApplication(e Expression[T]) Expression[T]
+	AgainApply(e Expression[T]) (res Expression[T], again bool)
 }
 
-type SplitableExpression interface {
-	Expression
-	Split() (left, right Expression)
+type SplitableExpression[T nameable.Nameable] interface {
+	Expression[T]
+	Split() (left, right Expression[T])
 }
 
-type InvariableExpression interface {
+type InvariableExpression[T nameable.Nameable] interface {
 	str.Stringable
-	equality.Eq[Expression]
-	DeepCopy() InvariableExpression
+	equality.Eq[Expression[T]]
+	DeepCopy() InvariableExpression[T]
 }
 
 var binder_string string = "λ"

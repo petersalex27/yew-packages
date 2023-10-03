@@ -1,43 +1,45 @@
 package expr
 
-type Const string
+import "github.com/petersalex27/yew-packages/nameable"
 
-func (c Const) ForceRequest() Expression { return c }
+type Const[T nameable.Nameable] struct {Name T}
 
-func constEquals(c1, c2 Const) bool {
-	return c1 == c2
+func (c Const[T]) ForceRequest() Expression[T] { return c }
+
+func constEquals[T nameable.Nameable](c1, c2 Const[T]) bool {
+	return c1.Name.GetName() == c2.Name.GetName()
 }
 
-func (c Const) Equals(e Expression) bool {
-	if c2, ok := e.ForceRequest().(Const); ok {
+func (c Const[T]) Equals(cxt *Context[T], e Expression[T]) bool {
+	if c2, ok := e.ForceRequest().(Const[T]); ok {
 		return constEquals(c, c2)
 	}
 	return false
 }
 
-func (c Const) String() string { return string(c) }
+func (c Const[T]) String() string { return c.Name.GetName() }
 
-func (c Const) StrictString() string { return string(c) }
+func (c Const[T]) StrictString() string { return c.Name.GetName() }
 
-func (c Const) Replace(Variable, Expression) (Expression, bool) { return c, false }
+func (c Const[T]) Replace(Variable[T], Expression[T]) (Expression[T], bool) { return c, false }
 
-func (c Const) StrictEquals(e Expression) bool { 
-	if c2, ok := e.(Const); ok {
+func (c Const[T]) StrictEquals(e Expression[T]) bool { 
+	if c2, ok := e.(Const[T]); ok {
 		return constEquals(c, c2)
 	}
 	return false
 }
 
-func (c Const) UpdateVars(gt int, by int) Expression { return c }
+func (c Const[T]) UpdateVars(gt int, by int) Expression[T] { return c }
 
-func (c Const) Again() (Expression, bool) { return c, false }
+func (c Const[T]) Again() (Expression[T], bool) { return c, false }
 
-func (c Const) Bind(BindersOnly) Expression { return c }
+func (c Const[T]) Bind(BindersOnly[T]) Expression[T] { return c }
 
-func (Const) Find(Variable) bool { return false }
+func (Const[T]) Find(Variable[T]) bool { return false }
 
-func (c Const) PrepareAsRHS() Expression { return c }
+func (c Const[T]) PrepareAsRHS() Expression[T] { return c }
 
-func (c Const) Rebind() Expression { return c }
+func (c Const[T]) Rebind() Expression[T] { return c }
 
-func (c Const) Copy() Expression { return c }
+func (c Const[T]) Copy() Expression[T] { return c }

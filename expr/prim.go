@@ -1,6 +1,10 @@
 package expr
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/petersalex27/yew-packages/nameable"
+)
 
 type Int int64
 func (Int) getPrimType() primType { return intPrim }
@@ -30,11 +34,11 @@ type primIFace interface {
 	getPrimType() primType
 }
 
-type Prim struct {
+type Prim[T nameable.Nameable] struct {
 	primIFace
 }
 
-func (p Prim) String() string {
+func (p Prim[T]) String() string {
 	switch p.getPrimType() {
 	case intPrim:
 		return strconv.FormatInt(int64(p.primIFace.(Int)), 10)
@@ -50,8 +54,8 @@ func (p Prim) String() string {
 	panic("unknown prim.")
 }
 
-func (p Prim) Equals(e Expression) bool {
-	p2, ok := e.(Prim)
+func (p Prim[T]) Equals(_ *Context[T], e Expression[T]) bool {
+	p2, ok := e.(Prim[T])
 	if !ok {
 		return false
 	}
@@ -74,30 +78,30 @@ func (p Prim) Equals(e Expression) bool {
 	}
 }
 
-func (p Prim) StrictString() string {
+func (p Prim[T]) StrictString() string {
 	return p.String()
 }
 
-func (p Prim) StrictEquals(e Expression) bool {
-	return p.Equals(e)
+func (p Prim[T]) StrictEquals(e Expression[T]) bool {
+	return p.Equals(nil, e)
 }
 
-func (p Prim) Replace(Variable, Expression) (Expression, bool) {
+func (p Prim[T]) Replace(Variable[T], Expression[T]) (Expression[T], bool) {
 	return p, false
 }
 
-func (p Prim) UpdateVars(gt int, by int) Expression { return p }
+func (p Prim[T]) UpdateVars(gt int, by int) Expression[T] { return p }
 
-func (p Prim) Again() (Expression, bool) { return p, false}
+func (p Prim[T]) Again() (Expression[T], bool) { return p, false}
 
-func (p Prim) Bind(BindersOnly) Expression { return p }
+func (p Prim[T]) Bind(BindersOnly[T]) Expression[T] { return p }
 
-func (p Prim) Find(Variable) bool { return false }
+func (p Prim[T]) Find(Variable[T]) bool { return false }
 
-func (p Prim) PrepareAsRHS() Expression { return p }
+func (p Prim[T]) PrepareAsRHS() Expression[T] { return p }
 
-func (p Prim) Rebind() Expression { return p }
+func (p Prim[T]) Rebind() Expression[T] { return p }
 
-func (p Prim) Copy() Expression { return p }
+func (p Prim[T]) Copy() Expression[T] { return p }
 
-func (p Prim) ForceRequest() Expression { return p }
+func (p Prim[T]) ForceRequest() Expression[T] { return p }

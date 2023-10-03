@@ -10,22 +10,22 @@ import (
 // picks out a monotype
 type DependentTypeInstance[T nameable.Nameable] struct {
 	Application[T]
-	index []TypeJudgement[T,expr.Expression]
+	index []TypeJudgement[T,expr.Expression[T]]
 }
 
-func Index[T nameable.Nameable](family Application[T], domain ...TypeJudgement[T,expr.Expression]) DependentTypeInstance[T] {
+func Index[T nameable.Nameable](family Application[T], domain ...TypeJudgement[T,expr.Expression[T]]) DependentTypeInstance[T] {
 	return DependentTypeInstance[T]{
 		Application: family,
 		index: domain,
 	}
 }
 
-func (dti DependentTypeInstance[T]) FreeInstantiateKinds(vs ...TypeJudgement[T,expr.Variable]) DependentTypeInstance[T] {
+func (dti DependentTypeInstance[T]) FreeInstantiateKinds(cxt *Context[T], vs ...TypeJudgement[T,expr.Variable[T]]) DependentTypeInstance[T] {
 	return DependentTypeInstance[T]{
 		Application: dti.Application,
-		index: fun.FMap(dti.index, func(i TypeJudgement[T,expr.Expression]) TypeJudgement[T,expr.Expression] {
+		index: fun.FMap(dti.index, func(i TypeJudgement[T,expr.Expression[T]]) TypeJudgement[T,expr.Expression[T]] {
 			for _, v := range vs {
-				expr, _ := i.expression.Replace(v.expression, expr.Var("_"))
+				expr, _ := i.expression.Replace(v.expression, expr.Var(cxt.makeName("_")))
 				i.expression = expr
 			}
 			return i

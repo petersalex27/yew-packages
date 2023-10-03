@@ -1,64 +1,71 @@
 package expr
 
 import (
-	"github.com/petersalex27/yew-packages/fun"
-	str "github.com/petersalex27/yew-packages/stringable"
 	"strings"
+
+	"github.com/petersalex27/yew-packages/fun"
+	"github.com/petersalex27/yew-packages/nameable"
+	str "github.com/petersalex27/yew-packages/stringable"
 )
 
 // λx.e
-type Function struct {
-	vars []Variable
-	e    Expression
+type Function[T nameable.Nameable] struct {
+	vars []Variable[T]
+	e    Expression[T]
 }
 
+var x_, y_ = Var(test_named("x")), Var(test_named("y"))
+var t_, f_ = Var(test_named("t")), Var(test_named("f"))
+var a_, b_ = Var(test_named("a")), Var(test_named("b"))
+var c_, e_ = Var(test_named("c")), Var(test_named("e"))
+
 // (λx . x)
-var IdFunction = Bind(Var("x")).In(Var("x"))
+var IdFunction = Bind[test_named](x_).In(x_)
 
 // (λx . y)
-var ConstFunction = Bind(Var("x")).In(Var("y"))
+var ConstFunction = Bind[test_named](x_).In(y_)
 
 // (λt f . t)
-var TrueFunction = Bind(Var("t"), Var("f")).In(Var("t"))
+var TrueFunction = Bind[test_named](t_, f_).In(t_)
 
 // (λt f . f)
-var FalseFunction = Bind(Var("t"), Var("f")).In(Var("f"))
+var FalseFunction = Bind[test_named](t_, f_).In(f_)
 
 // (λa b . a true b)
-var OrFunction = Bind(Var("a"), Var("b")).In(Apply(Var("a"), TrueFunction, Var("b")))
+var OrFunction = Bind[test_named](a_, b_).In(Apply[test_named](a_, TrueFunction, b_))
 
 // (λc t e . c t e)
-var IfFunction = Bind(Var("c"), Var("t"), Var("e")).In(Apply(Var("c"), Var("t"), Var("e")))
+var IfFunction = Bind[test_named](c_, t_, e_).In(Apply[test_named](c_, t_, e_))
 
 // (λa b . a b false)
-var AndFunction = Bind(Var("a"), Var("b")).In(Apply(Var("a"), Var("b"), FalseFunction))
+var AndFunction = Bind[test_named](a_, b_).In(Apply[test_named](a_, b_, FalseFunction))
 
 // (λa . a false true)
-var NotFunction = Bind(Var("a")).In(Apply(Var("a"), FalseFunction, TrueFunction))
+var NotFunction = Bind[test_named](a_).In(Apply[test_named](a_, FalseFunction, TrueFunction))
 
 // (λf . (λx . f (x x)) (λx . f (x x)))
-var Y = Bind(Var("f")).In(Apply(
-	Bind(Var("x")).In(Apply(Var("f"), Apply(Var("x"), Var("x")))),
-	Bind(Var("x")).In(Apply(Var("f"), Apply(Var("x"), Var("x"))))))
+var Y = Bind[test_named](f_).In(Apply[test_named](
+	Bind[test_named](x_).In(Apply[test_named](f_, Apply[test_named](x_, x_))),
+	Bind[test_named](x_).In(Apply[test_named](f_, Apply[test_named](x_, x_)))))
 
-func (f Function) Find(v Variable) bool {
+func (f Function[T]) Find(v Variable[T]) bool {
 	// update to account for binders
 	v2 := Var(v.name)
 	v2.depth = v.depth + f.BindDepth()
 	return f.e.Find(v2)
 }
 
-// assumes this was called from EtaReduction
-func (f Function) etaReduction_absorb(g Function) Function {
+// assumes this was called from EtaReduction[T]
+func (f Function[T]) etaReduction_absorb(g Function[T]) Function[T] {
 	bindDepth := f.BindDepth()
-	res := g.UpdateVars(f.BindDepth(), -1).(Function)
+	res := g.UpdateVars(f.BindDepth(), -1).(Function[T])
 	if bindDepth == 1 {
 		return res
 	}
 
 	//add := bindDepth - 1
-	vs := make([]Variable, (len(f.vars)-1)+len(g.vars))
-	//ex := res.e.CleanVars() // cleans function for re-binding
+	vs := make([]Variable[T], (len(f.vars)-1)+len(g.vars))
+	//ex := res.e.CleanVars() // cleans function[T] for re-binding
 	//println(ex.StrictString())
 	for i, v := range f.vars[:bindDepth-1] {
 		vs[i] = Var(v.name)
@@ -68,29 +75,29 @@ func (f Function) etaReduction_absorb(g Function) Function {
 	}
 	//vs = append(f.vars[:bindDepth-1], vs...)
 	return mkfunc(vs...).rebinding(res.e)
-	/*return Function{
+	/*return Function[T]{
 		vars: vs,
 		e:    ex,
 	}*/
 }
 
 // (\x -> (\f -> e) x) == (\f -> e)
-func (f Function) EtaReduction() Function {
+func (f Function[T]) EtaReduction() Function[T] {
 	// f = (\x -> e)
-	if a, ok := f.e.(Application); ok {
+	if a, ok := f.e.(Application[T]); ok {
 		lookFor := f.vars[f.BindDepth()-1]
 		// e = (e1 e2) => f = (\x -> e1 e2)
-		g, ok := a.left.(Function)
+		g, ok := a.left.(Function[T])
 		if !ok {
 			return f
 		}
 		// e = ((\y -> e3) e2) => f = (\x -> ((\y -> e3) e2))
 
-		if a.right.Equals(lookFor) {
+		if a.right.StrictEquals(lookFor) { // TODO: ?? a.right.Equals(lookFor)
 			if g.Find(lookFor) {
 				return f // g contains instances of lookFor
 			}
-			// g contains no instances of lookFor, do eta reduction
+			// g contains no instances of lookFor, do eta reduction[T]
 			return f.etaReduction_absorb(g)
 		}
 	}
@@ -98,36 +105,36 @@ func (f Function) EtaReduction() Function {
 }
 
 // (λx.e)
-func (f Function) String() string {
-	return "(" + binder_string + BindersOnly(f.vars).String() + to_string + f.e.String() + ")"
+func (f Function[T]) String() string {
+	return "(" + binder_string + BindersOnly[T](f.vars).String() + to_string + f.e.String() + ")"
 }
 
-func (f Function) StrictString() string {
-	return "(" + binder_string + BindersOnly(f.vars).StrictString() + to_string + f.e.StrictString() + ")"
+func (f Function[T]) StrictString() string {
+	return "(" + binder_string + BindersOnly[T](f.vars).StrictString() + to_string + f.e.StrictString() + ")"
 }
 
-func (f Function) Copy() Expression {
-	vs := make([]Variable, len(f.vars))
+func (f Function[T]) Copy() Expression[T] {
+	vs := make([]Variable[T], len(f.vars))
 	for i, v := range f.vars {
 		vs[i] = v.copy()
 	}
-	return Function{
+	return Function[T]{
 		vars: vs,
 		e:    f.e.Copy(),
 	}
 }
 
-func (f Function) Rebind() Expression {
-	return BindersOnly(f.vars).Clean().In(f.e.Rebind())
+func (f Function[T]) Rebind() Expression[T] {
+	return BindersOnly[T](f.vars).Clean().In(f.e.Rebind())
 }
 
-type BindersOnly []Variable
+type BindersOnly[T nameable.Nameable] []Variable[T]
 
-func (bs BindersOnly) String() string {
+func (bs BindersOnly[T]) String() string {
 	return str.Join(bs, str.String(" "))
 }
 
-func (bs BindersOnly) StrictString() string {
+func (bs BindersOnly[T]) StrictString() string {
 	strs := make([]string, len(bs))
 	for i, b := range bs {
 		strs[i] = b.StrictString()
@@ -135,21 +142,21 @@ func (bs BindersOnly) StrictString() string {
 	return strings.Join(strs, " ")
 }
 
-func (bs BindersOnly) Clean() BindersOnly {
-	out := make(BindersOnly, len(bs))
+func (bs BindersOnly[T]) Clean() BindersOnly[T] {
+	out := make(BindersOnly[T], len(bs))
 	for i, b := range bs {
 		out[i] = Var(b.name)
 	}
 	return out
 }
 
-func (bs BindersOnly) rebinding(e Expression) Function {
+func (bs BindersOnly[T]) rebinding(e Expression[T]) Function[T] {
 	return bs.In(e.Rebind())
 }
 
-func mkfunc(bs ...Variable) BindersOnly {
+func mkfunc[T nameable.Nameable](bs ...Variable[T]) BindersOnly[T] {
 	depth := len(bs)
-	out := make(BindersOnly, len(bs))
+	out := make(BindersOnly[T], len(bs))
 	for i, b := range bs {
 		out[i] = Var(b.name)
 		out[i].depth = depth - i
@@ -157,16 +164,16 @@ func mkfunc(bs ...Variable) BindersOnly {
 	return out
 }
 
-func Bind(binder Variable, more ...Variable) BindersOnly {
+func Bind[T nameable.Nameable](binder Variable[T], more ...Variable[T]) BindersOnly[T] {
 	if len(more) == 0 {
 		return mkfunc(binder)
 	}
 
-	return mkfunc(append([]Variable{binder}, more...)...)
+	return mkfunc(append([]Variable[T]{binder}, more...)...)
 }
 
-func (bs BindersOnly) Update(add int) BindersOnly {
-	out := make(BindersOnly, len(bs))
+func (bs BindersOnly[T]) Update(add int) BindersOnly[T] {
+	out := make(BindersOnly[T], len(bs))
 	for i, b := range bs {
 		out[i] = Var(b.name)
 		out[i].depth = b.depth + add
@@ -174,98 +181,98 @@ func (bs BindersOnly) Update(add int) BindersOnly {
 	return out
 }
 
-func makeFunction(vars []Variable, e Expression) Function {
-	return Function{vars: vars, e: e}
+func makeFunction[T nameable.Nameable](vars []Variable[T], e Expression[T]) Function[T] {
+	return Function[T]{vars: vars, e: e}
 }
 
-func (f Function) Bind(bs BindersOnly) Expression {
-	return Function{
+func (f Function[T]) Bind(bs BindersOnly[T]) Expression[T] {
+	return Function[T]{
 		vars: f.vars,
 		e:    f.e.Bind(bs.Update(len(f.vars))),
 	}
 }
 
-func (bs BindersOnly) In(e Expression) Function {
-	return Function{
+func (bs BindersOnly[T]) In(e Expression[T]) Function[T] {
+	return Function[T]{
 		vars: bs,
 		e:    e.Bind(bs),
 	}
 }
 
-var _freeApplyVar = Var("_")
+//var _freeApplyVar = Var("_")
 
-func (f Function) FreeApplyThrough() Expression {
-	var e Expression
+func (f Function[T]) FreeApplyThrough(cxt *Context[T]) Expression[T] {
+	var e Expression[T]
 	g, ok := f, true
 	for ok {
-		e = g.Apply(_freeApplyVar)
-		g, ok = e.(Function)
+		e = g.Apply(cxt.Var("_"))
+		g, ok = e.(Function[T])
 	}
 	return e
 }
 
-func functionEquals(f, g Function) bool {
-	return f.FreeApplyThrough().Equals(g.FreeApplyThrough())
+func functionEquals[T nameable.Nameable](cxt *Context[T], f, g Function[T]) bool {
+	return f.FreeApplyThrough(cxt).Equals(cxt, g.FreeApplyThrough(cxt))
 }
 
-func (f Function) Equals(e Expression) bool {
-	f2, ok := e.ForceRequest().(Function)
+func (f Function[T]) Equals(cxt *Context[T], e Expression[T]) bool {
+	f2, ok := e.ForceRequest().(Function[T])
 	if !ok {
 		return false
 	}
-	return functionEquals(f, f2)
+	return functionEquals(cxt, f, f2)
 }
 
-func functionStrictEquals(f, g Function) bool {
-	return fun.AndZip(true, f.vars, g.vars, varEquals) && f.e.StrictEquals(g.e)
+func functionStrictEquals[T nameable.Nameable](f, g Function[T]) bool {
+	return fun.AndZip(true, f.vars, g.vars, varEquals[T]) && f.e.StrictEquals(g.e)
 }
 
-func (f Function) StrictEquals(e Expression) bool {
-	f2, ok := e.(Function)
+func (f Function[T]) StrictEquals(e Expression[T]) bool {
+	f2, ok := e.(Function[T])
 	if !ok {
 		return false
 	}
 	return functionStrictEquals(f, f2)
 }
 
-func (f Function) Replace(v Variable, e Expression) (Expression, bool) {
-	v2 := v.UpdateVars(0, f.BindDepth()).(Variable)
+func (f Function[T]) Replace(v Variable[T], e Expression[T]) (Expression[T], bool) {
+	v2 := v.UpdateVars(0, f.BindDepth()).(Variable[T])
 	e2 := e.UpdateVars(0, f.BindDepth())
 	res, again := f.e.Replace(v2, e2)
-	return Function{
+	return Function[T]{
 		vars: f.vars,
 		e:    res,
 	}, again
 }
 
-// func (f Function) Apply(e Expression) {
+// func (f Function[T]) Apply(e Expression[T]) {
 //	lookFor := f.nBinders
 //	f.nBinders := f.nBinders - 1
 //	e.updateVars(f.nBinders)
 //	res := f.expr.Replace(lookFor, e).freeDecrement(lookFor)
 // }
 
-func (f Function) BindDepth() int {
+func (f Function[T]) BindDepth() int {
 	return len(f.vars)
 }
 
 // update all vars v > `gt` by `v = v + by`
-func (f Function) UpdateVars(gt int, by int) Expression {
-	return Function{
+func (f Function[T]) UpdateVars(gt int, by int) Expression[T] {
+	return Function[T]{
 		vars: f.vars,
 		e:    f.e.UpdateVars(f.BindDepth(), by),
 	}
 }
 
 // just returns f
-func (f Function) PrepareAsRHS() Expression { return f }
+func (f Function[T]) PrepareAsRHS() Expression[T] { return f }
 
 // (λa b . a b) (λa b c . a b z)
 // ( f=(λλ 2 1) ).Apply( e=(λλλ 3 2 4) )
 // lookFor = 2
 // e2 = (λλλ 3 2 6)
 // v = 2
-// res = { ((λλλ 3 2 6) 1) => call to apply in Application
+// res = { ((λλλ 3 2 6) 1) => call to apply in Application[T]
 //	 ( (λλλ 3 2 6) ).Apply( e=(1) )
 //	 lookFor = 3
 //	 e2 = (4)
@@ -276,12 +283,12 @@ func (f Function) PrepareAsRHS() Expression { return f }
 // } = (λλ 3 2 5)
 // res = (λλ 3 2 5)
 
-func (f Function) Apply(e Expression) Expression {
-	lookFor := f.BindDepth() // variable number being replaced
+func (f Function[T]) Apply(e Expression[T]) Expression[T] {
+	lookFor := f.BindDepth() // Variable[T] number being replaced
 	e2 := e.
 		PrepareAsRHS(). // makes sure free variables have a depth > 0
 		UpdateVars(0, lookFor) // updates free variables so they have a depth > f.BindDepth()
-	v := f.vars[0] // variable to replace (should have same number as `lookFor`)
+	v := f.vars[0] // Variable[T] to replace (should have same number as `lookFor`)
 	res, again := f.e.Replace(v, e2) // replace variables matching `v` with `e2`
 	res = res.UpdateVars(lookFor, -1) // dec. free vars to account for loss of binder
 	for again { // need to apply args again? 
@@ -289,7 +296,7 @@ func (f Function) Apply(e Expression) Expression {
 	}
 
 	if lookFor > 1 {
-		return Function{ // function has at least one binder left
+		return Function[T]{ // function[T] has at least one binder left
 			vars: f.vars[1:],
 			e:    res,
 		}
@@ -297,22 +304,22 @@ func (f Function) Apply(e Expression) Expression {
 	return res // no binders left
 }
 
-func (f Function) DoApplication(e Expression) Expression {
+func (f Function[T]) DoApplication(e Expression[T]) Expression[T] {
 	return f.Apply(e)
 } 
 
-func (f Function) ForceRequest() Expression { return f }
+func (f Function[T]) ForceRequest() Expression[T] { return f }
 
-func (f Function) Again() (Expression, bool) {
+func (f Function[T]) Again() (Expression[T], bool) {
 	/*res, again := f.e.Again()
-	return Function{
+	return Function[T]{
 		vars: f.vars,
 		e:    res,
 	}, again*/
 	return f, false
 }
 
-func (f Function) AgainApply(e Expression) (Expression, bool) {
+func (f Function[T]) AgainApply(e Expression[T]) (Expression[T], bool) {
 	lookFor := f.BindDepth() // same value, bindDepth is just uint
 	e2 := e.UpdateVars(0, lookFor)
 	v := f.vars[0]
@@ -320,7 +327,7 @@ func (f Function) AgainApply(e Expression) (Expression, bool) {
 	res = res.UpdateVars(lookFor, -1)
 
 	if lookFor > 1 {
-		return Function{
+		return Function[T]{
 			vars: f.vars[1:],
 			e:    res,
 		}, again

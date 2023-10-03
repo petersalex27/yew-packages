@@ -16,14 +16,14 @@ type ruleElement[T Type[U], U nameable.Nameable] struct {
 }
 
 type equivalenceClassMap[T nameable.Nameable] map[string]Monotyped[T]
-type expressionClassMap map[string]expr.Expression
+type expressionClassMap[T nameable.Nameable] map[string]expr.Expression[T]
 
 type Context[T nameable.Nameable] struct {
 	contextNumber int32
 	varCounter uint32
 	makeName func(string)T
 	equivClasses equivalenceClassMap[T]
-	exprClasses expressionClassMap
+	exprClasses expressionClassMap[T]
 	stack *stack.Stack[Type[T]]
 }
 
@@ -34,6 +34,7 @@ func InheritContext[T nameable.Nameable](parent *Context[T]) *Context[T] {
 	child.exprClasses = util.CopyMap(parent.exprClasses)
 	child.varCounter = parent.varCounter
 	child.stack = parent.stack
+	child.makeName = parent.makeName
 
 	return child
 }
@@ -41,7 +42,7 @@ func InheritContext[T nameable.Nameable](parent *Context[T]) *Context[T] {
 func NewContext[T nameable.Nameable]() *Context[T] {
 	cxt := new(Context[T])
 	cxt.equivClasses = make(equivalenceClassMap[T])
-	cxt.exprClasses = make(expressionClassMap)
+	cxt.exprClasses = make(expressionClassMap[T])
 	cxt.stack = stack.NewStack[Type[T]](1 << 5 /*cap=32*/)
 	return cxt
 }
@@ -238,8 +239,8 @@ func (cxt *Context[T]) Rule(id RuleID) (Type[T], error) {
 	return rules[id].rule(cxt)
 }*/
 
-func (cxt *Context[T]) FindExpression(e expr.Expression) expr.Expression {
-	if v, ok := e.(expr.Variable); ok {
+func (cxt *Context[T]) FindExpression(e expr.Expression[T]) expr.Expression[T] {
+	if v, ok := e.(expr.Variable[T]); ok {
 		if out, found := cxt.exprClasses[v.String()]; found {
 			return out
 		}
@@ -290,10 +291,10 @@ func (cxt *Context[T]) register(m Monotyped[T]) func(...Monotyped[T]) {
 	}
 }
 
-func (cxt *Context[T]) registerExpression(e expr.Expression) func(...expr.Expression) {
-	return func(exprs ...expr.Expression) {
+func (cxt *Context[T]) registerExpression(e expr.Expression[T]) func(...expr.Expression[T]) {
+	return func(exprs ...expr.Expression[T]) {
 		for _, exp := range exprs {
-			if _, ok := exp.(expr.Variable); !ok {
+			if _, ok := exp.(expr.Variable[T]); !ok {
 				continue
 			}
 			cxt.exprClasses[exp.StrictString()] = e
@@ -328,10 +329,10 @@ func (cxt *Context[T]) union(a, b Monotyped[T]) {
 	}
 }
 
-func (cxt *Context[T]) expressionUnion(e1, e2 expr.Expression) {
-	if _, ok := e1.(expr.Variable); ok {
+func (cxt *Context[T]) expressionUnion(e1, e2 expr.Expression[T]) {
+	if _, ok := e1.(expr.Variable[T]); ok {
 		cxt.registerExpression(e1)(e1, e2)
-	} else if _, ok := e2.(expr.Variable); ok {
+	} else if _, ok := e2.(expr.Variable[T]); ok {
 		cxt.registerExpression(e2)(e1, e2)
 	} else {
 		panic("tried to join two distinct expressions")
@@ -363,12 +364,12 @@ func (cxt *Context[T]) unify(a, b Monotyped[T]) bool {
 	return true
 }
 
-func IsKindVariable(e expr.Expression) bool {
-	_, ok := e.(expr.Variable)
+func IsKindVariable[T nameable.Nameable](e expr.Expression[T]) bool {
+	_, ok := e.(expr.Variable[T])
 	return ok
 }
 
-func (cxt *Context[T]) tryToEquateExpressions(e1, e2 expr.Expression) bool {
+func (cxt *Context[T]) tryToEquateExpressions(e1, e2 expr.Expression[T]) bool {
 	// f: [a; n+m] -> ([a; n], [a; m])
 	// f $ (x: [a; 6])
 	// => n+m=6 => n=6-m
@@ -376,7 +377,7 @@ func (cxt *Context[T]) tryToEquateExpressions(e1, e2 expr.Expression) bool {
 	return true
 }
 
-func (cxt *Context[T]) unifyExpression(a, b expr.Expression) bool {
+func (cxt *Context[T]) unifyExpression(a, b expr.Expression[T]) bool {
 	ta := cxt.FindExpression(a)
 	tb := cxt.FindExpression(b)
 
@@ -385,9 +386,9 @@ func (cxt *Context[T]) unifyExpression(a, b expr.Expression) bool {
 		return true
 	}
 
-	var la, ra, lb, rb expr.Expression
-	sa, okA := ta.(expr.SplitableExpression)
-	sb, okB := tb.(expr.SplitableExpression)
+	var la, ra, lb, rb expr.Expression[T]
+	sa, okA := ta.(expr.SplitableExpression[T])
+	sb, okB := tb.(expr.SplitableExpression[T])
 	if !(okA && okB) {
 		return cxt.tryToEquateExpressions(ta, tb)
 	} 

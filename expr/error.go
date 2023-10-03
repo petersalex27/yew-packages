@@ -1,15 +1,19 @@
 package expr
 
-import "errors"
+import (
+	"errors"
 
-func redefineNameInTable(name Const) error {
-	return errors.New("tried to redefine " + string(name))
+	"github.com/petersalex27/yew-packages/nameable"
+)
+
+func redefineNameInTable[T nameable.Nameable](name Const[T]) error {
+	return errors.New("tried to redefine " + name.String())
 }
 
-func nameNotDefined(name Const) error {
-	return errors.New(string(name) + " is not defined")
+func nameNotDefined[T nameable.Nameable](name Const[T]) error {
+	return errors.New(name.String() + " is not defined")
 }
 
-func redefineInv(name Const) error {
-	return errors.New("cannot redefine the inverse of " + string(name))
+func redefineInv[T nameable.Nameable](name Const[T]) error {
+	return errors.New("cannot redefine the inverse of " + name.String())
 }

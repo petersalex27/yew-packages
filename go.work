@@ -15,4 +15,5 @@ use (
 	./parser
 	./status
 	./nameable
+	./ir
 )

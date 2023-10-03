@@ -1,30 +1,41 @@
 package expr
 
-import "strconv"
+import (
+	"strconv"
 
-type Variable struct {
-	name  string
+	"github.com/petersalex27/yew-packages/nameable"
+)
+
+type Variable[T nameable.Nameable] struct {
+	name  T
 	depth int
 }
 
-func (v Variable) copy() Variable {
-	return Variable{
+func (v Variable[T]) copy() Variable[T] {
+	return Variable[T]{
 		name:  v.name,
 		depth: v.depth,
 	}
 }
 
-func (v Variable) Copy() Expression {
+func (v Variable[T]) Copy() Expression[T] {
 	return v.copy()
 }
 
-func makeVar(name string, depth int) Variable {
-	return Variable{name: name, depth: depth}
+// Makes a variable
+//
+// Deprecated: to be removed???
+func MakeVar[T nameable.Nameable](name T, depth int) Variable[T] {
+	return Variable[T]{name: name, depth: depth}
 }
 
-func (v Variable) PrepareAsRHS() Expression {
+func (cxt *Context[T]) makeVar(name string, depth int) Variable[T] {
+	return Variable[T]{name: cxt.makeName(name), depth: depth}
+}
+
+func (v Variable[T]) PrepareAsRHS() Expression[T] {
 	if v.depth < 1 {
-		return Variable{
+		return Variable[T]{
 			name:  v.name,
 			depth: 1,
 		}
@@ -32,7 +43,7 @@ func (v Variable) PrepareAsRHS() Expression {
 	return v
 }
 
-func (v Variable) UpdateVars(gt int, by int) Expression {
+func (v Variable[T]) UpdateVars(gt int, by int) Expression[T] {
 	if v.depth > gt {
 		newVar := Var(v.name)
 		newVar.depth = v.depth + by
@@ -41,11 +52,11 @@ func (v Variable) UpdateVars(gt int, by int) Expression {
 	return v
 }
 
-func (v Variable) Rebind() Expression {
+func (v Variable[T]) Rebind() Expression[T] {
 	return Var(v.name)
 }
 
-func (v Variable) Bind(bs BindersOnly) Expression {
+func (v Variable[T]) Bind(bs BindersOnly[T]) Expression[T] {
 	depth := len(bs)
 	if v.depth != 0 && v.depth <= depth {
 		return v
@@ -53,68 +64,72 @@ func (v Variable) Bind(bs BindersOnly) Expression {
 
 	name := v.name
 	out := Var(name)
-	// is free variable
+	// is free Variable[T]
 	for _, b := range bs {
-		if name == b.name {
-			// variable gets bound at b.depth
+		if name.GetName() == b.name.GetName() {
+			// Variable[T] gets bound at b.depth
 			out.depth = b.depth
 			return out
 		}
-		// variable does not get bound, maybe next binder..?
+		// Variable[T] does not get bound, maybe next binder..?
 	}
 
-	// variable remains unbound
+	// Variable[T] remains unbound
 	out.depth = v.depth + depth
 	if v.depth == 0 {
-		// variable is free but unrecognized as free
-		out.depth = out.depth + 1 // look at that! +1! variable is recognized :)
+		// Variable[T] is free but unrecognized as free
+		out.depth = out.depth + 1 // look at that! +1! Variable[T] is recognized :)
 	}
 	return out
 }
 
-func Var(name string) Variable {
-	return Variable{name: name, depth: 0}
+func (cxt *Context[T]) Var(name string) Variable[T] {
+	return Var[T](cxt.makeName(name))
 }
 
-func (v Variable) Again() (Expression, bool) {
+func Var[T nameable.Nameable](name T) Variable[T] {
+	return Variable[T]{name: name, depth: 0}
+}
+
+func (v Variable[T]) Again() (Expression[T], bool) {
 	return v, false
 }
 
-func (v Variable) Replace(w Variable, e Expression) (Expression, bool) {
+func (v Variable[T]) Replace(w Variable[T], e Expression[T]) (Expression[T], bool) {
 	if varEquals(v, w) {
 		return e, false
 	}
 	return v, false
 }
 
-func (v Variable) Find(w Variable) bool { return varEquals(v, w) }
+func (v Variable[T]) Find(w Variable[T]) bool { return varEquals(v, w) }
 
-func varEquals(v, w Variable) bool {
-	return v.depth == w.depth && v.name == w.name
+func varEquals[T nameable.Nameable](v, w Variable[T]) bool {
+	return v.depth == w.depth && v.name.GetName() == w.name.GetName()
 }
 
-func (v Variable) Equals(e Expression) bool {
-	v2, ok := e.ForceRequest().(Variable)
+func (v Variable[T]) Equals(_ *Context[T], e Expression[T]) bool {
+	v2, ok := e.ForceRequest().(Variable[T])
 	if !ok {
 		return false
 	}
 	return varEquals(v, v2)
 }
 
-func (v Variable) StrictEquals(e Expression) bool {
-	v2, ok := e.(Variable)
+func (v Variable[T]) StrictEquals(e Expression[T]) bool {
+	v2, ok := e.(Variable[T])
 	if !ok {
 		return false
 	}
 	return varEquals(v, v2)
 }
 
-func (v Variable) String() string {
-	return v.name
+func (v Variable[T]) String() string {
+	return v.name.GetName()
 }
 
-func (v Variable) StrictString() string {
-	return v.name + "[" + strconv.Itoa(v.depth) + "]"
+func (v Variable[T]) StrictString() string {
+	return v.name.GetName() + "[" + strconv.Itoa(v.depth) + "]"
 }
 
-func (v Variable) ForceRequest() Expression { return v }
+func (v Variable[T]) ForceRequest() Expression[T] { return v }

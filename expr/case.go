@@ -2,40 +2,42 @@ package expr
 
 import (
 	"strings"
+
+	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type Case struct {
-	binders []Variable
-	when Expression
-	then Expression
+type Case[T nameable.Nameable] struct {
+	binders []Variable[T]
+	when Expression[T]
+	then Expression[T]
 }
 
-type PartialCase_when Case
+type PartialCase_when[T nameable.Nameable] Case[T]
 
-func (bs BindersOnly) InCase(when Expression, then Expression) Case {
-	out := Case{ binders: bs, }
+func (bs BindersOnly[T]) InCase(when Expression[T], then Expression[T]) Case[T] {
+	out := Case[T]{ binders: bs, }
 	out.when = when.Bind(bs)
 	out.then = then.Bind(bs)
 	return out
 }
 
-func (bs BindersOnly) When(e Expression) PartialCase_when {
-	return PartialCase_when{
+func (bs BindersOnly[T]) When(e Expression[T]) PartialCase_when[T] {
+	return PartialCase_when[T]{
 		binders: bs,
 		when: e.Bind(bs),
 	}
 }
 
-func (pcw PartialCase_when) Then(e Expression) Case {
+func (pcw PartialCase_when[T]) Then(e Expression[T]) Case[T] {
 	pcw.then = e.Bind(pcw.binders)
-	return Case(pcw)
+	return Case[T](pcw)
 }
 
-func (c Case) String() string {
+func (c Case[T]) String() string {
 	return c.when.String() + " -> " + c.then.String()
 }
 
-func (c Case) StrictString() string {
+func (c Case[T]) StrictString() string {
 	strs := make([]string, len(c.binders))
 	for i, v := range c.binders {
 		strs[i] = v.StrictString()
@@ -43,12 +45,12 @@ func (c Case) StrictString() string {
 	return "Λ" + strings.Join(strs, " ") + " . " + c.when.StrictString() + " -> " + c.then.StrictString()
 }
 
-func (c Case) Equals(k Case) bool {
+func (c Case[T]) Equals(cxt *Context[T], k Case[T]) bool {
 	if len(c.binders) != len(k.binders) {
 		return false
 	}
 
-	ok := c.when.Equals(k.when) && c.then.Equals(k.then)
+	ok := c.when.Equals(cxt, k.when) && c.then.Equals(cxt, k.then)
 	if !ok {
 		return false
 	}
@@ -61,7 +63,7 @@ func (c Case) Equals(k Case) bool {
 	return true
 }
 
-func (c Case) StrictEquals(k Case) bool {
+func (c Case[T]) StrictEquals(k Case[T]) bool {
 	if len(c.binders) != len(k.binders) {
 		return false
 	}
@@ -79,10 +81,10 @@ func (c Case) StrictEquals(k Case) bool {
 	return true
 }
 
-func selectionsMap(selections []Case, f func(Expression) (Expression, bool)) ([]Case, bool) {
-	out := make([]Case, len(selections))
+func selectionsMap[T nameable.Nameable](selections []Case[T], f func(Expression[T]) (Expression[T], bool)) ([]Case[T], bool) {
+	out := make([]Case[T], len(selections))
 	for i, c := range selections {
-		var when, then Expression
+		var when, then Expression[T]
 		var ok bool
 		when, ok = f(c.when)
 		if !ok {
@@ -92,11 +94,11 @@ func selectionsMap(selections []Case, f func(Expression) (Expression, bool)) ([]
 		if !ok {
 			return selections, false
 		}
-		out[i] = Case{when: when, then: then}
+		out[i] = Case[T]{when: when, then: then}
 	}
 	return out, true
 }
 
-func (c Case) Find(v Variable) bool {
+func (c Case[T]) Find(v Variable[T]) bool {
 	return c.when.Find(v) || c.then.Find(v)
 }

@@ -68,12 +68,12 @@ Arr = forall a . map n: Uint . {
 Int = 0 | Succ Int | Pred Int
 */
 
-type IndexerGenerator[T nameable.Nameable] func(...expr.Expression) Monotyped[T]
+type IndexerGenerator[T nameable.Nameable] func(...expr.Expression[T]) Monotyped[T]
 
 // Dependent Type[T]
 type DependentType[T nameable.Nameable] struct {
 	indexForm DependentTypeInstance[T]
-	indexedBy []TypeJudgement[T,expr.Variable]
+	indexedBy []TypeJudgement[T,expr.Variable[T]]
 	indexConstruction []DependentTypeConstructor[T]
 }
 
@@ -88,7 +88,7 @@ func (d DependentType[T]) KindInstantiation() DependentTypeInstance[T] {
 func (d DependentType[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
 	cs := make([]DependentTypeConstructor[T], len(d.indexConstruction))
 	for i, c := range d.indexConstruction {
-		cs[i] = c.FreeInstantiateKinds(d.indexedBy...)
+		cs[i] = c.FreeInstantiateKinds(cxt, d.indexedBy...)
 	}
 	return DependentType[T]{
 		indexedBy: nil,

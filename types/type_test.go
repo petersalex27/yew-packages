@@ -48,7 +48,7 @@ func TestString(t *testing.T) {
 		{in: _Forall("a").Bind(_Var("a")), expect: "forall a . a"},
 		// dependent types
 		{
-			in: Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable,expr.Expression](expr.Var("n"), _Con("Uint"))),
+			in: Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable,expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "((Array Int); (n: Uint))",
 		},
 	}
@@ -113,9 +113,9 @@ func TestInstantiate(t *testing.T) {
 			expect: _App("Type", _Var("x"), _Var("x"), _Var("x")),
 		},
 		{
-			poly:	_Forall("a").Bind(Index(_App("Array", _Var("a")), Judgement[test_nameable, expr.Expression](expr.Var("n"), _Con("Uint")))),
+			poly:	_Forall("a").Bind(Index(_App("Array", _Var("a")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint")))),
 			mono:	_Con("Int"),
-			expect: Index(_App("Array", _Con("Int")), Judgement[test_nameable, expr.Expression](expr.Var("n"), _Con("Uint"))),
+			expect: Index(_App("Array", _Con("Int")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 		},
 	}
 

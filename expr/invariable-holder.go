@@ -1,41 +1,43 @@
 package expr
 
-type ExternalContainer struct { InvariableExpression }
+import "github.com/petersalex27/yew-packages/nameable"
 
-func Import(e InvariableExpression) ExternalContainer {
-	return ExternalContainer{InvariableExpression: e}
+type ExternalContainer[T nameable.Nameable] struct { InvariableExpression[T] }
+
+func Import[T nameable.Nameable](e InvariableExpression[T]) ExternalContainer[T] {
+	return ExternalContainer[T]{InvariableExpression: e}
 }
 
-func (xc ExternalContainer) ForceRequest() Expression {
+func (xc ExternalContainer[T]) ForceRequest() Expression[T] {
 	return xc
 }
 
-func (xc ExternalContainer) String() string {
+func (xc ExternalContainer[T]) String() string {
 	return xc.InvariableExpression.String()
 }
 
-func (xc ExternalContainer) Equals(e Expression) bool {
+func (xc ExternalContainer[T]) Equals(_ *Context[T], e Expression[T]) bool {
 	return xc.InvariableExpression.Equals(e)
 }
 
-func (xc ExternalContainer) StrictString() string { return xc.InvariableExpression.String() }
+func (xc ExternalContainer[T]) StrictString() string { return xc.InvariableExpression.String() }
 
-func (xc ExternalContainer) StrictEquals(e Expression) bool { return xc.Equals(e) }
+func (xc ExternalContainer[T]) StrictEquals(e Expression[T]) bool { return xc.Equals(nil, e) }
 
-func (xc ExternalContainer) Replace(Variable, Expression) (Expression, bool) { return xc, false }
+func (xc ExternalContainer[T]) Replace(Variable[T], Expression[T]) (Expression[T], bool) { return xc, false }
 
-func (xc ExternalContainer) UpdateVars(gt int, by int) Expression { return xc }
+func (xc ExternalContainer[T]) UpdateVars(gt int, by int) Expression[T] { return xc }
 
-func (xc ExternalContainer) Again() (Expression, bool) { return xc, false }
+func (xc ExternalContainer[T]) Again() (Expression[T], bool) { return xc, false }
 
-func (xc ExternalContainer) Bind(BindersOnly) Expression { return xc }
+func (xc ExternalContainer[T]) Bind(BindersOnly[T]) Expression[T] { return xc }
 
-func (xc ExternalContainer) Find(Variable) bool { return false }
+func (xc ExternalContainer[T]) Find(Variable[T]) bool { return false }
 
-func (xc ExternalContainer) PrepareAsRHS() Expression { return xc }
+func (xc ExternalContainer[T]) PrepareAsRHS() Expression[T] { return xc }
 
-func (xc ExternalContainer) Rebind() Expression { return xc }
+func (xc ExternalContainer[T]) Rebind() Expression[T] { return xc }
 
-func (xc ExternalContainer) Copy() Expression {
+func (xc ExternalContainer[T]) Copy() Expression[T] {
 	return Import(xc.InvariableExpression.DeepCopy())
 }

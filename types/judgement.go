@@ -5,7 +5,7 @@ import (
 	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type TypeJudgement[T nameable.Nameable, E expr.Expression] struct{
+type TypeJudgement[T nameable.Nameable, E expr.Expression[T]] struct{
 	expression E
 	ty Type[T]
 }
@@ -39,7 +39,7 @@ func (j TypeJudgement[T,_]) String() string {
 }
 
 // Judgement makes the trivial type judgement `𝚪, e: ty ⊢ e: ty`
-func Judgement[T nameable.Nameable, E expr.Expression](e E, ty Type[T]) TypeJudgement[T,E] {
+func Judgement[T nameable.Nameable, E expr.Expression[T]](e E, ty Type[T]) TypeJudgement[T,E] {
 	return TypeJudgement[T,E]{
 		expression: e,
 		ty: ty,
@@ -50,8 +50,10 @@ func (j TypeJudgement[T,E]) Replace(v Variable[T], m Monotyped[T]) TypeJudgement
 	return Judgement(j.expression, MaybeReplace(j.ty, v, m))
 }
 
-func Equals[N nameable.Nameable, T, U expr.Expression](j1 TypeJudgement[N,T], j2 TypeJudgement[N,U]) bool {
-	return j1.ty.Equals(j2.ty) && j1.expression.Equals(j2.expression)
+func Equals[N nameable.Nameable, T, U expr.Expression[N]](j1 TypeJudgement[N,T], j2 TypeJudgement[N,U]) bool {
+	return j1.ty.Equals(j2.ty) && 
+			j1.expression.StrictEquals(j2.expression)
+			// TODO: ??? j1.expression.Equals(j2.expression) instead???
 }
 
 func (j TypeJudgement[T, E]) Collect() []T {

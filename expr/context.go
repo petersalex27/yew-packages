@@ -1,50 +1,58 @@
 package expr
 
-type Context struct {
-	table    map[Const]Expression
-	inverses map[Const]Const
+import "github.com/petersalex27/yew-packages/nameable"
+
+type Context[T nameable.Nameable] struct {
+	table    map[string]Expression[T]
+	inverses map[string]Const[T]
+	makeName func(string)T
 }
 
-func NewContext() *Context {
-	cxt := new(Context)
-	cxt.table = make(map[Const]Expression)
-	cxt.inverses = make(map[Const]Const)
+func (cxt *Context[T]) SetNameMaker(f func(string)T) *Context[T] {
+	cxt.makeName = f
 	return cxt
 }
 
-func (cxt *Context) GetInverse(e Expression) (out Expression, ok bool) {
-	var c, invC Const
+func NewContext[T nameable.Nameable]() *Context[T] {
+	cxt := new(Context[T])
+	cxt.table = make(map[string]Expression[T])
+	cxt.inverses = make(map[string]Const[T])
+	return cxt
+}
+
+func (cxt *Context[T]) GetInverse(e Expression[T]) (out Expression[T], ok bool) {
+	var c, invC Const[T]
 	out = nil
-	if c, ok = e.(Const); !ok {
+	if c, ok = e.(Const[T]); !ok {
 		return
-	} else if invC, ok = cxt.inverses[c]; !ok {
+	} else if invC, ok = cxt.inverses[c.String()]; !ok {
 		return
 	}
 
-	out, ok = cxt.table[invC]
+	out, ok = cxt.table[invC.String()]
 	return
 }
 
-func (cxt *Context) AddName(name Const, e Expression) error {
-	if _, found := cxt.table[name]; found {
+func (cxt *Context[T]) AddName(name Const[T], e Expression[T]) error {
+	if _, found := cxt.table[name.String()]; found {
 		return redefineNameInTable(name)
 	}
 
-	cxt.table[name] = e
+	cxt.table[name.String()] = e
 	return nil
 }
-
-func (cxt *Context) DeclareInverse(f Const, invF Const) error {
-	if _, found := cxt.table[f]; !found {
+//[T nameable.Nameable]
+func (cxt *Context[T]) DeclareInverse(f Const[T], invF Const[T]) error {
+	if _, found := cxt.table[f.String()]; !found {
 		return nameNotDefined(f)
-	} else if _, found = cxt.table[invF]; !found {
+	} else if _, found = cxt.table[invF.String()]; !found {
 		return nameNotDefined(invF)
-	} else if _, found = cxt.inverses[f]; found {
+	} else if _, found = cxt.inverses[f.String()]; found {
 		return redefineInv(f)
-	} else if _, found = cxt.inverses[invF]; found {
+	} else if _, found = cxt.inverses[invF.String()]; found {
 		return redefineInv(invF)
 	}
 
-	cxt.inverses[f], cxt.inverses[invF] = invF, f
+	cxt.inverses[f.String()], cxt.inverses[invF.String()] = invF, f
 	return nil
 }
