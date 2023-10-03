@@ -22,3 +22,12 @@ func MaybeReplace[T nameable.Nameable](ty Type[T], v Variable[T], m Monotyped[T]
 	}
 	return ty
 }
+
+func Merge[T nameable.Nameable](head Application[T], tail Monotyped[T]) Application[T] {
+	newTypes := make([]Monotyped[T], 0, len(head.ts) + 1)
+	copy(newTypes, head.ts)
+	return Application[T]{
+		c: head.c,
+		ts: append(newTypes, tail),
+	}
+}
