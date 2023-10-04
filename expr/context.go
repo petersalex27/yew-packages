@@ -1,11 +1,26 @@
 package expr
 
-import "github.com/petersalex27/yew-packages/nameable"
+import (
+	"strconv"
+
+	"github.com/petersalex27/yew-packages/nameable"
+)
 
 type Context[T nameable.Nameable] struct {
+	varCounter uint32
 	table    map[string]Expression[T]
 	inverses map[string]Const[T]
 	makeName func(string)T
+}
+
+func freeVarName(n uint32) string {
+	return "$" + strconv.FormatInt(int64(n), 10)
+}
+
+func (cxt *Context[T]) NewVar() Variable[T] {
+	n := cxt.varCounter
+	cxt.varCounter++
+	return cxt.Var(freeVarName(n))
 }
 
 func (cxt *Context[T]) SetNameMaker(f func(string)T) *Context[T] {
