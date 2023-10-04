@@ -57,5 +57,5 @@ func Equals[N nameable.Nameable, T, U expr.Expression[N]](j1 TypeJudgement[N,T],
 }
 
 func (j TypeJudgement[T, E]) Collect() []T {
-	return j.ty.Collect()
+	return append(j.expression.Collect(), j.ty.Collect()...)
 }
