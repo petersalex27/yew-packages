@@ -22,6 +22,12 @@ func (cxt *Context[T]) Forall(vs ...string) partialPoly[T] {
 	return out
 }
 
+func Forall[T nameable.Nameable](vs ...Variable[T]) partialPoly[T] {
+	return partialPoly[T]{
+		typeBinders: vs,
+	}
+}
+
 func (p partialPoly[T]) Bind(t DependentTyped[T]) Polytype[T] {
 	return Polytype[T]{
 		typeBinders: p.typeBinders,
