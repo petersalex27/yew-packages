@@ -31,7 +31,7 @@ func CurrentChar(s Source) (byte, Status) {
 	return GetSourceChar(s, line, char)
 }
 
-// returns 0 on EOF or out-of-bounds-line, panics on out-of-bounds-char
+// returns 0 on EOF or EOL
 func GetSourceChar(s Source, line, char int) (byte, Status) {
 	src, stat := s.SourceLine(line)
 	if stat.NotOk() {
@@ -40,7 +40,11 @@ func GetSourceChar(s Source, line, char int) (byte, Status) {
 
 	if len(src) < char {
 		if len(src) == char - 1 {
-			return '\n', Eol
+			stat = Eol
+			if s.NumLines() == line {
+				stat = Eof
+			}
+			return '\n', stat
 		}
 		return 0, OutOfBounds
 	}
