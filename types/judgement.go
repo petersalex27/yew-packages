@@ -14,6 +14,10 @@ func (j TypeJudgement[T,_]) GetType() Type[T] {
 	return j.ty
 }
 
+func (j TypeJudgement[_, E]) GetExpression() E {
+	return j.expression
+}
+
 /*
 decons: [a; n+1] -> (a, [a; n])
 decons (x::xs) = (x, xs)
