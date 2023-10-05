@@ -7,10 +7,19 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
+type indexes[T nameable.Nameable] []TypeJudgement[T,expr.Expression[T]]
+
+func (idxs indexes[T]) String() string {
+	if len(idxs) == 0 {
+		return ""
+	}
+	return "; " + str.Join(idxs, str.String(" "))
+}
+
 // picks out a monotype
 type DependentTypeInstance[T nameable.Nameable] struct {
 	Application[T]
-	index []TypeJudgement[T,expr.Expression[T]]
+	index indexes[T]
 }
 
 func Index[T nameable.Nameable](family Application[T], domain ...TypeJudgement[T,expr.Expression[T]]) DependentTypeInstance[T] {
@@ -34,7 +43,10 @@ func (dti DependentTypeInstance[T]) FreeInstantiateKinds(cxt *Context[T], vs ...
 }
 
 func (dti DependentTypeInstance[T]) String() string {
-	return "(" + dti.Application.String() + "; " + str.Join(dti.index, str.String(" ")) + ")"
+	if len(dti.index) == 0 {
+		return dti.Application.String()
+	}
+	return "(" + dti.Application.String() + dti.index.String() + ")"
 }
 
 func (dti DependentTypeInstance[T]) Equals(t Type[T]) bool {

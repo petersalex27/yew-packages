@@ -17,6 +17,10 @@ func test_nameable_fn(s string) test_nameable {
 	return test_nameable(s)
 }
 
+func judgement[E expr.Expression[test_nameable]](e E, ty Type[test_nameable]) TypeJudgement[test_nameable, E] {
+	return Judgement(e, ty)
+}
+
 var base = 
 		NewContext[test_nameable]().
 		SetNameMaker(test_nameable_fn)
@@ -50,6 +54,15 @@ func TestString(t *testing.T) {
 		{
 			in: Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable,expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "((Array Int); (n: Uint))",
+		},
+		{
+			in: DependentType[test_nameable]{
+				[]TypeJudgement[test_nameable, expr.Variable[test_nameable]]{
+					judgement(expr.Var(base.makeName("n")), _Con("Uint")),
+				},
+				Index[test_nameable](_App("Array", _Var("a"))),
+			},
+			expect: "mapall (n: Uint) . (Array a)",
 		},
 	}
 

@@ -51,7 +51,7 @@ func (*Context[T]) instantiateDependentTyped(t DependentTyped[T]) Monotyped[T] {
 	} else if m, ok := t.(Monotyped[T]); ok {
 		return m
 	}
-	panic("tried to declare an unclassifiable Type[T]")
+	panic("tried to declare an unclassifiable Type")
 }
 
 func (cxt *Context[T]) Declare(t Type[T]) Monotyped[T] {

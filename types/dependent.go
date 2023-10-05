@@ -68,73 +68,136 @@ Arr = forall a . map n: Uint . {
 Int = 0 | Succ Int | Pred Int
 */
 
-type IndexerGenerator[T nameable.Nameable] func(...expr.Expression[T]) Monotyped[T]
+type DependentTypeFunction[T nameable.Nameable] Application[T]
 
-// Dependent Type[T]
+// Dependent Type: `(mapall (a: A) (b: B) ..) . (F a b ..)`
 type DependentType[T nameable.Nameable] struct {
-	indexForm DependentTypeInstance[T]
-	indexedBy []TypeJudgement[T,expr.Variable[T]]
-	indexConstruction []DependentTypeConstructor[T]
+	mapall []TypeJudgement[T, expr.Variable[T]]
+	//DependentTypeFunction[T]
+	DependentTypeInstance[T]
 }
 
 func (d DependentType[T]) String() string {
-	return "map " + str.Join(d.indexedBy, str.String(" ")) + " . "
+	return "mapall " + str.Join(d.mapall, str.String(" ")) + " . " + d.DependentTypeInstance.String()
+}
+
+func kindInstantiation[T nameable.Nameable](d DependentType[T], defaultElem expr.Expression[T]) DependentTypeInstance[T] {
+	index := make([]TypeJudgement[T, expr.Expression[T]], len(d.mapall))
+	for i := range index {
+		var elem expr.Expression[T]
+		if defaultElem == nil {
+			elem = d.mapall[i].expression
+		} else {
+			elem = defaultElem
+		}
+		index[i] = Judgement(elem, d.mapall[i].ty)
+	}
+	return DependentTypeInstance[T]{
+		Application: d.DependentTypeInstance.Application,
+		index:       index,
+	}
 }
 
 func (d DependentType[T]) KindInstantiation() DependentTypeInstance[T] {
-	return d.indexForm
+	return kindInstantiation(d, nil)
+}
+
+// ((mapall (a: A) (b: B) ..) . C) -> ((mapall (b: B) ..) . (C e))
+func (cxt *Context[T]) InstantiateKind(d DependentType[T], e expr.Expression[T]) DependentTyped[T] {
+	inst := d.DependentTypeInstance
+	ty := d.mapall[0].ty 
+	index := make([]TypeJudgement[T, expr.Expression[T]], len(inst.index)+1)
+	copy(index, inst.index)
+	index[len(inst.index)].expression = e
+	index[len(inst.index)].ty = ty // type of expression should be type of variable being replaced
+	
+	out := DependentType[T]{
+		mapall: d.mapall[1:],
+		DependentTypeInstance: DependentTypeInstance[T]{
+			Application: d.Application,
+			index: index,
+		},
+	}
+
+	if len(out.mapall) == 0 {
+		return out.DependentTypeInstance
+	}
+	return out
 }
 
 func (d DependentType[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
-	cs := make([]DependentTypeConstructor[T], len(d.indexConstruction))
-	for i, c := range d.indexConstruction {
-		cs[i] = c.FreeInstantiateKinds(cxt, d.indexedBy...)
-	}
-	return DependentType[T]{
-		indexedBy: nil,
-		indexConstruction: cs,
-	}
+	v := expr.Var(cxt.makeName("_"))
+	return kindInstantiation(d, expr.Expression[T](v))
 }
 
-// Allows the following (as long as B does not depend on A (in the first operand) 
-// and A does not depend on B (in the second operand)):
-// (map (x: A) (y: B) . W(y)) == (map (y: B) (x: A) . W(y)) == (map (y: B) . W(y))
+// This test exact equality, not judgemental equality. For example,
+//
+//	(mapall (a: A) (b: B) . (C b)) != (mapall (b: B) . (C b))
+//	despite the two being equiv. in some (probably useful) sense.
+//
+// Additionally, the following is not equiv. either:
+//
+//	(mapall (a: A) (b: B) . (C b)) != (mapall (b: B) (a: A) . (C b))
 func (d DependentType[T]) Equals(t Type[T]) bool {
 	d2, ok := t.(DependentType[T])
 	if !ok {
 		return false
 	}
-	return d.indexForm.Equals(d2.indexForm)
-	//return d.FreeInstantiation().Equals(d2.FreeInstantiation())
+
+	if len(d.mapall) != len(d2.mapall) {
+		return false
+	}
+
+	for i, judge := range d.mapall {
+		if !judge.ty.Equals(d2.mapall[i].ty) {
+			return false
+		}
+		// nil is okay here because variables don't require context object for equality
+		if !judge.expression.Equals(nil, d2.mapall[i].expression) {
+			return false
+		}
+	}
+
+	return d.DependentTypeInstance.Equals(d2.DependentTypeInstance)
 }
 
 func (d DependentType[T]) Generalize(cxt *Context[T]) Polytype[T] {
 	return Polytype[T]{
 		typeBinders: cxt.MakeDummyVars(1),
-		bound: d,
+		bound:       d,
 	}
 }
 
 func (d DependentType[T]) Collect() []T {
-	res := make([]T, 0, 1 + len(d.indexConstruction) + len(d.indexedBy))
-	res = append(res, d.indexForm.Collect()...)
-	for _, v := range d.indexedBy {
-		res = append(res, v.Collect()...)
+	var res []T = []T{}
+	if len(d.mapall) != 0 {
+		res = d.mapall[0].Collect()
+		for _, m := range d.mapall[1:] {
+			res = append(res, m.Collect()...)
+		}
 	}
-	for _, v := range d.indexConstruction {
-		res = append(res, v.Collect()...)
-	}
+	res = append(res, d.DependentTypeInstance.Collect()...)
 	return res
 }
 
 func (d DependentType[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
-	out := DependentType[T]{
-		indexedBy: d.indexedBy,
-		indexConstruction: make([]DependentTypeConstructor[T], len(d.indexConstruction)),
+	mapall := make([]TypeJudgement[T, expr.Variable[T]], len(d.mapall))
+	for i := range d.mapall {
+		mapall[i].expression = d.mapall[i].expression
+		if mono, ok := d.mapall[i].ty.(Monotyped[T]); ok {
+			mapall[i].ty = mono.Replace(v, m)
+		} else {
+			mapall[i].ty = d.mapall[i].ty // TODO: if this branch happens, something is wrong (prob)
+		}
 	}
 
-	for i, con := range d.indexConstruction {
-		out.indexConstruction[i] = con.Replace(v, m)
+	inst, ok := d.DependentTypeInstance.ReplaceDependent(v, m).(DependentTypeInstance[T])
+	if !ok {
+		panic("bug: replacement should've resulted in application")
 	}
-	return out
+
+	return DependentType[T]{
+		mapall:                mapall,
+		DependentTypeInstance: inst,
+	}
 }
