@@ -18,6 +18,13 @@ type Application[T nameable.Nameable] struct {
 	ts []Monotyped[T]
 }
 
+func (a Application[T]) Merge(m Monotyped[T]) Application[T] {
+	return Application[T]{
+		c: a.c,
+		ts: append(a.ts, m),
+	}
+}
+
 func Apply[T nameable.Nameable](c ReferableType[T], ts ...Monotyped[T]) Application[T] {
 	return Application[T]{ c: c, ts: ts, }
 }
