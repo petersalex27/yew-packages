@@ -77,6 +77,16 @@ type DependentType[T nameable.Nameable] struct {
 	DependentTypeInstance[T]
 }
 
+func MakeDependentType[T nameable.Nameable](mapall []TypeJudgement[T, expr.Variable[T]], typeFunc Application[T]) DependentType[T] {
+	return DependentType[T]{
+		mapall: mapall,
+		DependentTypeInstance: DependentTypeInstance[T]{
+			Application: typeFunc,
+			index: nil,
+		},
+	}
+}
+
 func (d DependentType[T]) String() string {
 	return "mapall " + str.Join(d.mapall, str.String(" ")) + " . " + d.DependentTypeInstance.String()
 }
