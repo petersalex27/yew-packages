@@ -81,7 +81,7 @@ func (a InfixApplication[T]) Generalize(cxt *Context[T]) Polytype[T] {
 
 func (a InfixApplication[T]) Collect() []T {
 	res := make([]T, 0, len(a.ts) + 1)
-	res = append(res, a.c.name)
+	res = append(res, a.c.getName())
 	for _, t := range a.ts {
 		res = append(res, t.Collect()...)
 	}
@@ -94,7 +94,7 @@ func (a InfixApplication[T]) Equals(t Type[T]) bool {
 		return false
 	}
 
-	if a.c.name.GetName() != a2.c.name.GetName() || len(a.ts) != len(a2.ts) {
+	if a.c.getName().GetName() != a2.c.getName().GetName() || len(a.ts) != len(a2.ts) {
 		return false
 	}
 

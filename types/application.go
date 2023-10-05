@@ -6,12 +6,19 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
+type ReferableType[T nameable.Nameable] interface {
+	Type[T]
+	ConstantRef() (Constant[T], bool)
+	VariableRef() (Variable[T], bool)
+	getName() T
+}
+
 type Application[T nameable.Nameable] struct {
-	c Constant[T]
+	c ReferableType[T]
 	ts []Monotyped[T]
 }
 
-func Apply[T nameable.Nameable](c Constant[T], ts ...Monotyped[T]) Application[T] {
+func Apply[T nameable.Nameable](c ReferableType[T], ts ...Monotyped[T]) Application[T] {
 	return Application[T]{ c: c, ts: ts, }
 }
 
@@ -30,14 +37,14 @@ func (a Application[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] {
 
 func (a Application[T]) Collect() []T {
 	res := make([]T, 0, len(a.ts)+1)
-	res = append(res, a.c.name)
+	res = append(res, a.c.getName())
 	for _, t := range a.ts {
 		res = append(res, t.Collect()...)
 	}
 	return res
 }
 
-func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.name.GetName(), a.ts }
+func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.getName().GetName(), a.ts }
 
 func (a Application[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
 	f := func(mono Monotyped[T]) Monotyped[T] { return mono.Replace(v, m) }
@@ -67,7 +74,7 @@ func (a Application[T]) Equals(t Type[T]) bool {
 		return false
 	}
 
-	if a.c.name.GetName() != a2.c.name.GetName() || len(a.ts) != len(a2.ts) {
+	if a.c.getName().GetName() != a2.c.getName().GetName() || len(a.ts) != len(a2.ts) {
 		return false
 	}
 
