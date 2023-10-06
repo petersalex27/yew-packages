@@ -1,10 +1,11 @@
 package types
 
 import (
-	expr "github.com/petersalex27/yew-packages/expr"
 	"fmt"
 	"os"
 	"testing"
+
+	expr "github.com/petersalex27/yew-packages/expr"
 )
 
 type test_nameable string
@@ -21,6 +22,8 @@ func judgement[E expr.Expression[test_nameable]](e E, ty Type[test_nameable]) Ty
 	return Judgement(e, ty)
 }
 
+type refer ReferableType[test_nameable]
+
 var base = 
 		NewContext[test_nameable]().
 		SetNameMaker(test_nameable_fn)
@@ -36,6 +39,10 @@ func TestString(t *testing.T) {
 		{in: _App("Type", _App("Type", _Con("x"))), expect: "(Type (Type x))"}, // nested application
 		{in: _Var("a"), expect: "a"},                                             // variable
 		{in: _App("Type", _Var("a")), expect: "(Type a)"},                        // application w/ variable
+		{in: Apply[test_nameable](_Var("a"), _App("Type", _Var("a"))), expect: ("(a (Type a))")},
+		{in: Apply[test_nameable](_App("Type", _Var("a")), _App("Type", _Var("a"))), expect: ("(Type a (Type a))")},
+		{in: Apply[test_nameable](base.Infix(_Con("Type"), "->", _Con("Type")), _App("Type", _Var("a"))), expect: ("(Type -> Type (Type a))")},
+		{in: Apply[test_nameable](_App("Type", _Var("a")), base.Infix(_Con("Type"), "->", _Con("Type"))), expect: ("(Type a (Type -> Type))")},
 		{in: base.Infix(_Con("Type"), "->", _Con("Type")), expect: "(Type -> Type)"},
 		{in: base.Infix(_App("Color", _Con("Red")), "->", _Con("Type")), expect: "((Color Red) -> Type)"},
 		{in: base.Infix(_Con("Type"), "->", _App("Color", _Con("Red"))), expect: "(Type -> (Color Red))"},
@@ -43,7 +50,7 @@ func TestString(t *testing.T) {
 		{in: base.Infix(base.Infix(_Con("Type"), "->", _Con("Type")), "->", _Con("Type")), expect: "((Type -> Type) -> Type)"},
 		{in: base.Infix(_Var("a"), "->", _Var("a")), expect: "(a -> a)",},
 		{in: base.Infix(_Var("a"), "->"), expect: "((->) a)",},
-		{in: InfixApplication[test_nameable]{c: _Con("->"), ts: nil,}, expect: "(->)",},
+		{in: Application[test_nameable]{c: base.InfixCon("->"), ts: nil,}, expect: "(->)",},
 		// polytypes
 		{in: _Con("Type").Generalize(base), expect: "forall _ . Type"},
 		{in: _Forall("a").Bind(_Con("Type")), expect: "forall a . Type"},
@@ -124,6 +131,21 @@ func TestInstantiate(t *testing.T) {
 			poly:   _Forall("c").Bind(_App("Type", _Var("x"), _Var("x"), _Var("c"))),
 			mono:   _Var("x"),
 			expect: _App("Type", _Var("x"), _Var("x"), _Var("x")),
+		},
+		{ // (forall a . (a (Type a))) $ Louis == (Louis (Type Louis))
+			poly:   _Forall("a").Bind(Apply[test_nameable](_Var("a"), _App("Type", _Var("a")))),
+			mono:   _Con("Louis"),
+			expect: Apply[test_nameable](_Con("Louis"), _App("Type", _Con("Louis"))),
+		},
+		{ // (forall a . (a (Type (a -> a)))) $ Louis == (Louis (Type (Louis -> Louis)))
+			poly:   _Forall("a").Bind(Apply[test_nameable](_Var("a"), _App("Type", _Function(_Var("a"), _Var("a"))))),
+			mono:   _Con("Louis"),
+			expect: Apply[test_nameable](_Con("Louis"), _App("Type", _Function(_Con("Louis"), _Con("Louis")))),
+		},
+		{ // (forall a . ((a -> a) (Type (a -> a)))) $ Louis == ((Louis -> Louis) (Type (Louis -> Louis)))
+			poly:   _Forall("a").Bind(Apply[test_nameable](_Function(_Var("a"), _Var("a")), _App("Type", _Function(_Var("a"), _Var("a"))))),
+			mono:   _Con("Louis"),
+			expect: Apply[test_nameable](_Function(_Con("Louis"), _Con("Louis")), _App("Type", _Function(_Con("Louis"), _Con("Louis")))),
 		},
 		{
 			poly:	_Forall("a").Bind(Index(_App("Array", _Var("a")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint")))),
@@ -371,7 +393,7 @@ func TestUnify_invalid(t *testing.T) {
 	}
 }
 
-func _Function(left Monotyped[test_nameable], right Monotyped[test_nameable]) InfixApplication[test_nameable] {
+func _Function(left Monotyped[test_nameable], right Monotyped[test_nameable]) Application[test_nameable] {
 	return base.Function(left, right)
 }
 
@@ -599,7 +621,7 @@ func TestAbstract(t *testing.T) {
 	}
 }
 
-func _Cons(left Monotyped[test_nameable], right Monotyped[test_nameable]) InfixApplication[test_nameable] {
+func _Cons(left Monotyped[test_nameable], right Monotyped[test_nameable]) Application[test_nameable] {
 	return base.Cons(left, right)
 }
 
@@ -755,7 +777,7 @@ func TestHeadTail_invalid(t *testing.T) {
 	}
 }
 
-func _Join(left Monotyped[test_nameable], right Monotyped[test_nameable]) InfixApplication[test_nameable] {
+func _Join(left Monotyped[test_nameable], right Monotyped[test_nameable]) Application[test_nameable] {
 	return base.Join(left, right)
 }
 

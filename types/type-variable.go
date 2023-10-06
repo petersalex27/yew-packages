@@ -12,16 +12,7 @@ type Variable[T nameable.Nameable] struct {
 	name         T
 }
 
-func (v Variable[T]) ConstantRef() (_ Constant[T], ok bool) {
-	ok = false
-	return
-}
-
-func (v Variable[T]) VariableRef() (Variable[T], bool) {
-	return v, true
-}
-
-func (v Variable[T]) getName() T {
+func (v Variable[T]) GetName() T {
 	return v.name
 }
 

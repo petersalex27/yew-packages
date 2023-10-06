@@ -18,8 +18,12 @@ func (idxs indexes[T]) String() string {
 
 // picks out a monotype
 type DependentTypeInstance[T nameable.Nameable] struct {
-	Application[T]
-	index indexes[T]
+	Application[T]		// dependent type function
+	index indexes[T]	// arguments to function
+}
+
+func (dti DependentTypeInstance[T]) GetName() T {
+	return dti.Application.GetName()
 }
 
 func Index[T nameable.Nameable](family Application[T], domain ...TypeJudgement[T,expr.Expression[T]]) DependentTypeInstance[T] {

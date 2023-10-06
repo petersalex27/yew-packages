@@ -4,16 +4,7 @@ import "github.com/petersalex27/yew-packages/nameable"
 
 type Constant[T nameable.Nameable] struct{ name T }
 
-func (c Constant[T]) ConstantRef() (Constant[T], bool) {
-	return c, true
-}
-
-func (c Constant[T]) VariableRef() (_ Variable[T], ok bool) {
-	ok = false
-	return 
-}
-
-func (c Constant[T]) getName() T {
+func (c Constant[T]) GetName() T {
 	return c.name
 }
 
