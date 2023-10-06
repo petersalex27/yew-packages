@@ -18,7 +18,7 @@ func (c Constant[T]) getName() T {
 }
 
 func MakeConst[T nameable.Nameable](t T) Constant[T] {
-	return Constant[T]{}
+	return Constant[T]{t}
 }
 
 func (cxt *Context[T]) Con(name string) Constant[T] {
