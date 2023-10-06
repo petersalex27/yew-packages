@@ -9,6 +9,7 @@ const (
 	Error
 	EndAction
 	EndOfParse
+	DoShift
 
 	NoAction
 
@@ -32,9 +33,9 @@ func (stat Status) EndParse() bool {
 	return stat == EndOfParse
 }
 
-// EndAction -> Ok; else, stat -> stat (Ok -> Ok too)
+// EndAction -> Ok; DoShift -> Ok; else, stat -> stat (Ok -> Ok too)
 func (stat Status) MakeOk() Status {
-	if stat == EndAction {
+	if stat == EndAction || stat == DoShift {
 		return Ok
 	}
 	return stat

@@ -146,9 +146,11 @@ func (p *parser) GetErrors() []error { return p.errors }
 
 type forType ast.Type
 
-func (a forType) modify(stat status.Status) status.Status {
+func (a forType) modify(stat status.Status, appliedRule bool) status.Status {
 	if a == forType(ast.None) {
 		return status.EndOfParse
+	} else if stat.Is(status.EndAction) && appliedRule {
+		return status.DoShift
 	}
 	return stat
 }
@@ -204,7 +206,7 @@ func (ty forType) actionLoop(p Parser, rules ruleSet, found bool) (stat status.S
 		stat, tmpApp = reduce(p, rules)
 		appliedRule = appliedRule || tmpApp
 	}
-	stat = ty.modify(stat)
+	stat = ty.modify(stat, appliedRule)
 	return
 }
 
@@ -223,10 +225,10 @@ func (p *parser) reportError(ty ast.Type) status.Status {
 
 func (ty forType) followUpRule(p Parser, rules ruleSet, stat status.Status, ruleApplied bool) status.Status {
 	if ruleApplied {
-		if stat.IsOk() {
+		if stat.Is(status.DoShift) {
 			p.shift()
-		} // else, already shifted
-	} else if rules.shiftAtEnd && ty != forType(ast.None) { // don't allow none to be shifted!
+		} // else, already shifted // TODO: is this possible?
+	} else if rules.elseShift && ty != forType(ast.None) { // don't allow none to be shifted!
 		stat = status.Ok
 		p.shift()
 	} else {

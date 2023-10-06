@@ -78,17 +78,17 @@ func (r ReductionRule) GetRuleSet() ruleSet {
 
 func (r ReductionRule) ElseShift() ReductionRule {
 	rule_set := r.ruleSet
-	rule_set.shiftAtEnd = true
+	rule_set.elseShift = true
 	return ReductionRule{lookaheads: r.lookaheads, ruleSet: rule_set}
 }
 
-var shiftRuleSet ruleSet = ruleSet{rules: nil, shiftAtEnd: true}
+var shiftRuleSet ruleSet = ruleSet{rules: nil, elseShift: true}
 
 type needEndReduction ReduceTable
 
 type ForTypesThrough ast.Type
 
-// Note: mapping from an element of mems that already exists in the table will overwrite 
+// Note: mapping from an element of mems that already exists in the table will overwrite
 // the previous map!
 func (m *ReduceTable) setInTable(ruleset ruleSet, rep ast.Type, mems []ast.Type) {
 	rs, found := m.table[rep]

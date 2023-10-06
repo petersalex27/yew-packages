@@ -150,17 +150,17 @@ RuleSet(
 func Rule(types ...ast.Type) pattern { return append(pattern{}, types...) }
 
 type ruleSet struct {
-	rules      []rule_interface
-	shiftAtEnd bool
+	rules     []rule_interface
+	elseShift bool
 }
 
 func (rs ruleSet) Union(ruleSets ...ruleSet) ruleSet {
 	out := make([]rule_interface, 0, len(rs.rules))
 	out = append(out, rs.rules...)
-	ruleSetOut := ruleSet{rules: out, shiftAtEnd: rs.shiftAtEnd}
+	ruleSetOut := ruleSet{rules: out, elseShift: rs.elseShift}
 	for _, set := range ruleSets {
 		ruleSetOut.rules = append(ruleSetOut.rules, set.rules...)
-		ruleSetOut.shiftAtEnd = ruleSetOut.shiftAtEnd || set.shiftAtEnd
+		ruleSetOut.elseShift = ruleSetOut.elseShift || set.elseShift
 	}
 	return ruleSetOut
 }
@@ -173,13 +173,13 @@ func RuleSet(rules ...rule_interface) (out ruleSet) {
 // creates a reduce action
 func (p pattern) Reduce(f Reduction) rule_interface { return rule{p, reduction{f}} }
 
-func (p pattern) To(f func(...ast.Ast)ast.Ast) rule_interface {
+func (p pattern) To(f func(...ast.Ast) ast.Ast) rule_interface {
 	return rule{p, reduction{ReductionFunction(f)}}
 }
 
-type need_pattern func(...ast.Ast)ast.Ast
+type need_pattern func(...ast.Ast) ast.Ast
 
-func Get(f func(...ast.Ast)ast.Ast) need_pattern {
+func Get(f func(...ast.Ast) ast.Ast) need_pattern {
 	return need_pattern(f)
 }
 
