@@ -40,6 +40,10 @@ func (t testType_t) String() string {
 	return "testType_t"
 }
 
+func test_token_stringType(ty ast.Type) string {
+	return testType_t(ty).String() + "(" + default_stringType(ty) + ")"
+}
+
 type test_token struct {
 	line, char int
 	ty         ast.Type

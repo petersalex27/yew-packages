@@ -127,11 +127,8 @@ type shift_rule pattern
 
 func (r shift_rule) getPattern() pattern { return pattern(r) }
 
-func (r shift_rule) call(p *parser, _ ...ast.Ast) (stat status.Status) {
-	if stat = p.shift(); stat.IsOk() {
-		stat = status.EndAction
-	}
-	return stat
+func (shift_rule) call(_ *parser, _ ...ast.Ast) status.Status {
+	return status.DoShift // this will trigger shift
 }
 
 func (r shift_rule) String() string {

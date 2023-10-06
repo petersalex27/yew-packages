@@ -193,7 +193,9 @@ func TestParser(t *testing.T) {
 			p := New().
 				Ruleset(table).
 				Load(test.stream, test.src, nil, nil).
-				LogActions()
+				LogActions().
+				StringType(test_token_stringType)
+
 			actual := p.Parse()
 
 			writeLog(p.FlushLog())

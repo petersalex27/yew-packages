@@ -13,6 +13,7 @@ import (
 type loggableParser struct {
 	*parser
 	logger strings.Builder
+	stringType func(ast.Type) string
 }
 
 type action_name string
@@ -58,7 +59,7 @@ func (p *loggableParser) action() status.Status {
 	toks := p.lookahead(p.parser)
 
 	ty := toks.getType(p.parser)
-	p.log(la_ty_log, "%v", ty)
+	p.log(la_ty_log, "%s", p.stringType(ty))
 
 	rules, found := p.ReduceTable.table[ty]
 	p.log(rules_found_log, "%t", found)
@@ -66,12 +67,21 @@ func (p *loggableParser) action() status.Status {
 
 	stat, ruleApplied := forType(ty).actionLoop(p, rules, found)
 	stat = forType(ty).followUpRule(p, rules, stat, ruleApplied)
+
 	p.log(action_end_log, "stack=%s", p.stack.ElemString())
 	return stat
 }
 
 func (p *loggableParser) Load(tokens []token.Token, src source.StaticSource, def DefaultErrorFunc, couldNotParse error) Parser {
 	p.parser.Load(tokens, src, def, couldNotParse)
+	return p
+}
+
+func (p *loggableParser) StringType(f func(ast.Type)string) *loggableParser {
+	if f == nil { // don't allow // TODO: log this?
+		return p
+	}
+	p.stringType = f
 	return p
 }
 

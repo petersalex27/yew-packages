@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/petersalex27/yew-packages/errors"
@@ -296,6 +297,10 @@ func (p *parser) Load(tokens []token.Token, src source.StaticSource, def Default
 	return p.load_src_def(src, def, couldNotParse)
 }
 
+func default_stringType(ty ast.Type) string {
+	return strconv.FormatInt(int64(ty), 10)
+}
+
 func (p *parser) LogActions() (out *loggableParser) {
 	var act action_name
 	if p.loaded {
@@ -306,6 +311,7 @@ func (p *parser) LogActions() (out *loggableParser) {
 
 	out = new(loggableParser)
 	out.parser = p
+	out.stringType = default_stringType
 
 	t, e := time.Now().In(time.UTC).MarshalText()
 	if e != nil {
