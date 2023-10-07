@@ -18,6 +18,8 @@ func (t testType_t) String() string {
 		return "assign_t"
 	case decl_t:
 		return "decl_t"
+	case fn_t: 
+		return "fn_t"
 	case mul_t:
 		return "mul_t"
 	case add_t:
@@ -32,6 +34,8 @@ func (t testType_t) String() string {
 		return "in_t"
 	case context_t:
 		return "context_t"
+	case func_t:
+		return "func_t"
 	case ast.None:
 		return "None"
 	case ast.Root:
@@ -54,6 +58,7 @@ const (
 	expr_t ast.Type = iota
 	assign_t
 	decl_t
+	fn_t
 	mul_t
 	add_t
 	integer_t
@@ -61,6 +66,7 @@ const (
 	let_t
 	in_t
 	context_t
+	func_t
 	lastType_t_
 )
 

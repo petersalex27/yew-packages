@@ -218,3 +218,73 @@ func TestParser(t *testing.T) {
 		}
 	}
 }
+
+func TestWhen(t *testing.T) {
+	idTok := (test_token{}).SetType(uint(id_t))
+	funcTok, _ := (test_token{}).SetType(uint(func_t)).SetValue("func")
+
+	fn_fn := test_reduce_fn(fn_t).GiveName("function")
+	assign_fn := test_reduce_fn(assign_t).GiveName("assignment")
+
+	rules := RuleSet(
+		fn_fn.When(func_t).From(id_t),
+		assign_fn.From(func_t, fn_t),
+	)
+
+	table :=
+		ForTypesThrough(lastType_t_).
+			UseReductions(
+				LA(func_t).Shift(),
+				LA(id_t).Shift(),
+			).Finally(rules)
+
+	fTok := token.AddValue(idTok, "f")
+
+	tests := []struct {
+		table ReduceTable
+		src    source.StaticSource
+		stream []token.Token
+		expect ast.Ast
+	}{
+		{
+			table,
+			MakeSource("test", "func f"),
+			[]token.Token{
+				funcTok.SetLineChar(1,1),
+				fTok.SetLineChar(1,6),
+			},
+			ast.AstRoot{
+				mknode(assign_t,
+					ast.TokenNode(funcTok),
+					mknode(fn_t, 
+						ast.TokenNode(fTok.SetLineChar(1,6)))),
+			},
+		},
+	}
+
+	for i, test := range tests { 
+		p := New().
+			Ruleset(table).
+			Load(test.stream, test.src, nil, nil).
+			LogActions().
+			StringType(test_token_stringType)
+
+		actual := p.Parse()
+
+		writeLog(p.FlushLog())
+
+		if p.HasErrors() {
+			es := p.GetErrors()
+			for _, e := range es {
+				fmt.Fprintf(os.Stderr, "%s\n", e.Error())
+			}
+			t.Fatal(testutil.TestFail2("errors", nil, p.errors, i))
+		}
+
+		if !actual.Equals(test.expect) {
+			act := ast.GetOrderedString(actual)
+			exp := ast.GetOrderedString(test.expect)
+			t.Fatal(testutil.TestFail(exp, act, i))
+		}
+	}
+}

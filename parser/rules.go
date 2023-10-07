@@ -53,9 +53,8 @@ type WarnFn struct {
 
 type reduction struct{ Reduction }
 
-func (r reduction) call(p *parser, nodes ...ast.Ast) status.Status {
+func (r reduction) call(p *parser, n uint, nodes ...ast.Ast) status.Status {
 	// pop stack (this removes `nodes`)
-	n := uint(len(nodes))
 	p.stack.Clear(n) // must be called before pushing reduction result
 	// do reduction action
 	result := r.function(nodes...)
@@ -75,7 +74,23 @@ func (r rule) String() string {
 func (r rule) getPattern() pattern { return r.pattern }
 
 func (r rule) call(p *parser, nodes ...ast.Ast) status.Status {
-	return r.reduction.call(p, nodes...)
+	return r.reduction.call(p, uint(len(nodes)), nodes...)
+}
+
+type when_rule struct {
+	pattern
+	clear uint
+	reduction
+}
+
+func (r when_rule) String() string {
+	return fmt.Sprintf("when(%v / %d -> %v)", r.pattern, r.clear, r.Reduction)
+}
+
+func (r when_rule) getPattern() pattern { return r.pattern }
+
+func (r when_rule) call(p *parser, nodes ...ast.Ast) status.Status {
+	return r.reduction.call(p, r.clear, nodes[uint(len(nodes))-r.clear:]...)
 }
 
 type error_rule struct {
@@ -174,14 +189,44 @@ func (p pattern) To(f func(...ast.Ast) ast.Ast) rule_interface {
 	return rule{p, reduction{ReductionFunction(f)}}
 }
 
-type need_pattern func(...ast.Ast) ast.Ast
+type need_pattern reduction
+
+type when_need_pattern struct {
+	need_pattern
+	when []ast.Type
+}
+
+func (f NamedReduction) From(tys ...ast.Type) rule_interface {
+	return need_pattern(reduction{f}).From(tys...)
+}
+
+func (f NamedReduction) When(tys ...ast.Type) when_need_pattern {
+	return need_pattern(reduction{f}).When(tys...)
+}
 
 func Get(f func(...ast.Ast) ast.Ast) need_pattern {
-	return need_pattern(f)
+	return need_pattern(reduction{ReductionFunction(f)})
+}
+
+func (p need_pattern) When(tys ...ast.Type) when_need_pattern {
+	return when_need_pattern{p, tys}
 }
 
 func (p need_pattern) From(tys ...ast.Type) rule_interface {
-	return rule{pattern(tys), reduction{ReductionFunction(p)}}
+	return rule{pattern(tys), reduction{p}}
+}
+
+func (p when_need_pattern) From(tys ...ast.Type) rule_interface {
+	clear := len(tys)
+	pat := make(pattern, len(p.when)+clear)
+	copy(pat, p.when)
+	copy(pat[len(p.when):], tys)
+
+	return when_rule{
+		pattern(pat), 
+		uint(clear), 
+		reduction{p.need_pattern},
+	}
 }
 
 func From(tys ...ast.Type) pattern { return pattern(tys) }
