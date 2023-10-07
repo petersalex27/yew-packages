@@ -78,6 +78,10 @@ func TestString(t *testing.T) {
 			expect: "[Int; (n: Uint)]",
 		},
 		{
+			in: Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), FreeJudge[test_nameable,expr.Expression[test_nameable]](base, expr.Var(base.makeName("n")))),
+			expect: "[Int; n]",
+		},
+		{
 			in: Index[test_nameable](
 				Apply[test_nameable](
 					base.EnclosingCon(1, "[]"), 
@@ -184,9 +188,27 @@ func TestInstantiate(t *testing.T) {
 			expect: Apply[test_nameable](_Function(_Con("Louis"), _Con("Louis")), _App("Type", _Function(_Con("Louis"), _Con("Louis")))),
 		},
 		{
-			poly:	_Forall("a").Bind(Index(_App("Array", _Var("a")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint")))),
+			poly:	_Forall("a").Bind(
+				Index(
+					_App("Array", _Var("a")), 
+					ExpressionJudgement[test_nameable, expr.Expression[test_nameable]](
+						Judgement(
+							expr.Expression[test_nameable](expr.Var(base.makeName("n"))), 
+							Type[test_nameable](_Con("Uint")),
+						),
+					),
+				),
+			),
 			mono:	_Con("Int"),
-			expect: Index(_App("Array", _Con("Int")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
+			expect: Index(
+				_App("Array", _Con("Int")),
+				ExpressionJudgement[test_nameable, expr.Expression[test_nameable]](
+					Judgement(
+						expr.Expression[test_nameable](expr.Var(base.makeName("n"))), 
+						Type[test_nameable](_Con("Uint")),
+					),
+				),
+			),
 		},
 	}
 

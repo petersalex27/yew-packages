@@ -7,7 +7,7 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type indexes[T nameable.Nameable] []TypeJudgement[T,expr.Expression[T]]
+type indexes[T nameable.Nameable] []ExpressionJudgement[T,expr.Expression[T]]
 
 func (idxs indexes[T]) String() string {
 	if len(idxs) == 0 {
@@ -26,7 +26,7 @@ func (dti DependentTypeInstance[T]) GetName() T {
 	return dti.Application.GetName()
 }
 
-func Index[T nameable.Nameable](family Application[T], domain ...TypeJudgement[T,expr.Expression[T]]) DependentTypeInstance[T] {
+func Index[T nameable.Nameable](family Application[T], domain ...ExpressionJudgement[T,expr.Expression[T]]) DependentTypeInstance[T] {
 	return DependentTypeInstance[T]{
 		Application: family,
 		index: domain,
@@ -36,10 +36,11 @@ func Index[T nameable.Nameable](family Application[T], domain ...TypeJudgement[T
 func (dti DependentTypeInstance[T]) FreeInstantiateKinds(cxt *Context[T], vs ...TypeJudgement[T,expr.Variable[T]]) DependentTypeInstance[T] {
 	return DependentTypeInstance[T]{
 		Application: dti.Application,
-		index: fun.FMap(dti.index, func(i TypeJudgement[T,expr.Expression[T]]) TypeJudgement[T,expr.Expression[T]] {
+		index: fun.FMap(dti.index, func(i ExpressionJudgement[T,expr.Expression[T]]) ExpressionJudgement[T,expr.Expression[T]] {
 			for _, v := range vs {
-				expr, _ := i.expression.Replace(v.expression, expr.Var(cxt.makeName("_")))
-				i.expression = expr
+				expr, _ := GetExpression(i).Replace(v.expression, expr.Var(cxt.makeName("_")))
+				ty := GetType(i)
+				i = i.MakeJudgement(expr, ty)
 			}
 			return i
 		}),
@@ -75,7 +76,7 @@ func (dti DependentTypeInstance[T]) Equals(t Type[T]) bool {
 
 	// check content of indexes
 	for i, ind := range dti.index {
-		if !Equals(ind, dti2.index[i]) {
+		if !JudgesEquals(ind, dti2.index[i]) {
 			return false
 		}
 	} 

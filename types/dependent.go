@@ -92,7 +92,7 @@ func (d DependentType[T]) String() string {
 }
 
 func kindInstantiation[T nameable.Nameable](d DependentType[T], defaultElem expr.Expression[T]) DependentTypeInstance[T] {
-	index := make([]TypeJudgement[T, expr.Expression[T]], len(d.mapall))
+	index := make([]ExpressionJudgement[T, expr.Expression[T]], len(d.mapall))
 	for i := range index {
 		var elem expr.Expression[T]
 		if defaultElem == nil {
@@ -115,11 +115,10 @@ func (d DependentType[T]) KindInstantiation() DependentTypeInstance[T] {
 // ((mapall (a: A) (b: B) ..) . C) -> ((mapall (b: B) ..) . (C e))
 func (cxt *Context[T]) InstantiateKind(d DependentType[T], e expr.Expression[T]) DependentTyped[T] {
 	inst := d.DependentTypeInstance
-	ty := d.mapall[0].ty 
-	index := make([]TypeJudgement[T, expr.Expression[T]], len(inst.index)+1)
+	ty := d.mapall[0].ty // type of expression should be type of variable being replaced
+	index := make([]ExpressionJudgement[T, expr.Expression[T]], len(inst.index)+1)
 	copy(index, inst.index)
-	index[len(inst.index)].expression = e
-	index[len(inst.index)].ty = ty // type of expression should be type of variable being replaced
+	index[len(inst.index)] = (FreeJudgement[T, expr.Expression[T]]{}).MakeJudgement(e, ty)
 	
 	out := DependentType[T]{
 		mapall: d.mapall[1:],
