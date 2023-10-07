@@ -51,16 +51,52 @@ func TestString(t *testing.T) {
 		{in: base.Infix(_Var("a"), "->", _Var("a")), expect: "(a -> a)",},
 		{in: base.Infix(_Var("a"), "->"), expect: "((->) a)",},
 		{in: Application[test_nameable]{c: base.InfixCon("->"), ts: nil,}, expect: "(->)",},
+		{in: Application[test_nameable]{c: base.EnclosingCon(1, "[]"), ts: nil,}, expect: "[]"},
+		{in: Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("A")), expect: "[A]"},
+		{
+			in: Apply[test_nameable](
+				base.EnclosingCon(1, "[]"),
+				Apply[test_nameable](base.EnclosingCon(1, "{}"), _Con("A")),
+			), 
+			expect: "[{A}]",
+		},
+		{in: Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Type"), _Var("a")), expect: "[Type a]"},
 		// polytypes
 		{in: _Con("Type").Generalize(base), expect: "forall _ . Type"},
 		{in: _Forall("a").Bind(_Con("Type")), expect: "forall a . Type"},
 		{in: _Forall("a", "b").Bind(_Con("Type")), expect: "forall a b . Type"},
 		{in: _Forall("a", "b").Bind(_App("Type", _App("Type2", _Var("b"), _Var("a")))), expect: "forall a b . (Type (Type2 b a))"},
 		{in: _Forall("a").Bind(_Var("a")), expect: "forall a . a"},
+		{in: _Forall("a").Bind(Apply[test_nameable](base.EnclosingCon(1, "[]"), _Var("a"))), expect: "forall a . [a]"},
 		// dependent types
 		{
 			in: Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable,expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "((Array Int); (n: Uint))",
+		},
+		{
+			in: Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), Judgement[test_nameable,expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
+			expect: "[Int; (n: Uint)]",
+		},
+		{
+			in: Index[test_nameable](
+				Apply[test_nameable](
+					base.EnclosingCon(1, "[]"), 
+					Index[test_nameable](
+						Apply[test_nameable](
+							base.EnclosingCon(1, "[]"), _Con("Int"),
+						), 
+						Judgement[test_nameable,expr.Expression[test_nameable]](
+							expr.Var(base.makeName("n")), 
+							_Con("Uint"),
+						),
+					),
+				), 
+				Judgement[test_nameable,expr.Expression[test_nameable]](
+					expr.Var(base.makeName("n")), 
+					_Con("Uint"),
+				),
+			),
+			expect: "[[Int; (n: Uint)]; (n: Uint)]",
 		},
 		{
 			in: DependentType[test_nameable]{

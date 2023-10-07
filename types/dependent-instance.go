@@ -50,7 +50,15 @@ func (dti DependentTypeInstance[T]) String() string {
 	if len(dti.index) == 0 {
 		return dti.Application.String()
 	}
-	return "(" + dti.Application.String() + dti.index.String() + ")"
+	lclose, rclose := "(", ")"
+	app := ""
+	if ec, ok := dti.Application.c.(EnclosingConst[T]); ok {
+		lclose, rclose = ec.SplitString()
+		app = str.Join(dti.Application.ts, str.String(" "))
+	} else {
+		app = dti.Application.String()
+	}
+	return lclose + app + dti.index.String() + rclose
 }
 
 func (dti DependentTypeInstance[T]) Equals(t Type[T]) bool {

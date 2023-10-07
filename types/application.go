@@ -39,9 +39,8 @@ func (cxt *Context[T]) App(name string, ts ...Monotyped[T]) Application[T] {
 }
 
 func (a Application[T]) String() string {
-	left := ""
-	mid := ""
-	right := ""
+	left, mid, right := "", "", ""
+	lclose, rclose := "(", ")"
 	if ic, ok := a.c.(InfixConst[T]); ok {
 		length := len(a.ts)
 		if length < 2 {
@@ -56,12 +55,15 @@ func (a Application[T]) String() string {
 			mid = " " + Constant[T](ic).String() + " "
 			right = str.Join(a.ts[1:], str.String(" "))
 		}
+	} else if ec, ok := a.c.(EnclosingConst[T]); ok {
+		lclose, rclose = ec.SplitString()
+		mid = str.Join(a.ts, str.String(" "))
 	} else {
 		left = a.c.String()
 		mid = " "
 		right = str.Join(a.ts, str.String(" "))
 	}
-	return "(" + left + mid + right + ")"
+	return lclose + left + mid + right + rclose
 }
 
 func (a Application[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] {
