@@ -24,6 +24,7 @@ type Parser interface {
 	actOnRule(rule_interface, []ast.Ast) (stat status.Status, ruleApplied bool)
 	reportError(ast.Type) status.Status
 	shift() status.Status
+	reduce(rules ruleSet) (stat status.Status, appliedRule bool)
 }
 
 type parser struct {
@@ -181,20 +182,42 @@ func (p *parser) matchStack(pattern pattern) (nodes []ast.Ast, matches bool) {
 	return
 }
 
-func reduce(p Parser, rules ruleSet) (stat status.Status, appliedRule bool) {
+func getSubset(ground *parser, rules ruleSet) (subSet []rule_interface) {
+	subSet = nil
+	// grab the top node and see if any subsets of rules exist w/ the top node as
+	// the last node
+	if node, stat := ground.stack.Peek(); stat.IsOk() {
+		var found bool
+		subSet, found = rules.ruleMap[node.NodeType()]
+		if !found {
+			subSet = nil
+		}
+	}
+	return
+}
+
+func (p *parser) reduce(rules ruleSet) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = status.EndAction, false
-	ground := p.ground()
-	for _, rule := range rules.rules {
+
+	// experimental - start
+	subSet := getSubset(p, rules)
+	// experimental - end
+
+	for _, rule := range subSet {
 		pattern := rule.getPattern()
 		//nodes, stackStat := ground.stack.MultiCheck(len(pattern))
 		//matches := ground.ReduceTable.Match(pattern, nodes...)
-		nodes, match := ground.matchStack(pattern)
+		nodes, match := p.matchStack(pattern)
 		if match {
 			stat, appliedRule = p.actOnRule(rule, nodes)
 			break
 		}
 	}
 	return
+}
+
+func (p *loggableParser) reduce(rules ruleSet) (stat status.Status, appliedRule bool) {
+	return p.ground().reduce(rules)
 }
 
 func (ty forType) actionLoop(p Parser, rules ruleSet, found bool) (stat status.Status, appliedRule bool) {
@@ -204,7 +227,7 @@ func (ty forType) actionLoop(p Parser, rules ruleSet, found bool) (stat status.S
 	}
 
 	for tmpApp := false; stat.IsOk(); {
-		stat, tmpApp = reduce(p, rules)
+		stat, tmpApp = p.reduce(rules)
 		appliedRule = appliedRule || tmpApp
 	}
 	stat = ty.modify(stat, appliedRule)
@@ -284,6 +307,11 @@ func (kp knowledgeable_parser) Load(tokens []token.Token, src source.StaticSourc
 	p.loaded = true
 
 	return p.load_src_def(src, def, couldNotParse)
+}
+
+func (p *parser) Benchmarker() benchmarker {
+	b := benchmarker{parser: p}
+	return b
 }
 
 func (p *parser) Load(tokens []token.Token, src source.StaticSource, def DefaultErrorFunc, couldNotParse error) Parser {

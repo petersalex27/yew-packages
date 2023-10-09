@@ -1,61 +1,17 @@
-init: 2023-10-07T23:06:09.727982Z
-lookahead: let_t(8)
+init: 2023-10-09T02:46:46.265579Z
+lookahead: func_t(11)
 rules?: true
-rules: {[{[1 9] {{context 0x102ff22b0}}}] true}
-shift: tok=test_token@[1:1]:let_t=let; stat=0
-action(end): stack=[{test_token@[1:1]:let_t=let}]
+rules: {[] map[] true}
+shift: tok=test_token@[1:1]:func_t=func; stat=0
+action(end): stack=[{test_token@[1:1]:func_t=func}]
 lookahead: id_t(7)
 rules?: true
-rules: {[[8] {[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-rule(applied): stat=6; rule=rule([8] -> shift); nodes=[{test_token@[1:1]:let_t=let}]
-shift: tok=test_token@[1:5]:id_t=a; stat=0
-action(end): stack=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}]
-lookahead: mul_t(4)
-rules?: true
-rules: {[{[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-rule(applied): stat=0; rule=rule([8 7] -> declaration); nodes=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}]
-shift: tok=test_token@[1:7]:mul_t=*; stat=0
-action(end): stack=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] {test_token@[1:7]:mul_t=*}]
-lookahead: integer_t(6)
-rules?: true
-rules: {[{[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-shift: tok=test_token@[1:9]:integer_t=3; stat=0
-action(end): stack=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] {test_token@[1:7]:mul_t=*} {test_token@[1:9]:integer_t=3}]
-lookahead: integer_t(6)
-rules?: true
-rules: {[{[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-rule(applied): stat=0; rule=rule([6] -> expression); nodes=[{test_token@[1:9]:integer_t=3}]
-shift: tok=test_token@[1:11]:integer_t=3; stat=0
-action(end): stack=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] {test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] {test_token@[1:11]:integer_t=3}]
-lookahead: in_t(9)
-rules?: true
-rules: {[{[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[2 0] {{assignment 0x102ff2340}}}] true}
-rule(applied): stat=0; rule=rule([6] -> expression); nodes=[{test_token@[1:11]:integer_t=3}]
-rule(applied): stat=0; rule=rule([4 0 0] -> expression); nodes=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]
-rule(applied): stat=0; rule=rule([2 0] -> assignment); nodes=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]]
-shift: tok=test_token@[1:13]:in_t=in; stat=0
-action(end): stack=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}]
-lookahead: mul_t(4)
-rules?: true
-rules: {[{[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-rule(applied): stat=0; rule=rule([1 9] -> context); nodes=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}]
-shift: tok=test_token@[1:16]:mul_t=*; stat=0
-action(end): stack=[ast_test_node:context_t=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}] {test_token@[1:16]:mul_t=*}]
-lookahead: id_t(7)
-rules?: true
-rules: {[[8] {[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-shift: tok=test_token@[1:18]:id_t=a; stat=0
-action(end): stack=[ast_test_node:context_t=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}] {test_token@[1:16]:mul_t=*} {test_token@[1:18]:id_t=a}]
-lookahead: id_t(7)
-rules?: true
-rules: {[[8] {[8 7] {{declaration 0x102ff2460}}} {[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[1 9] {{context 0x102ff22b0}}}] true}
-rule(applied): stat=0; rule=rule([7] -> expression); nodes=[{test_token@[1:18]:id_t=a}]
-shift: tok=test_token@[1:20]:id_t=a; stat=0
-action(end): stack=[ast_test_node:context_t=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}] {test_token@[1:16]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:18]:id_t=a}] {test_token@[1:20]:id_t=a}]
+rules: {[] map[] true}
+shift: tok=test_token@[1:6]:id_t=f; stat=0
+action(end): stack=[{test_token@[1:1]:func_t=func} {test_token@[1:6]:id_t=f}]
 lookahead: None(-1)
 rules?: true
-rules: {[{[7] {{expression 0x102ff23d0}}} {[6] {{expression 0x102ff23d0}}} {[5 0 0] {{expression 0x102ff23d0}}} {[4 0 0] {{expression 0x102ff23d0}}} {[2 0] {{assignment 0x102ff2340}}} {[1 9] {{context 0x102ff22b0}}} {[10 0] {{expression 0x102ff23d0}}}] false}
-rule(applied): stat=0; rule=rule([7] -> expression); nodes=[{test_token@[1:20]:id_t=a}]
-rule(applied): stat=0; rule=rule([4 0 0] -> expression); nodes=[{test_token@[1:16]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:18]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:20]:id_t=a}]]
-rule(applied): stat=0; rule=rule([10 0] -> expression); nodes=[ast_test_node:context_t=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}] ast_test_node:expr_t=[{test_token@[1:16]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:18]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:20]:id_t=a}]]]
-action(end): stack=[ast_test_node:expr_t=[ast_test_node:context_t=[ast_test_node:assign_t=[ast_test_node:decl_t=[{test_token@[1:1]:let_t=let} {test_token@[1:5]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:7]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:9]:integer_t=3}] ast_test_node:expr_t=[{test_token@[1:11]:integer_t=3}]]] {test_token@[1:13]:in_t=in}] ast_test_node:expr_t=[{test_token@[1:16]:mul_t=*} ast_test_node:expr_t=[{test_token@[1:18]:id_t=a}] ast_test_node:expr_t=[{test_token@[1:20]:id_t=a}]]]]
+rules: {[{[11 7] 1 {{{function 0x1026ccaf0}}}} {[11 3] {{{assignment 0x1026cca60}}}}] map[3:[{[11 3] {{{assignment 0x1026cca60}}}}] 7:[{[11 7] 1 {{{function 0x1026ccaf0}}}}]] false}
+rule(applied): stat=0; rule=when([11 7] / 1 -> function); nodes=[{test_token@[1:1]:func_t=func} {test_token@[1:6]:id_t=f}]
+rule(applied): stat=0; rule=rule([11 3] -> assignment); nodes=[{test_token@[1:1]:func_t=func} ast_test_node:fn_t=[{test_token@[1:6]:id_t=f}]]
+action(end): stack=[ast_test_node:assign_t=[{test_token@[1:1]:func_t=func} ast_test_node:fn_t=[{test_token@[1:6]:id_t=f}]]]

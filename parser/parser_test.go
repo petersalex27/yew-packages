@@ -25,25 +25,25 @@ func TestParser(t *testing.T) {
 	context_fn := test_reduce_fn(context_t).GiveName("context")
 
 	set_decl := RuleSet(
-		From(let_t, id_t).Reduce(decl_fn),
+		decl_fn.From(let_t, id_t),
 	)
 
 	set_expr := RuleSet(
-		From(id_t).Reduce(expr_fn),                  // Id -> expr
-		From(integer_t).Reduce(expr_fn),             // Id -> expr
-		From(add_t, expr_t, expr_t).Reduce(expr_fn), // Add expr expr -> expr
-		From(mul_t, expr_t, expr_t).Reduce(expr_fn), // Mul expr expr -> expr
+		expr_fn.From(id_t),                  // Id -> expr
+		expr_fn.From(integer_t),             // Id -> expr
+		expr_fn.From(add_t, expr_t, expr_t), // Add expr expr -> expr
+		expr_fn.From(mul_t, expr_t, expr_t), // Mul expr expr -> expr
 	)
 
-	set_id := RuleSet(From(let_t).Shift())
+	set_id := RuleSet(Shift().When(let_t))
 
-	set_assign := RuleSet(From(decl_t, expr_t).Reduce(assign_fn))
-	set_decl_expr := set_decl.Union(set_expr)
-	set_expr_assign := set_expr.Union(set_assign)
-	set_expr_w_cxt := RuleSet(From(context_t, expr_t).Reduce(expr_fn))
+	set_assign := RuleSet(assign_fn.From(decl_t, expr_t))
+	set_decl_expr := Union(set_decl, set_expr)
+	set_expr_assign := Union(set_expr, set_assign)
+	set_expr_w_cxt := RuleSet(expr_fn.From(context_t, expr_t))
 
 	set_context := RuleSet(
-		From(assign_t, in_t).Reduce(context_fn), // assign In -> context
+		context_fn.From(assign_t, in_t), // assign In -> context
 	)
 
 	my_class := integer_t
@@ -52,7 +52,7 @@ func TestParser(t *testing.T) {
 		ForTypesThrough(lastType_t_).
 			UseReductions(
 				LA(let_t).Shift(),
-				LA(id_t).Then(set_id.Union(set_decl_expr)).ElseShift(),
+				LA(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
 				LA(integer_t).Then(set_decl_expr).ElseShift(),
 				LA(add_t).Then(set_decl_expr).ElseShift(),
 				LA(mul_t).Then(set_decl_expr).ElseShift()).
@@ -62,7 +62,7 @@ func TestParser(t *testing.T) {
 		ForTypesThrough(lastType_t_).
 			UseReductions(
 				LA(let_t).Shift(),
-				LA(id_t).Then(set_id.Union(set_decl_expr)).ElseShift(),
+				LA(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
 				LA(my_class).
 					ForN(3, integer_t).Or(add_t).Or(mul_t).
 						Then(set_decl_expr).
@@ -74,25 +74,25 @@ func TestParser(t *testing.T) {
 		ForTypesThrough(lastType_t_).
 			UseReductions(
 				LA(let_t).Then(set_context).ElseShift(),
-				LA(id_t).Then(set_id.Union(set_decl_expr, set_context)).ElseShift(),
-				LA(integer_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
-				LA(add_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
-				LA(mul_t).Then(set_decl_expr.Union(set_context)).ElseShift(),
+				LA(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
+				LA(integer_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
+				LA(add_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
+				LA(mul_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
 				LA(in_t).Then(set_expr_assign).ElseShift()).
-			Finally(set_expr_assign.Union(set_context, set_expr_w_cxt))
+			Finally(Union(set_expr_assign, set_context, set_expr_w_cxt))
 	
 	
 	table_2_withClasses :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
 				LA(let_t).Then(set_context).ElseShift(),
-				LA(id_t).Then(set_id.Union(set_decl_expr, set_context)).ElseShift(),
+				LA(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
 				LA(my_class).
 					ForN(3, integer_t).Or(add_t).Or(mul_t).
-						Then(set_decl_expr.Union(set_context)).
+						Then(Union(set_decl_expr, set_context)).
 						ElseShift(),
 				LA(in_t).Then(set_expr_assign).ElseShift()).
-			Finally(set_expr_assign.Union(set_context, set_expr_w_cxt))
+			Finally(Union(set_expr_assign, set_context, set_expr_w_cxt))
 
 	id_a := token.AddValue(idTok, "a")
 	int_3 := token.AddValue(intTok, "3")
@@ -217,6 +217,212 @@ func TestParser(t *testing.T) {
 			}
 		}
 	}
+}
+
+func BenchmarkParser(b *testing.B) {
+	b.StopTimer()
+
+	listTail_t := lastType_t_
+	list_t := listTail_t + 1
+	eq_t := list_t + 1
+	last__t := eq_t + 1
+
+	addTok, _ := (test_token{}).SetType(uint(add_t)).SetValue("+")
+	mulTok, _ := (test_token{}).SetType(uint(mul_t)).SetValue("*")
+	intTok := (test_token{}).SetType(uint(integer_t))
+	idTok := (test_token{}).SetType(uint(id_t))
+	letTok, _ := (test_token{}).SetType(uint(let_t)).SetValue("let")
+	inTok, _ := (test_token{}).SetType(uint(in_t)).SetValue("in")
+	openTok, _ := (test_token{}).SetType(uint(open_t)).SetValue("(")
+	closeTok, _ := (test_token{}).SetType(uint(open_t)).SetValue(")")
+	commaTok, _ := (test_token{}).SetType(uint(comma_t)).SetValue(",")
+	eqTok, _ := (test_token{}).SetType(uint(eq_t)).SetValue("=")
+
+	unenclose_fn := ReductionFunction(func(nodes ...ast.Ast) ast.Ast {
+		return nodes[1]
+	}).GiveName("unenclose")
+
+	lt_fn := test_reduce_fn(listTail_t).GiveName("list-tail")
+	list_fn := test_reduce_fn(list_t).GiveName("list")
+	decl_fn := test_reduce_fn(decl_t).GiveName("declaration")
+	expr_fn := test_reduce_fn(expr_t).GiveName("expression")
+	assign_fn := test_reduce_fn(assign_t).GiveName("assignment")
+	context_fn := test_reduce_fn(context_t).GiveName("context")
+
+	set_decl := RuleSet(
+		decl_fn.From(let_t, id_t),
+	)
+
+	set_expr := RuleSet(
+		unenclose_fn.From(expr_t),
+		expr_fn.From(id_t),                  // Id -> expr
+		unenclose_fn.From(id_t),
+		expr_fn.From(integer_t),             // Id -> expr
+		unenclose_fn.From(integer_t),
+		expr_fn.From(add_t, expr_t, expr_t), // Add expr expr -> expr
+		expr_fn.From(mul_t, expr_t, expr_t), // Mul expr expr -> expr
+	)
+
+	set_list := RuleSet(
+		lt_fn.From(expr_t, close_t),
+		lt_fn.From(expr_t, comma_t, close_t),
+		lt_fn.From(expr_t, comma_t, listTail_t),
+	)
+
+	set_list_build := RuleSet(
+		list_fn.From(open_t, listTail_t),
+	)
+
+	set_id := RuleSet(Shift().When(let_t))
+
+	set_assign := RuleSet(assign_fn.From(decl_t, eq_t, expr_t))
+	set_decl_expr := Union(set_decl, set_expr)
+	set_expr_w_cxt := RuleSet(expr_fn.From(context_t, expr_t))
+
+	set_context := RuleSet(
+		context_fn.From(assign_t, in_t), // assign In -> context
+	)
+
+	table :=
+		ForTypesThrough(last__t).
+			UseReductions(
+				LA(let_t).Then(Union(set_context)).ElseShift(),
+				LA(id_t).Then(Union(set_id, set_expr, set_list_build, set_context)).ElseShift(),
+				LA(integer_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
+				LA(add_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
+				LA(mul_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
+				LA(comma_t).Then(Union(set_expr, set_assign, set_list_build, set_context, set_expr_w_cxt)),
+				LA(open_t).Then(Union(set_expr, set_assign, set_list_build, set_context, set_expr_w_cxt)),
+				LA(close_t).Then(Union(set_expr, set_assign, set_context, set_expr_w_cxt, set_list)),
+				LA(in_t).Then(Union(set_expr, set_list_build, set_assign)),
+				LA(eq_t).Then(set_decl_expr),
+			).Finally(Union(set_expr, set_context, set_expr_w_cxt))
+
+	id_a := token.AddValue(idTok, "a")
+	int_3 := token.AddValue(intTok, "3")
+
+	tests := []struct {
+		src    source.StaticSource
+		stream []token.Token
+	}{
+		{
+			MakeSource("test", "let a = * 3 3 in * a a"),
+			[]token.Token{
+				letTok.SetLineChar(1, 1),
+				id_a.SetLineChar(1, 5),
+				eqTok.SetLineChar(1, 7),
+				mulTok.SetLineChar(1, 9),
+				int_3.SetLineChar(1, 11),
+				int_3.SetLineChar(1, 13),
+				inTok.SetLineChar(1, 16),
+				mulTok.SetLineChar(1, 18),
+				id_a.SetLineChar(1, 20),
+				id_a.SetLineChar(1, 22),
+			},
+		},
+		{
+			MakeSource("test", "let a = * 3 3 in let a = * + a a a in + a * a a"),
+			[]token.Token{
+				letTok.SetLineChar(1, 1),
+				eqTok,
+				id_a.SetLineChar(1, 5),
+				mulTok.SetLineChar(1, 7),
+				int_3.SetLineChar(1, 9),
+				int_3.SetLineChar(1, 11),
+				inTok.SetLineChar(1, 13),
+				letTok,
+				id_a,
+				eqTok,
+				mulTok,
+				addTok,
+				id_a,
+				id_a,
+				id_a,
+				inTok,
+				addTok,
+				id_a,
+				mulTok,
+				id_a,
+				id_a,
+			},
+		},
+		{
+			MakeSource("test", 
+				"let a = (3,3) in "+
+				"let a = (+ (3,3,a) a) in "+
+				"+ (a) a"),
+			[]token.Token{
+				letTok, id_a, eqTok, // let a =
+					openTok, int_3, commaTok, int_3, closeTok, // (3,3)
+				inTok, // in
+				letTok,	id_a, eqTok, // let id =
+					openTok, // (
+						addTok, // +
+						openTok, int_3, commaTok, int_3, id_a, closeTok, // (3,3,a)
+						id_a, // a
+					closeTok, // )
+				inTok, // in
+				addTok, // +
+					openTok, id_a, closeTok, // (a)
+					id_a, // a
+			},
+		},
+		{
+			MakeSource("test", 
+				"let a = (3,3) in "+
+				"let a = (+ (3,3,a) a) in "+
+				"let a = ((((a,a,),a),a,a,(a,a,a),a),a) in + (a) a"),
+			[]token.Token{
+				letTok, id_a, eqTok, // let a =
+					openTok, int_3, commaTok, int_3, closeTok, // (3,3)
+				inTok, // in
+				letTok,	id_a, eqTok, // let id =
+					openTok, // (
+						addTok, // +
+						openTok, int_3, commaTok, int_3, id_a, closeTok, // (3,3,a)
+						id_a, // a
+					closeTok, // )
+				inTok, // in
+				openTok, 
+					openTok, 
+						openTok, 
+							openTok, id_a, commaTok, id_a, commaTok, closeTok,
+						  commaTok, id_a,
+						closeTok,
+						commaTok, id_a, commaTok, id_a, commaTok,
+						openTok, id_a, commaTok, id_a, commaTok, id_a, closeTok,
+						commaTok, id_a, 
+					closeTok,
+					commaTok, id_a, 
+				closeTok,
+				inTok,
+				addTok, // +
+					openTok, id_a, closeTok, // (a)
+					id_a, // a
+			},
+		},
+	}
+
+	test := tests[3]
+	for _, truthy := range []bool{true, false} {
+		b.ResetTimer()
+		b.Log("// optimizedReduce =", truthy, "/////////////")
+		for i := 0; i < 10000; i++ {
+			p := New().
+				Ruleset(table).
+				Load(test.stream, test.src, nil, nil).
+				Benchmarker()
+
+			p.ClearFlags()
+			p.SetOptimizedReduce(truthy)
+
+			b.StartTimer()
+			_ = p.Parse()
+			b.StopTimer()
+		}
+		b.Log(b.Elapsed())
+	}
+
 }
 
 func TestWhen(t *testing.T) {

@@ -94,7 +94,7 @@ func (m *ReduceTable) setInTable(ruleset ruleSet, rep ast.Type, mems []ast.Type)
 	rs, found := m.table[rep]
 	var in ruleSet
 	if found {
-		in = rs.Union(ruleset)
+		in = Union(rs, ruleset)
 	} else {
 		in = ruleset
 	}

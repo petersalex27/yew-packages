@@ -77,51 +77,51 @@ func (r rule) call(p *parser, nodes ...ast.Ast) status.Status {
 	return r.reduction.call(p, uint(len(nodes)), nodes...)
 }
 
-type when_rule struct {
+type whenRule struct {
 	pattern
 	clear uint
 	reduction
 }
 
-func (r when_rule) String() string {
+func (r whenRule) String() string {
 	return fmt.Sprintf("when(%v / %d -> %v)", r.pattern, r.clear, r.Reduction)
 }
 
-func (r when_rule) getPattern() pattern { return r.pattern }
+func (r whenRule) getPattern() pattern { return r.pattern }
 
-func (r when_rule) call(p *parser, nodes ...ast.Ast) status.Status {
+func (r whenRule) call(p *parser, nodes ...ast.Ast) status.Status {
 	return r.reduction.call(p, r.clear, nodes[uint(len(nodes))-r.clear:]...)
 }
 
-type error_rule struct {
+type errorRule struct {
 	pattern
 	ErrorFn
 }
 
-func (r error_rule) String() string {
+func (r errorRule) String() string {
 	return fmt.Sprintf("rule(%v -> error)", r.pattern)
 }
 
-func (r error_rule) getPattern() pattern { return r.pattern }
+func (r errorRule) getPattern() pattern { return r.pattern }
 
-func (r error_rule) call(p *parser, nodes ...ast.Ast) status.Status {
+func (r errorRule) call(p *parser, nodes ...ast.Ast) status.Status {
 	node, _ := p.top()
 	p.errors = append(p.errors, r.ErrorFn(node, nodes...))
 	return status.Error
 }
 
-type warning_rule struct {
+type warningRule struct {
 	pattern
 	WarnFn
 }
 
-func (r warning_rule) String() string {
+func (r warningRule) String() string {
 	return fmt.Sprintf("rule(%v -> (warning, %v))", r.pattern, r.Reduction)
 }
 
-func (r warning_rule) getPattern() pattern { return r.pattern }
+func (r warningRule) getPattern() pattern { return r.pattern }
 
-func (r warning_rule) call(p *parser, nodes ...ast.Ast) status.Status {
+func (r warningRule) call(p *parser, nodes ...ast.Ast) status.Status {
 	// look ahead token is for warning information; it should not be used in
 	// reduction
 	tok, _ := p.lookAhead()
@@ -138,15 +138,15 @@ func (r warning_rule) call(p *parser, nodes ...ast.Ast) status.Status {
 	return status.Ok
 }
 
-type shift_rule pattern
+type shiftRule pattern
 
-func (r shift_rule) getPattern() pattern { return pattern(r) }
+func (r shiftRule) getPattern() pattern { return pattern(r) }
 
-func (shift_rule) call(_ *parser, _ ...ast.Ast) status.Status {
+func (shiftRule) call(_ *parser, _ ...ast.Ast) status.Status {
 	return status.DoShift // this will trigger shift
 }
 
-func (r shift_rule) String() string {
+func (r shiftRule) String() string {
 	return fmt.Sprintf("rule(%v -> shift)", pattern(r))
 }
 
@@ -159,81 +159,128 @@ RuleSet(
 )
 */
 
-func Rule(types ...ast.Type) pattern { return append(pattern{}, types...) }
+//func Rule(types ...ast.Type) pattern { return append(pattern{}, types...) }
 
 type ruleSet struct {
 	rules     []rule_interface
+	// maps last type in rule_interface pattern to a subset of rule interfaces
+	ruleMap		map[ast.Type][]rule_interface // NOTE: expiremental
 	elseShift bool
 }
 
-func (rs ruleSet) Union(ruleSets ...ruleSet) ruleSet {
-	out := make([]rule_interface, 0, len(rs.rules))
-	out = append(out, rs.rules...)
-	ruleSetOut := ruleSet{rules: out, elseShift: rs.elseShift}
-	for _, set := range ruleSets {
-		ruleSetOut.rules = append(ruleSetOut.rules, set.rules...)
-		ruleSetOut.elseShift = ruleSetOut.elseShift || set.elseShift
+func mapSet(set ruleSet, m *map[ast.Type][]rule_interface) {
+	for _, rule := range set.rules {
+		pat := rule.getPattern()
+		if len(pat) != 0 {
+			last := pat[len(pat)-1]
+			res, found := (*m)[last]
+			if !found {
+				res = []rule_interface{rule}
+			} else {
+				res = append(res, rule)
+			}
+			(*m)[last] = res
+		}
 	}
-	return ruleSetOut
+}
+
+func Union(sets ...ruleSet) (unified ruleSet) {
+	unified = ruleSet{
+		rules: []rule_interface{}, 
+		ruleMap: make(map[ast.Type][]rule_interface), 
+		elseShift: false,
+	}
+	for _, set := range sets {
+		mapSet(set, &unified.ruleMap)
+		unified.rules = append(unified.rules, set.rules...)
+		unified.elseShift = unified.elseShift || set.elseShift
+	}
+	return
 }
 
 func RuleSet(rules ...rule_interface) (out ruleSet) {
 	out.rules = append([]rule_interface{}, rules...)
+	out.ruleMap = make(map[ast.Type][]rule_interface)
+	mapSet(out, &out.ruleMap)
 	return out
 }
 
-// creates a reduce action
-func (p pattern) Reduce(f Reduction) rule_interface { return rule{p, reduction{f}} }
+type needPattern reduction
 
-func (p pattern) To(f func(...ast.Ast) ast.Ast) rule_interface {
-	return rule{p, reduction{ReductionFunction(f)}}
-}
-
-type need_pattern reduction
-
-type when_need_pattern struct {
-	need_pattern
+type whenNeedPattern struct {
+	needPattern
 	when []ast.Type
 }
 
 func (f NamedReduction) From(tys ...ast.Type) rule_interface {
-	return need_pattern(reduction{f}).From(tys...)
+	return needPattern(reduction{f}).From(tys...)
 }
 
-func (f NamedReduction) When(tys ...ast.Type) when_need_pattern {
-	return need_pattern(reduction{f}).When(tys...)
+func (f NamedReduction) When(tys ...ast.Type) whenNeedPattern {
+	return needPattern(reduction{f}).When(tys...)
 }
 
-func Get(f func(...ast.Ast) ast.Ast) need_pattern {
-	return need_pattern(reduction{ReductionFunction(f)})
+func Get(f func(...ast.Ast) ast.Ast) needPattern {
+	return needPattern(reduction{ReductionFunction(f)})
 }
 
-func (p need_pattern) When(tys ...ast.Type) when_need_pattern {
-	return when_need_pattern{p, tys}
+func (p needPattern) When(tys ...ast.Type) whenNeedPattern {
+	return whenNeedPattern{p, tys}
 }
 
-func (p need_pattern) From(tys ...ast.Type) rule_interface {
+func (p needPattern) From(tys ...ast.Type) rule_interface {
 	return rule{pattern(tys), reduction{p}}
 }
 
-func (p when_need_pattern) From(tys ...ast.Type) rule_interface {
+func (p whenNeedPattern) From(tys ...ast.Type) rule_interface {
 	clear := len(tys)
 	pat := make(pattern, len(p.when)+clear)
 	copy(pat, p.when)
 	copy(pat[len(p.when):], tys)
 
-	return when_rule{
+	return whenRule{
 		pattern(pat), 
 		uint(clear), 
-		reduction{p.need_pattern},
+		reduction{p.needPattern},
 	}
 }
 
 func From(tys ...ast.Type) pattern { return pattern(tys) }
 
-// creates a shift action
-func (p pattern) Shift() rule_interface { return shift_rule(p) }
+func Shift() (s shiftRule) {return}
 
-func (p pattern) Error(e ErrorFn) rule_interface { return error_rule{p, e} }
+func (shiftRule) When(tys ...ast.Type) rule_interface {
+	return shiftRule(tys)
+}
 
-func (p pattern) Warn(w WarnFn) rule_interface { return warning_rule{p, w} }
+type errorNeedsPattern errorRule
+
+func Error(e func(top ast.Ast, nodes ...ast.Ast) errors.Err) errorNeedsPattern {
+	return errorNeedsPattern{ErrorFn: e}
+}
+
+func (e errorNeedsPattern) From(tys ...ast.Type) rule_interface {
+	return errorRule{
+		pattern: pattern(tys),
+		ErrorFn: e.ErrorFn,
+	}
+}
+
+type warnNeedsReduction warningRule
+
+type warnNeedPattern warningRule
+
+func Warn(warnFn func(top ast.Ast, nodes ...ast.Ast) errors.Warning) warnNeedsReduction { 
+	return warnNeedsReduction(warningRule{WarnFn: WarnFn{Warn: warnFn}})
+}
+
+func (w warnNeedsReduction) ThenGet(f func(nodes ...ast.Ast) ast.Ast) warnNeedPattern {
+	return warnNeedPattern{WarnFn: WarnFn{Warn: w.Warn, Reduction: ReductionFunction(f)}}
+}
+
+func (w warnNeedPattern) From(tys ...ast.Type) rule_interface {
+	return warningRule{
+		pattern: pattern(tys),
+		WarnFn: w.WarnFn,
+	}
+}

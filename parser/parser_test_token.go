@@ -36,12 +36,18 @@ func (t testType_t) String() string {
 		return "context_t"
 	case func_t:
 		return "func_t"
+	case open_t:
+		return "open_t"
+	case close_t:
+		return "close_t"
+	case comma_t:
+		return "comma_t"
 	case ast.None:
 		return "None"
 	case ast.Root:
 		return "Root"
 	}
-	return "testType_t"
+	return "testType_"+default_stringType(ast.Type(t))
 }
 
 func test_token_stringType(ty ast.Type) string {
@@ -67,6 +73,9 @@ const (
 	in_t
 	context_t
 	func_t
+	open_t
+	close_t
+	comma_t
 	lastType_t_
 )
 
