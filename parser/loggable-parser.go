@@ -61,7 +61,7 @@ func (p *loggableParser) action() status.Status {
 	ty := toks.getType(p.parser)
 	p.log(la_ty_log, "%s", p.stringType(ty))
 
-	rules, found := p.ReduceTable.table[ty]
+	rules, found := p.table().table[ty]
 	p.log(rules_found_log, "%t", found)
 	p.log(rules_log, "%v", rules)
 

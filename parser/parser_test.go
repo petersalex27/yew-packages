@@ -65,8 +65,8 @@ func TestParser(t *testing.T) {
 				LA(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
 				LA(my_class).
 					ForN(3, integer_t).Or(add_t).Or(mul_t).
-						Then(set_decl_expr).
-						ElseShift(),
+					Then(set_decl_expr).
+					ElseShift(),
 			).
 			Finally(set_expr_assign)
 
@@ -80,8 +80,7 @@ func TestParser(t *testing.T) {
 				LA(mul_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
 				LA(in_t).Then(set_expr_assign).ElseShift()).
 			Finally(Union(set_expr_assign, set_context, set_expr_w_cxt))
-	
-	
+
 	table_2_withClasses :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
@@ -89,8 +88,8 @@ func TestParser(t *testing.T) {
 				LA(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
 				LA(my_class).
 					ForN(3, integer_t).Or(add_t).Or(mul_t).
-						Then(Union(set_decl_expr, set_context)).
-						ElseShift(),
+					Then(Union(set_decl_expr, set_context)).
+					ElseShift(),
 				LA(in_t).Then(set_expr_assign).ElseShift()).
 			Finally(Union(set_expr_assign, set_context, set_expr_w_cxt))
 
@@ -98,11 +97,11 @@ func TestParser(t *testing.T) {
 	int_3 := token.AddValue(intTok, "3")
 
 	tests := []struct {
-		table ReduceTable
+		table      ReduceTable
 		classTable ReduceTable
-		src    source.StaticSource
-		stream []token.Token
-		expect ast.Ast
+		src        source.StaticSource
+		stream     []token.Token
+		expect     ast.Ast
 	}{
 		{
 			table,
@@ -190,8 +189,8 @@ func TestParser(t *testing.T) {
 
 	for i, test := range tests {
 		for j, table := range []ReduceTable{test.table, test.classTable} {
-			p := New().
-				Ruleset(table).
+			p := NewParser().
+				UsingReductionTable(table).
 				Load(test.stream, test.src, nil, nil).
 				LogActions().
 				StringType(test_token_stringType)
@@ -255,9 +254,9 @@ func BenchmarkParser(b *testing.B) {
 
 	set_expr := RuleSet(
 		unenclose_fn.From(expr_t),
-		expr_fn.From(id_t),                  // Id -> expr
+		expr_fn.From(id_t), // Id -> expr
 		unenclose_fn.From(id_t),
-		expr_fn.From(integer_t),             // Id -> expr
+		expr_fn.From(integer_t), // Id -> expr
 		unenclose_fn.From(integer_t),
 		expr_fn.From(add_t, expr_t, expr_t), // Add expr expr -> expr
 		expr_fn.From(mul_t, expr_t, expr_t), // Mul expr expr -> expr
@@ -347,58 +346,58 @@ func BenchmarkParser(b *testing.B) {
 			},
 		},
 		{
-			MakeSource("test", 
+			MakeSource("test",
 				"let a = (3,3) in "+
-				"let a = (+ (3,3,a) a) in "+
-				"+ (a) a"),
+					"let a = (+ (3,3,a) a) in "+
+					"+ (a) a"),
 			[]token.Token{
 				letTok, id_a, eqTok, // let a =
-					openTok, int_3, commaTok, int_3, closeTok, // (3,3)
-				inTok, // in
-				letTok,	id_a, eqTok, // let id =
-					openTok, // (
-						addTok, // +
-						openTok, int_3, commaTok, int_3, id_a, closeTok, // (3,3,a)
-						id_a, // a
-					closeTok, // )
-				inTok, // in
-				addTok, // +
-					openTok, id_a, closeTok, // (a)
-					id_a, // a
+				openTok, int_3, commaTok, int_3, closeTok, // (3,3)
+				inTok,               // in
+				letTok, id_a, eqTok, // let id =
+				openTok,                                         // (
+				addTok,                                          // +
+				openTok, int_3, commaTok, int_3, id_a, closeTok, // (3,3,a)
+				id_a,                    // a
+				closeTok,                // )
+				inTok,                   // in
+				addTok,                  // +
+				openTok, id_a, closeTok, // (a)
+				id_a, // a
 			},
 		},
 		{
-			MakeSource("test", 
+			MakeSource("test",
 				"let a = (3,3) in "+
-				"let a = (+ (3,3,a) a) in "+
-				"let a = ((((a,a,),a),a,a,(a,a,a),a),a) in + (a) a"),
+					"let a = (+ (3,3,a) a) in "+
+					"let a = ((((a,a,),a),a,a,(a,a,a),a),a) in + (a) a"),
 			[]token.Token{
 				letTok, id_a, eqTok, // let a =
-					openTok, int_3, commaTok, int_3, closeTok, // (3,3)
-				inTok, // in
-				letTok,	id_a, eqTok, // let id =
-					openTok, // (
-						addTok, // +
-						openTok, int_3, commaTok, int_3, id_a, closeTok, // (3,3,a)
-						id_a, // a
-					closeTok, // )
-				inTok, // in
-				openTok, 
-					openTok, 
-						openTok, 
-							openTok, id_a, commaTok, id_a, commaTok, closeTok,
-						  commaTok, id_a,
-						closeTok,
-						commaTok, id_a, commaTok, id_a, commaTok,
-						openTok, id_a, commaTok, id_a, commaTok, id_a, closeTok,
-						commaTok, id_a, 
-					closeTok,
-					commaTok, id_a, 
+				openTok, int_3, commaTok, int_3, closeTok, // (3,3)
+				inTok,               // in
+				letTok, id_a, eqTok, // let id =
+				openTok,                                         // (
+				addTok,                                          // +
+				openTok, int_3, commaTok, int_3, id_a, closeTok, // (3,3,a)
+				id_a,     // a
+				closeTok, // )
+				inTok,    // in
+				openTok,
+				openTok,
+				openTok,
+				openTok, id_a, commaTok, id_a, commaTok, closeTok,
+				commaTok, id_a,
+				closeTok,
+				commaTok, id_a, commaTok, id_a, commaTok,
+				openTok, id_a, commaTok, id_a, commaTok, id_a, closeTok,
+				commaTok, id_a,
+				closeTok,
+				commaTok, id_a,
 				closeTok,
 				inTok,
-				addTok, // +
-					openTok, id_a, closeTok, // (a)
-					id_a, // a
+				addTok,                  // +
+				openTok, id_a, closeTok, // (a)
+				id_a, // a
 			},
 		},
 	}
@@ -408,8 +407,8 @@ func BenchmarkParser(b *testing.B) {
 		b.ResetTimer()
 		b.Log("// optimizedReduce =", truthy, "/////////////")
 		for i := 0; i < 10000; i++ {
-			p := New().
-				Ruleset(table).
+			p := NewParser().
+				UsingReductionTable(table).
 				Load(test.stream, test.src, nil, nil).
 				Benchmarker()
 
@@ -447,7 +446,7 @@ func TestWhen(t *testing.T) {
 	fTok := token.AddValue(idTok, "f")
 
 	tests := []struct {
-		table ReduceTable
+		table  ReduceTable
 		src    source.StaticSource
 		stream []token.Token
 		expect ast.Ast
@@ -456,21 +455,21 @@ func TestWhen(t *testing.T) {
 			table,
 			MakeSource("test", "func f"),
 			[]token.Token{
-				funcTok.SetLineChar(1,1),
-				fTok.SetLineChar(1,6),
+				funcTok.SetLineChar(1, 1),
+				fTok.SetLineChar(1, 6),
 			},
 			ast.AstRoot{
 				mknode(assign_t,
 					ast.TokenNode(funcTok),
-					mknode(fn_t, 
-						ast.TokenNode(fTok.SetLineChar(1,6)))),
+					mknode(fn_t,
+						ast.TokenNode(fTok.SetLineChar(1, 6)))),
 			},
 		},
 	}
 
-	for i, test := range tests { 
-		p := New().
-			Ruleset(table).
+	for i, test := range tests {
+		p := NewParser().
+			UsingReductionTable(table).
 			Load(test.stream, test.src, nil, nil).
 			LogActions().
 			StringType(test_token_stringType)

@@ -45,7 +45,15 @@ type blank_parser struct {
 
 type knowledgeable_parser struct {
 	blank_parser
-	ReduceTable
+	cxt *ParserContext
+}
+
+func (kp knowledgeable_parser) root() *combinerTrieRoot {
+	return kp.cxt.currentTable.root
+}
+
+func (kp knowledgeable_parser) table() *ReduceTable {
+	return &kp.cxt.currentTable
 }
 
 func none_token() token.Token {
@@ -62,7 +70,7 @@ func (lap lookahead_payload) getType(p *parser) ast.Type {
 	}
 
 	// combine to make type
-	ty, found := p.root.get(tys...)
+	ty, found := p.root().get(tys...)
 	if !found {
 		return ast.None
 	}
@@ -94,7 +102,7 @@ func default_lookahead(p *parser) lookahead_payload {
 	return []token.Token{p.tokens[0]}
 }
 
-func New() blank_parser {
+func NewParser() blank_parser {
 	p := blank_parser{}
 
 	p.errors = make([]error, 0, 1)
@@ -161,7 +169,7 @@ func (p *parser) action() status.Status {
 	toks := p.lookahead(p)
 	ty := toks.getType(p)
 
-	rules, found := p.ReduceTable.table[ty]
+	rules, found := p.table().table[ty]
 
 	stat, ruleApplied := forType(ty).actionLoop(p, rules, found)
 	return forType(ty).followUpRule(p, rules, stat, ruleApplied)
@@ -178,7 +186,7 @@ func (p *parser) matchStack(pattern pattern) (nodes []ast.Ast, matches bool) {
 	if stackStat.NotOk() {
 		return nil, false
 	}
-	matches = p.ReduceTable.Match(pattern, nodes...)
+	matches = p.table().Match(pattern, nodes...)
 	return
 }
 
@@ -262,11 +270,18 @@ func (ty forType) followUpRule(p Parser, rules ruleSet, stat status.Status, rule
 	return stat.MakeOk()
 }
 
-func (p blank_parser) Ruleset(table ReduceTable) knowledgeable_parser {
-	return knowledgeable_parser{
+func (p blank_parser) UsingReductionTable(table ReduceTable) knowledgeable_parser {
+	kp := knowledgeable_parser{
 		blank_parser: p,
-		ReduceTable:  table,
+		cxt:          new(ParserContext),
 	}
+	*kp.cxt = makeParserContext(ast.None, table, 1)
+	return kp
+}
+
+func (p knowledgeable_parser) Mapping(ty ast.Type, table ReduceTable) knowledgeable_parser {
+	p.cxt.MapTable(ty, table)
+	return p
 }
 
 func estimateStackUse(fullElemLen int) uint {
