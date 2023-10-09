@@ -324,6 +324,21 @@ func (kp knowledgeable_parser) Load(tokens []token.Token, src source.StaticSourc
 	return p.load_src_def(src, def, couldNotParse)
 }
 
+// InitialStackPush pushes ast nodes onto the parse stack. This function panics
+// if the parser has already started parsing
+func (p *parser) InitialStackPush(nodes ...ast.Ast) *parser {
+	// check if parser has already started parsing (marks itself as unloaded at 
+  // start of parse)
+	if !p.loaded { 
+		panic("illegal operation: stack cannot be initialized once parser has started parsing")
+	}
+
+	for _, node := range nodes {
+		p.stack.Push(node)
+	}
+	return p
+}
+
 func (p *parser) Benchmarker() benchmarker {
 	b := benchmarker{parser: p}
 	return b
