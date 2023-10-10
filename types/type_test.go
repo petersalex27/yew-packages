@@ -24,9 +24,8 @@ func judgement[E expr.Expression[test_nameable]](e E, ty Type[test_nameable]) Ty
 
 type refer ReferableType[test_nameable]
 
-var base = 
-		NewContext[test_nameable]().
-		SetNameMaker(test_nameable_fn)
+var base = NewContext[test_nameable]().
+	SetNameMaker(test_nameable_fn)
 
 func TestString(t *testing.T) {
 	tests := []struct {
@@ -37,8 +36,8 @@ func TestString(t *testing.T) {
 		{in: _Con("Type"), expect: "Type"},                                     // just type
 		{in: _App("Type", _Con("x")), expect: "(Type x)"},                      // application
 		{in: _App("Type", _App("Type", _Con("x"))), expect: "(Type (Type x))"}, // nested application
-		{in: _Var("a"), expect: "a"},                                             // variable
-		{in: _App("Type", _Var("a")), expect: "(Type a)"},                        // application w/ variable
+		{in: _Var("a"), expect: "a"},                                           // variable
+		{in: _App("Type", _Var("a")), expect: "(Type a)"},                      // application w/ variable
 		{in: Apply[test_nameable](_Var("a"), _App("Type", _Var("a"))), expect: ("(a (Type a))")},
 		{in: Apply[test_nameable](_App("Type", _Var("a")), _App("Type", _Var("a"))), expect: ("(Type a (Type a))")},
 		{in: Apply[test_nameable](base.Infix(_Con("Type"), "->", _Con("Type")), _App("Type", _Var("a"))), expect: ("(Type -> Type (Type a))")},
@@ -48,16 +47,16 @@ func TestString(t *testing.T) {
 		{in: base.Infix(_Con("Type"), "->", _App("Color", _Con("Red"))), expect: "(Type -> (Color Red))"},
 		{in: base.Infix(_Con("Type"), "->", base.Infix(_Con("Type"), "->", _Con("Type"))), expect: "(Type -> (Type -> Type))"},
 		{in: base.Infix(base.Infix(_Con("Type"), "->", _Con("Type")), "->", _Con("Type")), expect: "((Type -> Type) -> Type)"},
-		{in: base.Infix(_Var("a"), "->", _Var("a")), expect: "(a -> a)",},
-		{in: base.Infix(_Var("a"), "->"), expect: "((->) a)",},
-		{in: Application[test_nameable]{c: base.InfixCon("->"), ts: nil,}, expect: "(->)",},
-		{in: Application[test_nameable]{c: base.EnclosingCon(1, "[]"), ts: nil,}, expect: "[]"},
+		{in: base.Infix(_Var("a"), "->", _Var("a")), expect: "(a -> a)"},
+		{in: base.Infix(_Var("a"), "->"), expect: "((->) a)"},
+		{in: Application[test_nameable]{c: base.InfixCon("->"), ts: nil}, expect: "(->)"},
+		{in: Application[test_nameable]{c: base.EnclosingCon(1, "[]"), ts: nil}, expect: "[]"},
 		{in: Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("A")), expect: "[A]"},
 		{
 			in: Apply[test_nameable](
 				base.EnclosingCon(1, "[]"),
 				Apply[test_nameable](base.EnclosingCon(1, "{}"), _Con("A")),
-			), 
+			),
 			expect: "[{A}]",
 		},
 		{in: Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Type"), _Var("a")), expect: "[Type a]"},
@@ -70,33 +69,33 @@ func TestString(t *testing.T) {
 		{in: _Forall("a").Bind(Apply[test_nameable](base.EnclosingCon(1, "[]"), _Var("a"))), expect: "forall a . [a]"},
 		// dependent types
 		{
-			in: Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable,expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
+			in:     Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "((Array Int); (n: Uint))",
 		},
 		{
-			in: Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), Judgement[test_nameable,expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
+			in:     Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), Judgement[test_nameable, expr.Expression[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "[Int; (n: Uint)]",
 		},
 		{
-			in: Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), FreeJudge[test_nameable,expr.Expression[test_nameable]](base, expr.Var(base.makeName("n")))),
+			in:     Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), FreeJudge[test_nameable, expr.Expression[test_nameable]](base, expr.Var(base.makeName("n")))),
 			expect: "[Int; n]",
 		},
 		{
 			in: Index[test_nameable](
 				Apply[test_nameable](
-					base.EnclosingCon(1, "[]"), 
+					base.EnclosingCon(1, "[]"),
 					Index[test_nameable](
 						Apply[test_nameable](
 							base.EnclosingCon(1, "[]"), _Con("Int"),
-						), 
-						Judgement[test_nameable,expr.Expression[test_nameable]](
-							expr.Var(base.makeName("n")), 
+						),
+						Judgement[test_nameable, expr.Expression[test_nameable]](
+							expr.Var(base.makeName("n")),
 							_Con("Uint"),
 						),
 					),
-				), 
-				Judgement[test_nameable,expr.Expression[test_nameable]](
-					expr.Var(base.makeName("n")), 
+				),
+				Judgement[test_nameable, expr.Expression[test_nameable]](
+					expr.Var(base.makeName("n")),
 					_Con("Uint"),
 				),
 			),
@@ -120,7 +119,7 @@ func TestString(t *testing.T) {
 	}
 }
 
-func _Forall(vs ...string)partialPoly[test_nameable] {
+func _Forall(vs ...string) binders[test_nameable] {
 	return base.Forall(vs...)
 }
 
@@ -188,23 +187,23 @@ func TestInstantiate(t *testing.T) {
 			expect: Apply[test_nameable](_Function(_Con("Louis"), _Con("Louis")), _App("Type", _Function(_Con("Louis"), _Con("Louis")))),
 		},
 		{
-			poly:	_Forall("a").Bind(
+			poly: _Forall("a").Bind(
 				Index(
-					_App("Array", _Var("a")), 
+					_App("Array", _Var("a")),
 					ExpressionJudgement[test_nameable, expr.Expression[test_nameable]](
 						Judgement(
-							expr.Expression[test_nameable](expr.Var(base.makeName("n"))), 
+							expr.Expression[test_nameable](expr.Var(base.makeName("n"))),
 							Type[test_nameable](_Con("Uint")),
 						),
 					),
 				),
 			),
-			mono:	_Con("Int"),
+			mono: _Con("Int"),
 			expect: Index(
 				_App("Array", _Con("Int")),
 				ExpressionJudgement[test_nameable, expr.Expression[test_nameable]](
 					Judgement(
-						expr.Expression[test_nameable](expr.Var(base.makeName("n"))), 
+						expr.Expression[test_nameable](expr.Var(base.makeName("n"))),
 						Type[test_nameable](_Con("Uint")),
 					),
 				),
@@ -327,11 +326,11 @@ func TestRegister(t *testing.T) {
 		},
 		{
 			representative: _App("Type", _Con("Int")),
-			classMembers: mts_test{_Var("a")},
+			classMembers:   mts_test{_Var("a")},
 		},
 		{
 			representative: _Var("a"),
-			classMembers: mts_test{_App("Type", _Con("Int"))},
+			classMembers:   mts_test{_App("Type", _Con("Int"))},
 		},
 	}
 
