@@ -44,7 +44,7 @@ func (pcw PartialCase_when[T]) Then(e Expression[T]) Case[T] {
 }
 
 func (c Case[T]) String() string {
-	return c.when.String() + " -> " + c.then.String()
+	return "(" + c.when.String() + " -> " + c.then.String() + ")"
 }
 
 func (c Case[T]) StrictString() string {
@@ -52,7 +52,9 @@ func (c Case[T]) StrictString() string {
 	for i, v := range c.binders {
 		strs[i] = v.StrictString()
 	}
-	return "Λ" + strings.Join(strs, " ") + " . " + c.when.StrictString() + " -> " + c.then.StrictString()
+	return "(Λ" + strings.Join(strs, " ") + " . " + 
+		c.when.StrictString() + " -> " + 
+		c.then.StrictString() + ")"
 }
 
 func (c Case[T]) Equals(cxt *Context[T], k Case[T]) bool {

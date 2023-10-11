@@ -7,7 +7,7 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-// e1 of (\x -> e2) else (\y -> e3)
+// e when (\x1 .. -> e1) | (\x2 .. -> e2) | .. | (\xN .. -> eN)
 type Selection[T nameable.Nameable] struct {
 	selector Expression[T]
 	selections []Case[T]
@@ -34,7 +34,7 @@ func (s Selection[T]) Merge(selections ...Case[T]) Selection[T] {
 }
 
 func (s Selection[T]) String() string {
-	return s.selector.String() + " of " + str.Join(s.selections, str.String(" else "))
+	return s.selector.String() + " when " + str.Join(s.selections, str.String(" | "))
 }
 
 func (s Selection[T]) Equals(cxt *Context[T], e Expression[T]) bool {
@@ -57,12 +57,12 @@ func (s Selection[T]) Equals(cxt *Context[T], e Expression[T]) bool {
 }
 
 func (s Selection[T]) StrictString() string {
-	head := s.selector.StrictString() + " of "
+	head := s.selector.StrictString() + " when "
 	tail := make([]string, len(s.selections))
 	for i := range tail {
 		tail[i] = s.selections[i].StrictString()
 	}
-	return head + strings.Join(tail, " else ")
+	return head + strings.Join(tail, " | ")
 }
 
 func (s Selection[T]) StrictEquals(e Expression[T]) bool {
