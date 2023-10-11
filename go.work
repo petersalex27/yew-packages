@@ -16,4 +16,5 @@ use (
 	./status
 	./nameable
 	./ir
+	./bridge
 )
