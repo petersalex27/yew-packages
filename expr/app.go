@@ -11,6 +11,10 @@ func (a Application[T]) Collect() []T {
 	return append(a.left.Collect(), a.right.Collect()...)
 }
 
+func (a Application[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	return append(a.left.ExtractFreeVariables(dummyVar), a.right.ExtractFreeVariables(dummyVar)...)
+}
+
 func (a Application[T]) Copy() Expression[T] {
 	return Apply(a.left.Copy(), a.right.Copy())
 }

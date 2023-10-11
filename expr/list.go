@@ -9,6 +9,14 @@ import (
 
 type List[T nameable.Nameable] []Expression[T]
 
+func (ls List[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	vars := []Variable[T]{}
+	for _, elem := range ls {
+		vars = append(vars, elem.ExtractFreeVariables(dummyVar)...)
+	}
+	return vars
+}
+
 func (ls List[T]) Collect() []T {
 	if len(ls) == 0 {
 		return []T{}

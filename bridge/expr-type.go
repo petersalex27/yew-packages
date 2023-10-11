@@ -1,14 +1,19 @@
 package bridge
 
 import (
-	"github.com/petersalex27/yew-packages/nameable"
 	"github.com/petersalex27/yew-packages/expr"
+	"github.com/petersalex27/yew-packages/nameable"
 	"github.com/petersalex27/yew-packages/types"
 )
 
 type JudgementAsExpression[T nameable.Nameable, E expr.Expression[T]] types.TypeJudgement[T, E]
 
-func (judgement JudgementAsExpression[T,E]) ToTypeJudgement() types.TypeJudgement[T, E] {
+func (judgement JudgementAsExpression[T, E]) ExtractFreeVariables(dummyVar expr.Variable[T]) []expr.Variable[T] {
+	_, e := judgement.TypeAndExpr()
+	return e.ExtractFreeVariables(dummyVar)
+}
+
+func (judgement JudgementAsExpression[T, E]) ToTypeJudgement() types.TypeJudgement[T, E] {
 	return types.TypeJudgement[T, E](judgement)
 }
 
@@ -16,7 +21,7 @@ func Judgement[T nameable.Nameable, E expr.Expression[T]](e E, t types.Type[T]) 
 	return JudgementAsExpression[T, E](types.Judgement(e, t))
 }
 
-func (judgement JudgementAsExpression[T,E]) TypeAndExpr() (types.Type[T], E) {
+func (judgement JudgementAsExpression[T, E]) TypeAndExpr() (types.Type[T], E) {
 	j := judgement.ToTypeJudgement()
 	return j.GetType(), j.GetExpression()
 }
@@ -36,9 +41,12 @@ func (judgement JudgementAsExpression[T, E]) equalsHead(e expr.Expression[T]) (e
 	return j1.GetExpression(), j2.GetExpression(), j1.GetType().Equals(j2.GetType())
 }
 
-// see implementations of 
+// see implementations of
+//
 //	Type[T].Equals(Type[T]) bool
+//
 // and
+//
 //	Expression[T].Equals(Context[T], Expression[T]) bool
 func (judgement JudgementAsExpression[T, _]) Equals(cxt *expr.Context[T], e expr.Expression[T]) bool {
 	e1, e2, ok := judgement.equalsHead(e)
@@ -69,7 +77,8 @@ func (judgement JudgementAsExpression[T, _]) Replace(v expr.Variable[T], e expr.
 	var res = new(bool)
 	return judgement.expressionAction(
 		func(eIn expr.Expression[T]) (ex expr.Expression[T]) {
-			ex, *res = eIn.Replace(v, e); return
+			ex, *res = eIn.Replace(v, e)
+			return
 		}), *res
 }
 
@@ -82,13 +91,14 @@ func (judgement JudgementAsExpression[T, _]) Again() (expr.Expression[T], bool) 
 	var res = new(bool)
 	return judgement.expressionAction(
 		func(e expr.Expression[T]) (ex expr.Expression[T]) {
-			ex, *res = e.Again(); return
+			ex, *res = e.Again()
+			return
 		}), *res
 }
 
 func (judgement JudgementAsExpression[T, _]) Bind(e expr.BindersOnly[T]) expr.Expression[T] {
 	return judgement.expressionAction(
-		func(ex expr.Expression[T]) (expr.Expression[T]) { return ex.Bind(e) },
+		func(ex expr.Expression[T]) expr.Expression[T] { return ex.Bind(e) },
 	)
 }
 
@@ -99,25 +109,25 @@ func (judgement JudgementAsExpression[T, _]) Find(v expr.Variable[T]) bool {
 
 func (judgement JudgementAsExpression[T, _]) PrepareAsRHS() expr.Expression[T] {
 	return judgement.expressionAction(
-		func(e expr.Expression[T]) (expr.Expression[T]) { return e.PrepareAsRHS() },
+		func(e expr.Expression[T]) expr.Expression[T] { return e.PrepareAsRHS() },
 	)
 }
 
 func (judgement JudgementAsExpression[T, _]) Rebind() expr.Expression[T] {
 	return judgement.expressionAction(
-		func(e expr.Expression[T]) (expr.Expression[T]) { return e.Rebind() },
+		func(e expr.Expression[T]) expr.Expression[T] { return e.Rebind() },
 	)
 }
 
 func (judgement JudgementAsExpression[T, _]) Copy() expr.Expression[T] {
 	return judgement.expressionAction(
-		func(e expr.Expression[T]) (expr.Expression[T]) { return e.Copy() },
+		func(e expr.Expression[T]) expr.Expression[T] { return e.Copy() },
 	)
 }
 
 func (judgement JudgementAsExpression[T, _]) ForceRequest() expr.Expression[T] {
 	return judgement.expressionAction(
-		func(e expr.Expression[T]) (expr.Expression[T]) { return e.ForceRequest() },
+		func(e expr.Expression[T]) expr.Expression[T] { return e.ForceRequest() },
 	)
 }
 

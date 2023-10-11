@@ -12,6 +12,16 @@ type Case[T nameable.Nameable] struct {
 	then    Expression[T]
 }
 
+func (c Case[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	var when, then Expression[T] = c.when, c.then
+	for _, v := range c.binders {
+		when, _ = when.Replace(v, dummyVar)
+		then, _ = then.Replace(v, dummyVar)
+	}
+
+	return append(c.when.ExtractFreeVariables(dummyVar), c.then.ExtractFreeVariables(dummyVar)...)
+}
+
 func (a Case[T]) Collect() []T {
 	res := make([]T, 0, len(a.binders))
 	for _, binder := range a.binders {

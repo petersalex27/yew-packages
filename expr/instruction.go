@@ -24,6 +24,14 @@ type Instruction[T nameable.Nameable] struct {
 	InstructionArgs[T]
 }
 
+func (instr Instruction[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	vars := []Variable[T]{}
+	for _, arg := range instr.args {
+		vars = append(vars, arg.ExtractFreeVariables(dummyVar)...)
+	}
+	return vars
+}
+
 func (instr Instruction[T]) Collect() []T {
 	if len(instr.args) == 0 {
 		return []T{}

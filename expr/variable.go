@@ -11,6 +11,15 @@ type Variable[T nameable.Nameable] struct {
 	depth int
 }
 
+func (v Variable[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	if v.name.GetName() != dummyVar.name.GetName() { 
+		// variable is free variable; all bound variables were replaced w/ dummy
+		// variable
+		return []Variable[T]{v}
+	}
+	return []Variable[T]{}
+}
+
 func (v Variable[T]) Collect() []T {
 	return []T{v.name}
 }

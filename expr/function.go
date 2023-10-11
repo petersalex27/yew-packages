@@ -14,6 +14,15 @@ type Function[T nameable.Nameable] struct {
 	e    Expression[T]
 }
 
+func (f Function[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	var e Expression[T] = f.e
+	for _, v := range f.vars {
+		e, _ = e.Replace(v, dummyVar)
+	}
+	
+	return e.ExtractFreeVariables(dummyVar)
+}
+
 func (f Function[T]) Collect() []T {
 	res := make([]T, 0, 1)
 	for _, v := range f.vars {

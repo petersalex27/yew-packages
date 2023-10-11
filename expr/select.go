@@ -13,6 +13,14 @@ type Selection[T nameable.Nameable] struct {
 	selections []Case[T]
 }
 
+func (s Selection[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	vars := s.selector.ExtractFreeVariables(dummyVar)
+	for _, c := range s.selections {
+		vars = append(vars, c.ExtractFreeVariables(dummyVar)...)
+	}
+	return vars
+}
+
 func (s Selection[T]) Collect() []T {
 	res := s.selector.Collect()
 	for _, sel := range s.selections {

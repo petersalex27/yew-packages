@@ -4,6 +4,10 @@ import "github.com/petersalex27/yew-packages/nameable"
 
 type Const[T nameable.Nameable] struct {Name T}
 
+func (Const[T]) ExtractFreeVariables(Variable[T]) []Variable[T] {
+	return []Variable[T]{}
+}
+
 func (c Const[T]) Collect() []T {
 	return []T{c.Name}
 }

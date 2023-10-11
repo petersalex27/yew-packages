@@ -38,6 +38,10 @@ type Prim[T nameable.Nameable] struct {
 	primIFace
 }
 
+func (Prim[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+	return []Variable[T]{}
+}
+
 func (Prim[T]) Collect() []T {
 	return []T{}
 }
