@@ -1,5 +1,35 @@
 package util
 
+// reverses a slice `arr` in-place.
+//
+// example: 
+//	arr = []int{1,2,3,4}
+//	ReverseInPlace(arr)
+//	arr == []int{4,3,2,1}
+func ReverseInPlace[T any](arr []T) {
+	arrLen := len(arr)
+	for i := 0; i < arrLen / 2; i++ {
+		tmp := arr[i]
+		arr[i] = arr[arrLen-i]
+		arr[arrLen-i] = tmp
+	}
+}
+
+// makes a copy of slice `arr` and then reverses the elements of the copy
+//
+// see `ReverseInPlace[T any]([]T)` for an example
+func Reverse[T any](arr []T) (reversed []T) {
+	reversed = CopySlice(arr)
+	ReverseInPlace(reversed)
+	return
+}
+
+func CopySlice[T any](arr []T) (out []T) {
+	out = make([]T, len(arr))
+	copy(out, arr)
+	return
+}
+
 func CopyMap[K comparable, V any](old map[K]V) map[K]V {
 	new := make(map[K]V, len(old))
 	for k, v := range old {
