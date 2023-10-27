@@ -1,6 +1,6 @@
 package util
 
-// reverses a slice `arr` in-place.
+// reverses the slice `arr` in-place.
 //
 // example: 
 //	arr = []int{1,2,3,4}
@@ -15,7 +15,8 @@ func ReverseInPlace[T any](arr []T) {
 	}
 }
 
-// makes a copy of slice `arr` and then reverses the elements of the copy
+// makes a perfect-fit copy of slice `arr`, and then reverses the elements of 
+// the new slice copy
 //
 // see `ReverseInPlace[T any]([]T)` for an example
 func Reverse[T any](arr []T) (reversed []T) {
