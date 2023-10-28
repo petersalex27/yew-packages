@@ -6,6 +6,8 @@ import (
 	"github.com/petersalex27/yew-packages/util"
 )
 
+// interface for usual stack operations (i.e., push, pop, peek, and number of
+// elements) and an additional operation to query various states
 type StackType[T any] interface {
 	Push(T)
 	Pop() (T, StackStatus)
@@ -14,6 +16,7 @@ type StackType[T any] interface {
 	Status() StackStatus
 }
 
+// stacks with the ability to pop and push multiple elements 
 type StackPlus[T any] interface {
 	StackType[T]
 	Clear(uint)
@@ -21,6 +24,7 @@ type StackPlus[T any] interface {
 	MultiPop(uint) ([]T, StackStatus)
 }
 
+// stacks that can create stack frames
 type ReturnableStack[T any] interface {
 	StackType[T]
 	GetFullCount() uint
@@ -37,8 +41,11 @@ type Stack[T any] struct {
 // wraps fmt.Sprint(s.elems)
 func (s *Stack[T]) ElemString() string { return fmt.Sprint(s.elems[:s.sc]) }
 
+// stack with fixed size (i.e., stack cannot request more capacity)
 type StaticStack[T any] Stack[T]
 
+// initializes a stack w/ an initial capacity of `cap` rounded up to the 
+// nearest power of two
 func makeStack[T any](cap uint) (out Stack[T]) {
 	if cap == 0 {
 		cap = 8
@@ -51,12 +58,15 @@ func makeStack[T any](cap uint) (out Stack[T]) {
 	return out
 }
 
+// Return a pointer to a new, initialized stack with room for at least `cap`
+// elements.
 func NewStack[T any](cap uint) *Stack[T] {
 	out := new(Stack[T])
 	*out = makeStack[T](cap)
 	return out
 }
 
+// returns a copy of elements on stack
 func (s *Stack[T]) getElemsCopy(newCap uint) []T {
 	if newCap < uint(cap(s.elems)) {
 		newCap = uint(cap(s.elems))
@@ -69,6 +79,7 @@ func (s *Stack[T]) getElemsCopy(newCap uint) []T {
 	return newElems
 }
 
+// grow stack size
 func (s *Stack[T]) grow() StackStatus {
 	if (s.st << 1) < s.st { // check for overflow
 		return Overflow
@@ -83,6 +94,7 @@ func (s *Stack[T]) grow() StackStatus {
 	return Ok
 }
 
+// true iff stack cannot have more elements pushed onto it
 func (s *Stack[T]) full() bool { return s.st == s.sc }
 
 func (s *Stack[T]) MultiPush(elems ...T) {
@@ -91,6 +103,13 @@ func (s *Stack[T]) MultiPush(elems ...T) {
 	}
 }
 
+// MultiCheck returns the top `n` elements of the stack (or an IllegalOperation 
+// if there are fewer than `n` elements). Elements are returned in 
+// reverse-popped order (see "IMPORTANT" below), e.g.,
+//	 [w, x, y, z].MultiCheck(3) == [x, y, z]
+//
+// IMPORTANT: note that MultiCheck does NOT return a slice in the order 
+// (left-to-right) that elemnts would be popped! In fact, it does the opposite. 
 func (s *Stack[T]) MultiCheck(n int) (elems []T, stat StackStatus) {
 	if s.sc < uint(n) {
 		return nil, IllegalOperation
@@ -103,6 +122,12 @@ func (s *Stack[T]) MultiCheck(n int) (elems []T, stat StackStatus) {
 	return elems, Ok
 }
 
+// MultiPop returns the top `n` elements of the stack (or an IllegalOperation 
+// if there are fewer than `n` elements). Elements are returned in they order
+// (left-to-right in return value) that they would be popped, e.g.,
+//		[w, x, y, z].MultiPop(3) == [z, y, x]
+// To return the elements in the order they appear on the stack, use 
+// 		(*Stack[T]) MultiCheck(int)
 func (s *Stack[T]) MultiPop(n uint) (elems []T, stat StackStatus) {
 	if s.sc < n {
 		stat = IllegalOperation
@@ -118,6 +143,7 @@ func (s *Stack[T]) MultiPop(n uint) (elems []T, stat StackStatus) {
 	return
 }
 
+// Puts elem onto top of stack
 func (s *Stack[T]) Push(elem T) {
 	if s.full() {
 		if s.grow().IsOverflow() {
@@ -129,11 +155,13 @@ func (s *Stack[T]) Push(elem T) {
 	s.sc++
 }
 
+// removes min(n, s.GetCount()) elements from the stack
 func (s *Stack[T]) Clear(n uint) {
 	n = util.UMin(uint(s.GetCount()), n)
 	s.sc = s.sc - n
 }
 
+// returns the top element of the stack if it exists, else the Empty status
 func (s *Stack[T]) Peek() (elem T, stat StackStatus) {
 	if s.Empty() {
 		stat = Empty
@@ -144,10 +172,13 @@ func (s *Stack[T]) Peek() (elem T, stat StackStatus) {
 	return
 }
 
+// unchecked peek at stack counter - 1 - n
 func (s *Stack[T]) unsafePeekOffset(n uint) T {
 	return s.elems[s.sc-1-n]
 }
 
+// removes the top element of the stack and returns it if stack is not empty,
+// else Empty status is returned
 func (s *Stack[T]) Pop() (T, StackStatus) {
 	elem, stat := s.Peek()
 	if stat.IsOk() {
@@ -156,14 +187,17 @@ func (s *Stack[T]) Pop() (T, StackStatus) {
 	return elem, stat
 }
 
+// returns capicty of stack
 func (s *Stack[T]) GetCapacity() uint {
 	return s.st
 }
 
+// returns number of elements in stack
 func (s *Stack[T]) GetCount() uint {
 	return s.sc
 }
 
+// returns condition of stack (Ok or Empty)
 func (s *Stack[T]) Status() StackStatus {
 	if s.Empty() {
 		return Empty
@@ -171,6 +205,7 @@ func (s *Stack[T]) Status() StackStatus {
 	return Ok
 }
 
+// returns true iff stack has no elements
 func (s *Stack[T]) Empty() bool {
 	return s.GetCount() == 0
 }
