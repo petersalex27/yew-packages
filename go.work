@@ -17,4 +17,5 @@ use (
 	./nameable
 	./ir
 	./bridge
+	./table
 )
