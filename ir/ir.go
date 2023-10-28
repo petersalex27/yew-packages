@@ -1,18 +1,19 @@
 package ir
-/*
+
 import (
 	"fmt"
-	"sync"
+	//"sync"
 
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/constant"
 	irtypes "github.com/llir/llvm/ir/types"
-	"github.com/petersalex27/yew-packages/expr"
-	"github.com/petersalex27/yew-packages/nameable"
-	"github.com/petersalex27/yew-packages/symbol"
-	"github.com/petersalex27/yew-packages/table"
-	"github.com/petersalex27/yew-packages/types"
+	//"github.com/petersalex27/yew-packages/expr"
+	//"github.com/petersalex27/yew-packages/nameable"
+	//"github.com/petersalex27/yew-packages/symbol"
+	//"github.com/petersalex27/yew-packages/table"
+	//"github.com/petersalex27/yew-packages/types"
 )
+/*
 
 // create a translation/replacement `irty ::= constType`
 func (translator *Translator[T]) CreateTypeTranslation(constType types.Constant[T], irty irtypes.Type) Status {
@@ -72,6 +73,10 @@ func NewTranslator[T any]() *Translator[T] {
 	translator.sourceFiles = make(map[string]*ir.Module)
 	return translator
 }
+func (translator *Translator[T]) Function() {
+
+}
+*/
 
 // will be removed soon--example llvm "hello, world!" program for reference 
 func HelloWorld() string {
@@ -89,8 +94,3 @@ func HelloWorld() string {
 	entry.NewRet(constant.NewInt(irtypes.I32, 0))
 	return fmt.Sprint(mod)
 }
-
-func (translator *Translator[T]) Function() {
-
-}
-*/

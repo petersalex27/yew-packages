@@ -217,7 +217,7 @@ func TestSave(t *testing.T) {
 
 func TestReturn(t *testing.T) {
 	tests := []struct {
-		afterReturn   string
+		afterReturn  string
 		returnStatus StackStatus
 		peek         rune
 		stat         StackStatus
@@ -262,15 +262,108 @@ func TestReturn(t *testing.T) {
 		}
 
 		if stat.IsOk() {
-			expect := test.afterReturn[len(test.afterReturn)-1]
+			expect := byte(test.peek)
 			if actual != expect {
 				t.Fatal(testutil.TestFail2("peek result", expect, actual, i))
 			}
 		}
 
+		expectSC, actualSC := uint(len(test.afterReturn)), stack.sc
+		if expectSC != actualSC {
+			t.Fatal(testutil.TestFail2("stack counter after return", expectSC, actualSC, i))
+		}
+
 		actualResult := string(stack.elems[:stack.sc])
 		if actualResult != test.afterReturn {
 			t.Fatal(testutil.TestFail2("after return result", test.afterReturn, actualResult, i))
+		}
+	}
+}
+
+func TestRebase(t *testing.T) {
+	tests := []struct {
+		savedFrames   []string
+		rebaseStatus  StackStatus
+		peek          rune
+		stat          StackStatus
+		expectedFrame string
+	}{
+		{[]string{""}, Ok, 0, Empty, ""},
+		{[]string{""}, Ok, 'a', Ok, "a"},
+		{[]string{"a"}, Ok, 'a', Ok, "a"},
+		{[]string{"123"}, Ok, '6', Ok, "123456"},
+		{[]string{"123", "45"}, Ok, '6', Ok, "123456"},
+	}
+
+	for i, test := range tests {
+		stack := NewSaveStack[byte](32, 4)
+		// place all elems
+		for i := range test.expectedFrame {
+			stack.elems[i] = test.expectedFrame[i]
+		}
+
+		// set counter
+		stack.sc = uint(len(test.expectedFrame))
+
+		// for each frame, set return point
+		previousTop := uint(0)
+		for _, frame := range test.savedFrames {
+			// save return point
+			stack.returnStack.Push(previousTop)
+			previousTop = uint(len(frame)) // stack counter for frame
+		}
+
+		// set base counter for current frame (base counter is previous frame's 
+		// stack counter)
+		ret := previousTop
+		stack.bc = ret
+
+		// test rebase for each saved frame
+		numFrames := len(test.savedFrames)
+		for j, frameIndex := 0, numFrames - 1; j < len(test.savedFrames); j, frameIndex = j + 1, frameIndex - 1 {
+			frameIndex = numFrames - 1 - j
+			// now rebase
+			retStat := stack.Rebase()
+			if !retStat.Is(test.rebaseStatus) {
+				t.Fatal(testutil.TestFail2("rebase status", test.rebaseStatus.String(), retStat.String(), i))
+			}
+
+			// new base counter should be frame saved before frame's stack counter 
+			// (else 0)
+			var expectBC uint
+			if frameIndex == 0 {
+				expectBC = 0
+			} else {
+				expectBC = uint(len(test.savedFrames[frameIndex-1]))
+			}
+			actualBC := stack.bc
+			if expectBC != actualBC {
+				t.Fatal(testutil.TestFail2("base counter", expectBC, actualBC, i, j))
+			}
+
+			actual, stat := stack.Peek() // stack counter should never change, so top should never change
+			if !stat.Is(test.stat) {
+				t.Fatal(testutil.TestFail2("status", test.stat.String(), stat.String(), i, j))
+			}
+
+			if stat.IsOk() {
+				expect := byte(test.peek)
+				if actual != expect {
+					t.Fatal(testutil.TestFail2("peek result", expect, actual, i, j))
+				}
+			}
+
+			// stack counter should never change
+			expectSC, actualSC := uint(len(test.expectedFrame)), stack.sc
+			if expectSC != actualSC {
+				t.Fatal(testutil.TestFail2("stack counter after rebase", expectSC, actualSC, i, j))
+			}
+
+			actualResult := string(stack.elems[stack.bc:stack.sc])
+			expectedResult := test.expectedFrame[expectBC:]
+			if actualResult != expectedResult {
+				t.Fatal(testutil.TestFail2("after rebase result", expectedResult, actualResult, i, j))
+			}
 		}
 	}
 }

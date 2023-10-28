@@ -59,14 +59,30 @@ func (stack *SaveStack[T]) Save() {
 	stack.bc = stack.sc
 }
 
-func (stack *SaveStack[T]) Return() (stat StackStatus) {
-	if stack.returnStack.GetCount() == 0 {
+// Returns base counter to saved base counter but does NOT change the stack
+// counter. This function effectively "merges" the top two stack frames into
+// a single frame
+func (stack *SaveStack[T]) Rebase() (stat StackStatus) {
+	if stack.returnStack.GetCount() == 0 { // return stack is empty
 		return IllegalReturn
 	}
-	old := stack.bc
-	stack.bc, stat = stack.returnStack.Pop()
+	var previousBaseCounter uint // base counter of saved frame
+	previousBaseCounter, stat = stack.returnStack.Pop()
 	if stat.IsOk() {
-		stack.sc = old
+		stack.bc = previousBaseCounter // merge top two frames
+	}
+	// by way of not setting the stack counter, the previous stack frame
+	// incorporates all the elements of the frame above it
+	return
+}
+
+// Return base counter to saved base counter and return stack counter to 
+// previous stack counter. Return fails when nothing is saved.
+func (stack *SaveStack[T]) Return() (stat StackStatus) {
+	old := stack.bc // where previous stack frame ended
+	stat = stack.Rebase() // merge top two frames
+	if stat.IsOk() {
+		stack.sc = old // remove top (now merged with frame under it) frame
 	}
 	return
 }
