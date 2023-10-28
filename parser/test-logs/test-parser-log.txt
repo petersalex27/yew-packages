@@ -1,17 +1,15 @@
-init: 2023-10-09T02:46:46.265579Z
+init: 2023-10-28T04:10:36.671802Z
 lookahead: func_t(11)
 rules?: true
 rules: {[] map[] true}
-shift: tok=test_token@[1:1]:func_t=func; stat=0
+shift: tok=test_token@[1:1]:func_t=func; stat=Ok
 action(end): stack=[{test_token@[1:1]:func_t=func}]
 lookahead: id_t(7)
 rules?: true
 rules: {[] map[] true}
-shift: tok=test_token@[1:6]:id_t=f; stat=0
+shift: tok=test_token@[1:6]:id_t=f; stat=Ok
 action(end): stack=[{test_token@[1:1]:func_t=func} {test_token@[1:6]:id_t=f}]
 lookahead: None(-1)
 rules?: true
-rules: {[{[11 7] 1 {{{function 0x1026ccaf0}}}} {[11 3] {{{assignment 0x1026cca60}}}}] map[3:[{[11 3] {{{assignment 0x1026cca60}}}}] 7:[{[11 7] 1 {{{function 0x1026ccaf0}}}}]] false}
-rule(applied): stat=0; rule=when([11 7] / 1 -> function); nodes=[{test_token@[1:1]:func_t=func} {test_token@[1:6]:id_t=f}]
-rule(applied): stat=0; rule=rule([11 3] -> assignment); nodes=[{test_token@[1:1]:func_t=func} ast_test_node:fn_t=[{test_token@[1:6]:id_t=f}]]
+rules: {[{[11 7] 1 {{{function 0x100be3760}}}} {[11 3] {{{assignment 0x100be36d0}}}}] map[3:[{[11 3] {{{assignment 0x100be36d0}}}}] 7:[{[11 7] 1 {{{function 0x100be3760}}}}]] false}
 action(end): stack=[ast_test_node:assign_t=[{test_token@[1:1]:func_t=func} ast_test_node:fn_t=[{test_token@[1:6]:id_t=f}]]]

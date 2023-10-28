@@ -6,23 +6,19 @@ import (
 	"github.com/petersalex27/yew-packages/util/testutil"
 )
 
-type testName string
-
-func (n testName) GetName() string { return string(n) }
-
 func TestAdd(t *testing.T) {
 	tests := []struct{
 		add []tableElement[int]
 		expect []map[string]int
 	}{
 		{
-			[]tableElement[int]{{testName("a"), 0}},
+			[]tableElement[int]{{test_nameable("a"), 0}},
 			[]map[string]int{{"a": 0}},
 		},
 		{
 			[]tableElement[int]{
-				{testName("a"), 0},
-				{testName("b"), 0},
+				{test_nameable("a"), 0},
+				{test_nameable("b"), 0},
 			},
 			[]map[string]int{
 				{"a": 0},
@@ -31,9 +27,9 @@ func TestAdd(t *testing.T) {
 		},
 		{
 			[]tableElement[int]{
-				{testName("a"), 0},
-				{testName("b"), 0},
-				{testName("a"), 1},
+				{test_nameable("a"), 0},
+				{test_nameable("b"), 0},
+				{test_nameable("a"), 1},
 			},
 			[]map[string]int{
 				{"a": 0},
@@ -72,39 +68,39 @@ func TestAdd(t *testing.T) {
 func TestRemove(t *testing.T) {
 	tests := []struct{
 		data map[string]tableElement[int]
-		remove testName
+		remove test_nameable
 		removedVal int
 		expectOk bool
 		expect map[string]int
 	}{
 		{
 			map[string]tableElement[int]{},
-			testName("a"),
+			test_nameable("a"),
 			0, false,
 			map[string]int{},
 		},
 		{
 			map[string]tableElement[int]{
-				"a": {testName("a"), 3},
+				"a": {test_nameable("a"), 3},
 			},
-			testName("x"),
+			test_nameable("x"),
 			0, false,
 			map[string]int{"a": 3},
 		},
 		{
 			map[string]tableElement[int]{
-				"a": {testName("a"), 3},
+				"a": {test_nameable("a"), 3},
 			},
-			testName("a"),
+			test_nameable("a"),
 			3, true,
 			map[string]int{},
 		},
 		{
 			map[string]tableElement[int]{
-				"a": {testName("a"), 3},
-				"b": {testName("b"), 4},
+				"a": {test_nameable("a"), 3},
+				"b": {test_nameable("b"), 4},
 			},
-			testName("a"),
+			test_nameable("a"),
 			3, true,
 			map[string]int{"b": 4},
 		},
@@ -146,39 +142,39 @@ func TestRemove(t *testing.T) {
 func TestGet(t *testing.T) {
 	tests := []struct{
 		data map[string]tableElement[int]
-		key testName
+		key test_nameable
 		gotVal int
 		expectOk bool
 		expect map[string]int // confirm unchanged
 	}{
 		{
 			map[string]tableElement[int]{},
-			testName("a"),
+			test_nameable("a"),
 			0, false,
 			map[string]int{},
 		},
 		{
 			map[string]tableElement[int]{
-				"a": {testName("a"), 3},
+				"a": {test_nameable("a"), 3},
 			},
-			testName("x"),
+			test_nameable("x"),
 			0, false,
 			map[string]int{"a": 3},
 		},
 		{
 			map[string]tableElement[int]{
-				"a": {testName("a"), 3},
+				"a": {test_nameable("a"), 3},
 			},
-			testName("a"),
+			test_nameable("a"),
 			3, true,
 			map[string]int{"a": 3},
 		},
 		{
 			map[string]tableElement[int]{
-				"a": {testName("a"), 3},
-				"b": {testName("b"), 4},
+				"a": {test_nameable("a"), 3},
+				"b": {test_nameable("b"), 4},
 			},
-			testName("a"),
+			test_nameable("a"),
 			3, true,
 			map[string]int{"a": 3, "b": 4},
 		},

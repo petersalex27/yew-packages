@@ -7,6 +7,18 @@ import (
 
 type TableStack[T any] stack.Stack[*Table[T]]
 
+// Creates an initializes new table stack, returning a pointer to it. `cap` is 
+// optional: if it's included, then the new table stack will have an initial 
+// capacity of at least `cap` elements; if it's ommited, then the new table 
+// stack will have an initial capacity of at least 8 elements
+func NewTableStack[T any](cap ...uint) *TableStack[T] {
+	if len(cap) == 0 {
+		cap = []uint{8}
+	}
+
+	return (*TableStack[T])(stack.NewStack[*Table[T]](cap[0]))
+}
+
 // return element `offset` elements from the top, e.g., 
 //		(&[w, x, y, z]).peekOffset(2) == x
 func (ts *TableStack[T]) peekOffset(offset uint) *Table[T] {
