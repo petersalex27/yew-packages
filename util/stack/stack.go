@@ -109,7 +109,9 @@ func (s *Stack[T]) MultiPush(elems ...T) {
 //	 [w, x, y, z].MultiCheck(3) == [x, y, z]
 //
 // IMPORTANT: note that MultiCheck does NOT return a slice in the order 
-// (left-to-right) that elemnts would be popped! In fact, it does the opposite. 
+// (left-to-right) that elemnts would be popped! In fact, it does the opposite.
+//
+// NOTE: elements are not removed from the stack
 func (s *Stack[T]) MultiCheck(n int) (elems []T, stat StackStatus) {
 	if s.sc < uint(n) {
 		return nil, IllegalOperation
@@ -122,9 +124,10 @@ func (s *Stack[T]) MultiCheck(n int) (elems []T, stat StackStatus) {
 	return elems, Ok
 }
 
-// MultiPop returns the top `n` elements of the stack (or an IllegalOperation 
-// if there are fewer than `n` elements). Elements are returned in they order
-// (left-to-right in return value) that they would be popped, e.g.,
+// MultiPop pops and returns the top `n` elements of the stack (or an 
+// IllegalOperation if there are fewer than `n` elements). Elements are 
+// returned in they order (left-to-right in return value) that they are popped,
+// e.g.,
 //		[w, x, y, z].MultiPop(3) == [z, y, x]
 // To return the elements in the order they appear on the stack, use 
 // 		(*Stack[T]) MultiCheck(int)

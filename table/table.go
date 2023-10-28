@@ -10,9 +10,31 @@ type tableElement[T any] struct {
 	val T
 }
 
+type TableType[T any] interface {
+	Len() int
+	Add(key nameable.Nameable, val T)
+	Get(key nameable.Nameable) (val T, ok bool)
+	Remove(key nameable.Nameable) (val T, ok bool)
+}
+
 // Table that maps instances of nameable.Nameable to a value of type T
 type Table[T any] struct {
 	data map[string]tableElement[T]
+}
+
+// Makes a new table with initial capacity cap[0]. Calling this function with 
+// no arguments is also valid, in which case a small starting capacity is used
+func NewTable[T any](cap ...uint) *Table[T] {
+	var underlying Table[T]
+	if len(cap) == 0 {
+		underlying = Table[T]{make(map[string]tableElement[T])}
+	} else {
+		underlying = Table[T]{make(map[string]tableElement[T], cap[0])}
+	}
+
+	out := new(Table[T])
+	*out = underlying
+	return out
 }
 
 // number of elements in table
