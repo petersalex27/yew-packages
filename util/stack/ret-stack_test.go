@@ -321,7 +321,6 @@ func TestRebase(t *testing.T) {
 		// test rebase for each saved frame
 		numFrames := len(test.savedFrames)
 		for j, frameIndex := 0, numFrames - 1; j < len(test.savedFrames); j, frameIndex = j + 1, frameIndex - 1 {
-			frameIndex = numFrames - 1 - j
 			// now rebase
 			retStat := stack.Rebase()
 			if !retStat.Is(test.rebaseStatus) {
