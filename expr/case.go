@@ -62,8 +62,14 @@ func (c Case[T]) StrictString() string {
 	for i, v := range c.binders {
 		strs[i] = v.StrictString()
 	}
-	return "(Λ" + strings.Join(strs, " ") + " . " + 
-		c.when.StrictString() + " -> " + 
+
+	hiddenBinders := ""
+	if len(c.binders) != 0 {
+		hiddenBinders = "Λ" + strings.Join(strs, " ") + " . "
+	}
+
+	return "(" + hiddenBinders +
+		c.when.StrictString() + " -> " +
 		c.then.StrictString() + ")"
 }
 

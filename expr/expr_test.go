@@ -14,8 +14,8 @@ func _Apply(e1, e2 Expression[test_named], es ...Expression[test_named]) Applica
 	return Apply[test_named](e1, e2, es...)
 }
 
-func _Bind(binder Variable[test_named], more ...Variable[test_named]) BindersOnly[test_named] {
-	return Bind[test_named](binder, more...)
+func _Bind(more ...Variable[test_named]) BindersOnly[test_named] {
+	return Bind[test_named](more...)
 }
 
 func _Var(s string) Variable[test_named] {

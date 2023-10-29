@@ -190,12 +190,16 @@ func mkfunc[T nameable.Nameable](bs ...Variable[T]) BindersOnly[T] {
 	return out
 }
 
-func Bind[T nameable.Nameable](binder Variable[T], more ...Variable[T]) BindersOnly[T] {
+func StrictBind[T nameable.Nameable](binder Variable[T], more ...Variable[T]) BindersOnly[T] {
 	if len(more) == 0 {
 		return mkfunc(binder)
 	}
 
 	return mkfunc(append([]Variable[T]{binder}, more...)...)
+}
+
+func Bind[T nameable.Nameable](binders ...Variable[T]) BindersOnly[T] {
+	return mkfunc(binders...)
 }
 
 func (bs BindersOnly[T]) Update(add int) BindersOnly[T] {
