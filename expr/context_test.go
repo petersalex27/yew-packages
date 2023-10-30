@@ -3,7 +3,7 @@ package expr
 import "testing"
 
 func nameMaker(s string) test_named {
-		return test_named(s)
+	return test_named(s)
 }
 
 func TestDeclareInverses_invalid(t *testing.T) {
@@ -15,34 +15,34 @@ func TestDeclareInverses_invalid(t *testing.T) {
 		expect string
 	}{
 		{
-			func(cxt *Context[test_named]) {}, 
+			func(cxt *Context[test_named]) {},
 			nameNotDefined(f).Error(),
 		},
 		{
-			func(cxt *Context[test_named]) { cxt.table[f.String()] = f }, 
+			func(cxt *Context[test_named]) { cxt.table[f.String()] = f },
 			nameNotDefined(fInv).Error(),
 		},
 		{
-			func(cxt *Context[test_named]) { 
-				cxt.table[f.String()], cxt.table[fInv.String()] = f, fInv 
+			func(cxt *Context[test_named]) {
+				cxt.table[f.String()], cxt.table[fInv.String()] = f, fInv
 				cxt.inverses[f.String()] = _Const("_")
-			}, 
+			},
 			redefineInv(f).Error(),
 		},
 		{
-			func(cxt *Context[test_named]) { 
-				cxt.table[f.String()], cxt.table[fInv.String()] = f, fInv 
+			func(cxt *Context[test_named]) {
+				cxt.table[f.String()], cxt.table[fInv.String()] = f, fInv
 				cxt.inverses[fInv.String()] = _Const("_")
-			}, 
+			},
 			redefineInv(fInv).Error(),
 		},
 	}
-	
+
 	for testIndex, test := range tests {
 		cxt := NewContext[test_named]().SetNameMaker(nameMaker)
 		test.setup(cxt)
 		e := cxt.DeclareInverse(f, fInv)
-		
+
 		if e == nil {
 			t.Fatalf("failed test #%d: call to cxt.DeclareInverse(%v, %v) succeeded but should have failed with \"%s.\"\n", testIndex+1, f, fInv, test.expect)
 		}
@@ -54,23 +54,23 @@ func TestDeclareInverses_invalid(t *testing.T) {
 }
 
 func TestDeclareInverses(t *testing.T) {
-	tests := []struct{
+	tests := []struct {
 		names [2]Const[test_named]
-		exp [2]Expression[test_named]
+		exp   [2]Expression[test_named]
 	}{
 		{
 			[2]Const[test_named]{_Const("id"), _Const("id")},
 			[2]Expression[test_named]{_Const("id"), _Const("id")},
 		},
 		{
-			[2]Const[test_named]{_Const("succ"), _Const("pred")}, 
+			[2]Const[test_named]{_Const("succ"), _Const("pred")},
 			[2]Expression[test_named]{
 				_Bind(_Var("x")).In(_Apply(_Const("Succ"), _Var("x"))),
 				_Bind(_Var("x")).In(_Apply(_Const("Pred"), _Var("x"))),
 			},
 		},
 		{
-			[2]Const[test_named]{_Const("(+)"), _Const("(-)")}, 
+			[2]Const[test_named]{_Const("(+)"), _Const("(-)")},
 			[2]Expression[test_named]{
 				_Bind(_Var("x"), _Var("y")).In(_Apply(_Const("addNum"), _Var("x"), _Var("y"))),
 				_Bind(_Var("x"), _Var("y")).In(_Apply(_Const("subNum"), _Var("x"), _Var("y"))),

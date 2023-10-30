@@ -18,25 +18,54 @@ func (lex *Lexer) GetErrors() []error {
 	return lex.errors
 }
 
-func NewLexer(whitespace *regexp.Regexp, caps ...int) *Lexer {
+// order for capsAndOffsets is:
+//	- [0] source cap (default=32) (keep default but include next w/ < 0)
+//	- [1] tokens cap (default=32) (keep default but include next w/ < 0)
+//	- [2] errors cap (default=0) (keep default but include next w/ < 0)
+//	- [3] line offset (default=0) (keep defaul but include next w/ < 0)
+//  - [4] char offset (default=0) (for default, don't pass an argument
+//		or < 0)
+func NewLexer(whitespace *regexp.Regexp, capsAndOffsets ...int) *Lexer {
 	lex := new(Lexer)
 	*lex = Lexer{
 		whitespace: whitespace,
-		line:       1,
-		char:       1,
 		source: nil,
 		tokens: nil,
-		errors:	 	make([]error, 0),
+		errors:	nil,
+		line: 1, 
+		char: 1,
 	}
-	if len(caps) > 2 {
-		lex.errors = make([]error, 0, caps[2])
+
+	var inits [5]int = [5]int{
+		32, // source
+		32, // tokens
+		0,  // errors
+		0,  // line
+		0,  // char
 	}
-	if len(caps) > 1 {
-		lex.tokens = make([]token.Token, 0, caps[1])
+
+	const (
+		sourceCapIndex int = iota
+		tokensCapIndex
+		errorsCapIndex
+		lineOffsIndex
+		charOffsIndex
+	)
+
+	for i, val := range capsAndOffsets {
+		if val < 0 {
+			continue // keep default
+		}
+		inits[i] = val
 	}
-	if len(caps) > 0 {
-		lex.source = make([]string, 0, caps[0])
-	}
+
+	// initialize
+	lex.source = make([]string, 0, inits[sourceCapIndex])
+	lex.tokens = make([]token.Token, 0, inits[tokensCapIndex])
+	lex.errors = make([]error, 0, inits[tokensCapIndex])
+	lex.line = lex.line + inits[lineOffsIndex]
+	lex.char = lex.char + inits[charOffsIndex]
+
 	return lex
 }
 
@@ -56,7 +85,59 @@ func (lex *Lexer) SetPath(path string) {
 	lex.path = path
 }
 
-func Lex(path string, whitespace *regexp.Regexp) (*Lexer, error) {
+func Initialize(path string, rawSource []byte, whitespace *regexp.Regexp) (*Lexer, error) {
+	avgTokenLen, avgLineLen := 5, 35 // this is just an estimate
+
+	sourceCap := len(rawSource)/avgLineLen
+	tokensCap := len(rawSource)/avgTokenLen
+	errorsCap := 1
+
+	lex := NewLexer(whitespace, sourceCap, tokensCap, errorsCap)
+	lex.path = path
+
+	oldI := 0
+	for i := 0; i < len(rawSource); i++ {
+		if rawSource[i] == '\n' {
+			lex.source = append(lex.source, string(rawSource[oldI:i+1]))
+			i++
+			oldI = i
+		}
+	}
+	lex.source = append(lex.source, string(rawSource[oldI:]))
+
+	return lex, nil
+}
+
+func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
+	lineOffs, charOffs := firstLine, firstChar
+	if len(lex.tokens) == 0 {
+		return
+	}
+
+	var i int
+	var tok token.Token
+	for i, tok = range lex.tokens {
+		ln, cr := tok.GetLineChar()
+		if ln != firstLine {
+			if i == 0 {
+				lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr)
+			} else {
+				lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr + charOffs)
+			}
+			break
+		}
+		lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr + charOffs)
+	}
+
+	charOffs = 0
+
+	for i = i + 1; i < len(lex.tokens); i++ {
+		ln, cr := tok.GetLineChar()
+		lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr)
+	}
+}
+
+func readInput(path string) ([]byte, error) {
 	f, e := os.Open(path)
 	if e != nil {
 		return nil, e
@@ -66,26 +147,16 @@ func Lex(path string, whitespace *regexp.Regexp) (*Lexer, error) {
 	if readError != nil {
 		return nil, readError
 	}
+	return bytes, nil
+}
 
-	avgTokenLen, avgLineLen := 5, 35 // this is just an estimate
-
-	sourceCap := len(bytes)/avgLineLen
-	tokensCap := len(bytes)/avgTokenLen
-	errorsCap := 1
-
-	lex := NewLexer(whitespace, sourceCap, tokensCap, errorsCap)
-	lex.path = path
-
-	oldI := 0
-	for i := 0; i < len(bytes); i++ {
-		if bytes[i] == '\n' {
-			lex.source = append(lex.source, string(bytes[oldI:i+1]))
-			i++
-			oldI = i
-		}
+func Lex(path string, whitespace *regexp.Regexp) (*Lexer, error) {
+	bytes, e := readInput(path)
+	if e != nil {
+		return nil, e
 	}
-	lex.source = append(lex.source, string(bytes[oldI:]))
-	return lex, nil
+
+	return Initialize(path, bytes, whitespace)
 }
 
 func (lex *Lexer) GetPath() string {
@@ -232,25 +303,6 @@ func (lex *Lexer) IsEndOfFile() bool {
 	return lex.line > len(lex.source)
 }
 
-func (lex *Lexer) advanceLine() {
-	lex.line = lex.line + 1
-	lex.char = 1
-}
-
-func (lex *Lexer) step() { lex.stepn(1) }
-
-func (lex *Lexer) stepn(n uint32) {
-	lex.char = lex.char + int(n)
-	for lex.char > len(lex.source[lex.line-1]) {
-		overflow := lex.char - len(lex.source[lex.line-1])
-		lex.char = overflow
-		lex.line = lex.line + 1
-		if lex.line > len(lex.source) {
-			return
-		}
-	}
-}
-
 func (lex *Lexer) Status() source.Status {
 	if lex.line < 1 || lex.line > len(lex.source) {
 		return source.BadLineNumber
@@ -296,12 +348,6 @@ func (lex *Lexer) stepDirection(n int) source.Status {
 	return source.Ok
 }
 
-func (lex *Lexer) resetCurr() string {
-	out := string(lex.curr.data[:lex.curr.len])
-	lex.curr.len = 0
-	return out
-}
-
 type Lexer struct {
 	whitespace *regexp.Regexp
 	errors 	   []error
@@ -310,11 +356,6 @@ type Lexer struct {
 	char       int
 	source     []string
 	tokens     []token.Token
-	curr       struct {
-		data []byte
-		cap  int
-		len  int
-	}
 }
 
 func (lex *Lexer) GetTokens() []token.Token {
