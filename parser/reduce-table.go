@@ -5,94 +5,46 @@ import (
 	"github.com/petersalex27/yew-packages/util/iterator"
 )
 
-type ReduceTable struct {
+// table of reductions
+type ReductionTable struct {
 	root *combinerTrieRoot
-	//classes map[ast.Type]reps
-	table map[ast.Type]ruleSet
-}
-
-type reps []ast.Type
-
-/*
-func (rt *ReduceTable) SetClass(representative ast.Type, members ...ast.Type) {
-	for _, member := range members {
-		rs, found := rt.classes[member]
-		if found {
-			rs = append(rs, representative)
-		} else {
-			rs = reps{representative}
-		}
-		rt.classes[member] = rs
-	}
-}
-
-func (rt *ReduceTable) getMembers(ty ast.Type) reps {
-	if ty2, found := rt.classes[ty]; found {
-		return ty2
-	}
-	return reps{ty}
-}
-*/
-
-func (rt *ReduceTable) Match(pat pattern, nodes ...ast.Ast) bool {
-	if len(pat) != len(nodes) {
-		return false
-	}
-
-	for i, node := range nodes {
-		if pat[i] != node.NodeType() {
-			return false
-		}
-	}
-	return true
-
-	/*
-		for i, node := range nodes {
-			rs := rt.getMembers(node.NodeType())
-			ok := false
-			for _, r := range rs {
-				if pat[i] == r {
-					ok = true
-					break
-				}
-			}
-			if !ok {
-				return false
-			}
-		}
-		return true*/
+	// maps lookahead to an ordered list of productions
+	table map[ast.Type]productionOrder
 }
 
 type ReductionRules interface {
-	GetRuleSet() ruleSet
+	GetProductionOrder() productionOrder
 }
 
-type ReductionRule struct {
+// reduction rule class. reduction rules classified based on lookahead
+type ReductionRuleClass struct {
 	lookaheads mappable
-	ruleSet
+	productionOrder
 }
 
-func (r ReductionRule) GetRuleSet() ruleSet {
-	return r.ruleSet
+// return productions in given class
+func (r ReductionRuleClass) GetProductionOrder() productionOrder {
+	return r.productionOrder
 }
 
-func (r ReductionRule) ElseShift() ReductionRule {
-	rule_set := r.ruleSet
+// create a shift reduction rule class
+func (r ReductionRuleClass) ElseShift() ReductionRuleClass {
+	rule_set := r.productionOrder
 	rule_set.elseShift = true
-	return ReductionRule{lookaheads: r.lookaheads, ruleSet: rule_set}
+	return ReductionRuleClass{lookaheads: r.lookaheads, productionOrder: rule_set}
 }
 
-var shiftRuleSet ruleSet = ruleSet{rules: nil, elseShift: true}
+var shiftRuleSet productionOrder = productionOrder{rules: nil, classes: nil, elseShift: true}
 
-type needEndReduction ReduceTable
+type needEndReduction ReductionTable
 
 type ForTypesThrough ast.Type
 
 // Note: mapping from an element of mems that already exists in the table will overwrite
 // the previous map!
-func (m *ReduceTable) setInTable(ruleset ruleSet, rep ast.Type, mems []ast.Type) {
+func (m *ReductionTable) setInTable(ruleset productionOrder, rep ast.Type, mems []ast.Type) {
 	rs, found := m.table[rep]
-	var in ruleSet
+	var in productionOrder
 	if found {
 		in = Union(rs, ruleset)
 	} else {
@@ -107,8 +59,8 @@ func (m *ReduceTable) setInTable(ruleset ruleSet, rep ast.Type, mems []ast.Type)
 	}
 }
 
-func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRule) needEndReduction {
-	m := ReduceTable{table: make(map[ast.Type]ruleSet)}
+func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRuleClass) needEndReduction {
+	m := ReductionTable{table: make(map[ast.Type]productionOrder)}
 	m.root = initRoot(ast.Type(lastType))
 
 	for _, rrule := range reductionRules {
@@ -122,18 +74,19 @@ func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRule) n
 		}
 
 		ty := m.root.set(mp...)
-		m.setInTable(rrule.ruleSet, ty, tys)
+		m.setInTable(rrule.productionOrder, ty, tys)
 	}
 
 	return needEndReduction(m)
 }
 
-func (m needEndReduction) Finally(rs ruleSet) ReduceTable {
+// production rules to apply once all tokens have been shifted
+func (m needEndReduction) Finally(rs productionOrder) ReductionTable {
 	ty := ast.None
 	if _, found := m.table[ty]; found {
 		panic("terminal reduction rule(s) already exist(s)")
 	}
 
 	m.table[ty] = rs
-	return ReduceTable(m)
+	return ReductionTable(m)
 }

@@ -41,7 +41,7 @@ func (p benchmarker) ground() *parser {
 	return p.parser
 }
 
-func (p benchmarker) actOnRule(ri rule_interface, ns []ast.Ast) (stat status.Status, ruleApplied bool) {
+func (p benchmarker) actOnRule(ri productionInterface, ns []ast.Ast) (stat status.Status, ruleApplied bool) {
 	return p.parser.actOnRule(ri, ns)
 }
 
@@ -53,7 +53,7 @@ func (p benchmarker) shift() status.Status {
 	return p.parser.shift()
 }
 
-func (p benchmarker) reduce(rules ruleSet) (stat status.Status, appliedRule bool) {
+func (p benchmarker) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
 	if p.optimizedReduce {
 		return p.ground().reduce(rules)
 	}

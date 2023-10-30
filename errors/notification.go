@@ -96,7 +96,7 @@ var specTable = map[rune]func(*Notification, any, int){
 	'r': func(e *Notification, rng any, position int) {
 		res, ok := rng.(int)
 		if !ok {
-			panic("argument " + num(position) + " does not match the format specifier f")
+			panic("argument " + num(position) + " does not match the format specifier r")
 		}
 		if e.ptr == nil {
 			e.ptr = PointerRange{rngLen: res}

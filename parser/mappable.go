@@ -3,8 +3,8 @@ package parser
 import "github.com/petersalex27/yew-packages/parser/ast"
 
 type mappable interface {
-	Shift() ReductionRule
-	Then(ruleSet) ReductionRule
+	Shift() ReductionRuleClass
+	Then(productionOrder) ReductionRuleClass
 }
 
 func class(m mappable) (class ClassMapper, isClass bool) {
@@ -29,14 +29,14 @@ Mapper functions
 */
 
 // creates a lookahead to be mapped to a rule
-func LA(tys ...ast.Type) Mapper { return Mapper(tys) }
+func LookAhead(tys ...ast.Type) Mapper { return Mapper(tys) }
 
-func (tys Mapper) Shift() ReductionRule {
-	return ReductionRule{tys, shiftRuleSet}
+func (tys Mapper) Shift() ReductionRuleClass {
+	return ReductionRuleClass{tys, shiftRuleSet}
 }
 
-func (tys Mapper) Then(rs ruleSet) ReductionRule {
-	return ReductionRule{tys, rs}
+func (tys Mapper) Then(rs productionOrder) ReductionRuleClass {
+	return ReductionRuleClass{tys, rs}
 }
 
 func (tys Mapper) IsClass() (isClass bool, class ClassMapper) {
@@ -60,17 +60,17 @@ func (m Mapper) ForN(n uint, tys ...ast.Type) ClassMapper {
 
 func (c ClassMapper) Or(tys ...ast.Type) ClassMapper {
 	return ClassMapper{
-		rep: c.rep,
+		rep:  c.rep,
 		mems: append(c.mems, members(tys)),
 	}
 }
 
-func (tys ClassMapper) Shift() ReductionRule {
-	return ReductionRule{tys, shiftRuleSet}
+func (tys ClassMapper) Shift() ReductionRuleClass {
+	return ReductionRuleClass{tys, shiftRuleSet}
 }
 
-func (tys ClassMapper) Then(rs ruleSet) ReductionRule {
-	return ReductionRule{tys, rs}
+func (tys ClassMapper) Then(rs productionOrder) ReductionRuleClass {
+	return ReductionRuleClass{tys, rs}
 }
 
 func (tys ClassMapper) IsClass() (isClass bool, class ClassMapper) {

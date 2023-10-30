@@ -14,8 +14,8 @@ type callable interface {
 	call(p *parser, nodes ...ast.Ast) (stat status.Status)
 }
 
-type rule_interface interface {
+type productionInterface interface {
 	stringable.Stringable
 	callable
-	getPattern() pattern
+	getPattern() PatternInterface
 }

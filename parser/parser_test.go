@@ -24,25 +24,25 @@ func TestParser(t *testing.T) {
 	assign_fn := test_reduce_fn(assign_t).GiveName("assignment")
 	context_fn := test_reduce_fn(context_t).GiveName("context")
 
-	set_decl := RuleSet(
+	set_decl := Order(
 		decl_fn.From(let_t, id_t),
 	)
 
-	set_expr := RuleSet(
+	set_expr := Order(
 		expr_fn.From(id_t),                  // Id -> expr
 		expr_fn.From(integer_t),             // Id -> expr
 		expr_fn.From(add_t, expr_t, expr_t), // Add expr expr -> expr
 		expr_fn.From(mul_t, expr_t, expr_t), // Mul expr expr -> expr
 	)
 
-	set_id := RuleSet(Shift().When(let_t))
+	set_id := Order(Shift().When(let_t))
 
-	set_assign := RuleSet(assign_fn.From(decl_t, expr_t))
+	set_assign := Order(assign_fn.From(decl_t, expr_t))
 	set_decl_expr := Union(set_decl, set_expr)
 	set_expr_assign := Union(set_expr, set_assign)
-	set_expr_w_cxt := RuleSet(expr_fn.From(context_t, expr_t))
+	set_expr_w_cxt := Order(expr_fn.From(context_t, expr_t))
 
-	set_context := RuleSet(
+	set_context := Order(
 		context_fn.From(assign_t, in_t), // assign In -> context
 	)
 
@@ -51,19 +51,19 @@ func TestParser(t *testing.T) {
 	table :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
-				LA(let_t).Shift(),
-				LA(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
-				LA(integer_t).Then(set_decl_expr).ElseShift(),
-				LA(add_t).Then(set_decl_expr).ElseShift(),
-				LA(mul_t).Then(set_decl_expr).ElseShift()).
+				LookAhead(let_t).Shift(),
+				LookAhead(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
+				LookAhead(integer_t).Then(set_decl_expr).ElseShift(),
+				LookAhead(add_t).Then(set_decl_expr).ElseShift(),
+				LookAhead(mul_t).Then(set_decl_expr).ElseShift()).
 			Finally(set_expr_assign)
 
 	table_withClasses :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
-				LA(let_t).Shift(),
-				LA(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
-				LA(my_class).
+				LookAhead(let_t).Shift(),
+				LookAhead(id_t).Then(Union(set_id, set_decl_expr)).ElseShift(),
+				LookAhead(my_class).
 					ForN(3, integer_t).Or(add_t).Or(mul_t).
 					Then(set_decl_expr).
 					ElseShift(),
@@ -73,32 +73,32 @@ func TestParser(t *testing.T) {
 	table_2 :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
-				LA(let_t).Then(set_context).ElseShift(),
-				LA(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
-				LA(integer_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
-				LA(add_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
-				LA(mul_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
-				LA(in_t).Then(set_expr_assign).ElseShift()).
+				LookAhead(let_t).Then(set_context).ElseShift(),
+				LookAhead(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
+				LookAhead(integer_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
+				LookAhead(add_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
+				LookAhead(mul_t).Then(Union(set_decl_expr, set_context)).ElseShift(),
+				LookAhead(in_t).Then(set_expr_assign).ElseShift()).
 			Finally(Union(set_expr_assign, set_context, set_expr_w_cxt))
 
 	table_2_withClasses :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
-				LA(let_t).Then(set_context).ElseShift(),
-				LA(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
-				LA(my_class).
+				LookAhead(let_t).Then(set_context).ElseShift(),
+				LookAhead(id_t).Then(Union(set_id, set_decl_expr, set_context)).ElseShift(),
+				LookAhead(my_class).
 					ForN(3, integer_t).Or(add_t).Or(mul_t).
 					Then(Union(set_decl_expr, set_context)).
 					ElseShift(),
-				LA(in_t).Then(set_expr_assign).ElseShift()).
+				LookAhead(in_t).Then(set_expr_assign).ElseShift()).
 			Finally(Union(set_expr_assign, set_context, set_expr_w_cxt))
 
 	id_a := token.AddValue(idTok, "a")
 	int_3 := token.AddValue(intTok, "3")
 
 	tests := []struct {
-		table      ReduceTable
-		classTable ReduceTable
+		table      ReductionTable
+		classTable ReductionTable
 		src        source.StaticSource
 		stream     []token.Token
 		expect     ast.Ast
@@ -188,7 +188,7 @@ func TestParser(t *testing.T) {
 	notOrClass := []string{"", "-c"}
 
 	for i, test := range tests {
-		for j, table := range []ReduceTable{test.table, test.classTable} {
+		for j, table := range []ReductionTable{test.table, test.classTable} {
 			p := NewParser().
 				UsingReductionTable(table).
 				Load(test.stream, test.src, nil, nil).
@@ -237,7 +237,7 @@ func BenchmarkParser(b *testing.B) {
 	commaTok, _ := (test_token{}).SetType(uint(comma_t)).SetValue(",")
 	eqTok, _ := (test_token{}).SetType(uint(eq_t)).SetValue("=")
 
-	unenclose_fn := ReductionFunction(func(nodes ...ast.Ast) ast.Ast {
+	unenclose_fn := ProductionFunction(func(nodes ...ast.Ast) ast.Ast {
 		return nodes[1]
 	}).GiveName("unenclose")
 
@@ -248,11 +248,11 @@ func BenchmarkParser(b *testing.B) {
 	assign_fn := test_reduce_fn(assign_t).GiveName("assignment")
 	context_fn := test_reduce_fn(context_t).GiveName("context")
 
-	set_decl := RuleSet(
+	set_decl := Order(
 		decl_fn.From(let_t, id_t),
 	)
 
-	set_expr := RuleSet(
+	set_expr := Order(
 		unenclose_fn.From(expr_t),
 		expr_fn.From(id_t), // Id -> expr
 		unenclose_fn.From(id_t),
@@ -262,39 +262,39 @@ func BenchmarkParser(b *testing.B) {
 		expr_fn.From(mul_t, expr_t, expr_t), // Mul expr expr -> expr
 	)
 
-	set_list := RuleSet(
+	set_list := Order(
 		lt_fn.From(expr_t, close_t),
 		lt_fn.From(expr_t, comma_t, close_t),
 		lt_fn.From(expr_t, comma_t, listTail_t),
 	)
 
-	set_list_build := RuleSet(
+	set_list_build := Order(
 		list_fn.From(open_t, listTail_t),
 	)
 
-	set_id := RuleSet(Shift().When(let_t))
+	set_id := Order(Shift().When(let_t))
 
-	set_assign := RuleSet(assign_fn.From(decl_t, eq_t, expr_t))
+	set_assign := Order(assign_fn.From(decl_t, eq_t, expr_t))
 	set_decl_expr := Union(set_decl, set_expr)
-	set_expr_w_cxt := RuleSet(expr_fn.From(context_t, expr_t))
+	set_expr_w_cxt := Order(expr_fn.From(context_t, expr_t))
 
-	set_context := RuleSet(
+	set_context := Order(
 		context_fn.From(assign_t, in_t), // assign In -> context
 	)
 
 	table :=
 		ForTypesThrough(last__t).
 			UseReductions(
-				LA(let_t).Then(Union(set_context)).ElseShift(),
-				LA(id_t).Then(Union(set_id, set_expr, set_list_build, set_context)).ElseShift(),
-				LA(integer_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
-				LA(add_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
-				LA(mul_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
-				LA(comma_t).Then(Union(set_expr, set_assign, set_list_build, set_context, set_expr_w_cxt)),
-				LA(open_t).Then(Union(set_expr, set_assign, set_list_build, set_context, set_expr_w_cxt)),
-				LA(close_t).Then(Union(set_expr, set_assign, set_context, set_expr_w_cxt, set_list)),
-				LA(in_t).Then(Union(set_expr, set_list_build, set_assign)),
-				LA(eq_t).Then(set_decl_expr),
+				LookAhead(let_t).Then(Union(set_context)).ElseShift(),
+				LookAhead(id_t).Then(Union(set_id, set_expr, set_list_build, set_context)).ElseShift(),
+				LookAhead(integer_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
+				LookAhead(add_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
+				LookAhead(mul_t).Then(Union(set_expr, set_list_build, set_context)).ElseShift(),
+				LookAhead(comma_t).Then(Union(set_expr, set_assign, set_list_build, set_context, set_expr_w_cxt)),
+				LookAhead(open_t).Then(Union(set_expr, set_assign, set_list_build, set_context, set_expr_w_cxt)),
+				LookAhead(close_t).Then(Union(set_expr, set_assign, set_context, set_expr_w_cxt, set_list)),
+				LookAhead(in_t).Then(Union(set_expr, set_list_build, set_assign)),
+				LookAhead(eq_t).Then(set_decl_expr),
 			).Finally(Union(set_expr, set_context, set_expr_w_cxt))
 
 	id_a := token.AddValue(idTok, "a")
@@ -431,7 +431,7 @@ func TestWhen(t *testing.T) {
 	fn_fn := test_reduce_fn(fn_t).GiveName("function")
 	assign_fn := test_reduce_fn(assign_t).GiveName("assignment")
 
-	rules := RuleSet(
+	rules := Order(
 		fn_fn.When(func_t).From(id_t),
 		assign_fn.From(func_t, fn_t),
 	)
@@ -439,14 +439,14 @@ func TestWhen(t *testing.T) {
 	table :=
 		ForTypesThrough(lastType_t_).
 			UseReductions(
-				LA(func_t).Shift(),
-				LA(id_t).Shift(),
+				LookAhead(func_t).Shift(),
+				LookAhead(id_t).Shift(),
 			).Finally(rules)
 
 	fTok := token.AddValue(idTok, "f")
 
 	tests := []struct {
-		table  ReduceTable
+		table  ReductionTable
 		src    source.StaticSource
 		stream []token.Token
 		expect ast.Ast
@@ -475,7 +475,7 @@ func TestWhen(t *testing.T) {
 			StringType(test_token_stringType)
 
 		actual := p.Parse()
-
+		
 		writeLog(p.FlushLog())
 
 		if p.HasErrors() {

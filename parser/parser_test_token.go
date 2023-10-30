@@ -18,7 +18,7 @@ func (t testType_t) String() string {
 		return "assign_t"
 	case decl_t:
 		return "decl_t"
-	case fn_t: 
+	case fn_t:
 		return "fn_t"
 	case mul_t:
 		return "mul_t"
@@ -47,7 +47,7 @@ func (t testType_t) String() string {
 	case ast.Root:
 		return "Root"
 	}
-	return "testType_"+default_stringType(ast.Type(t))
+	return "testType_" + default_stringType(ast.Type(t))
 }
 
 func test_token_stringType(ty ast.Type) string {
@@ -164,7 +164,7 @@ func (a ast_test_node) InOrderTraversal(f func(token.Token)) {
 	}
 }
 
-func test_reduce_fn(ty ast.Type) ReductionFunction {
+func test_reduce_fn(ty ast.Type) ProductionFunction {
 	return func(nodes ...ast.Ast) ast.Ast { return mknode(ty, nodes...) }
 }
 

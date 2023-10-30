@@ -12,25 +12,25 @@ import (
 
 type loggableParser struct {
 	*parser
-	logger strings.Builder
+	logger     strings.Builder
 	stringType func(ast.Type) string
 }
 
 type action_name string
 
 const (
-	late_log   action_name = "init(late):"
-	init_log   action_name = "init:"
-	shift_log  action_name = "shift:"
-	reduce_log action_name = "reduce:"
-	error_log  action_name = "error:"
-	search_log action_name = "search:"
-	la_ty_log action_name = "lookahead:"
-	rule_log action_name = "rule(applied):"
+	late_log         action_name = "init(late):"
+	init_log         action_name = "init:"
+	shift_log        action_name = "shift:"
+	reduce_log       action_name = "reduce:"
+	error_log        action_name = "error:"
+	search_log       action_name = "search:"
+	la_ty_log        action_name = "lookahead:"
+	rule_log         action_name = "rule(applied):"
 	rule_not_app_log action_name = "rule(unapplied):"
-	rules_found_log action_name = "rules?:"
-	rules_log action_name = "rules:"
-	action_end_log action_name = "action(end):"
+	rules_found_log  action_name = "rules?:"
+	rules_log        action_name = "rules:"
+	action_end_log   action_name = "action(end):"
 )
 
 func (p *loggableParser) shift() status.Status {
@@ -39,7 +39,7 @@ func (p *loggableParser) shift() status.Status {
 	return p.parser.shift()
 }
 
-func (p *loggableParser) actOnRule(rule rule_interface, vars []ast.Ast) (stat status.Status, appliedRule bool) {
+func (p *loggableParser) actOnRule(rule productionInterface, vars []ast.Ast) (stat status.Status, appliedRule bool) {
 	var act action_name = rule_log
 	stat, appliedRule = p.parser.actOnRule(rule, vars)
 	if !appliedRule {
@@ -77,7 +77,7 @@ func (p *loggableParser) Load(tokens []token.Token, src source.StaticSource, def
 	return p
 }
 
-func (p *loggableParser) StringType(f func(ast.Type)string) *loggableParser {
+func (p *loggableParser) StringType(f func(ast.Type) string) *loggableParser {
 	if f == nil { // don't allow // TODO: log this?
 		return p
 	}

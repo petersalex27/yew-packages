@@ -15,16 +15,20 @@ import (
 
 type DefaultErrorFunc func(source.StaticSource, token.Token) error
 
-type Parser interface {
+type RunnableParser interface {
 	Parse() ast.AstRoot
 	LogActions() *loggableParser
-	Load([]token.Token, source.StaticSource, DefaultErrorFunc, error) Parser
+	Load([]token.Token, source.StaticSource, DefaultErrorFunc, error) RunnableParser
+	Parser
+}
+
+type Parser interface {
 	action() status.Status
 	ground() *parser
-	actOnRule(rule_interface, []ast.Ast) (stat status.Status, ruleApplied bool)
+	actOnRule(productionInterface, []ast.Ast) (stat status.Status, ruleApplied bool)
 	reportError(ast.Type) status.Status
 	shift() status.Status
-	reduce(rules ruleSet) (stat status.Status, appliedRule bool)
+	reduce(rules productionOrder) (stat status.Status, appliedRule bool)
 }
 
 type parser struct {
@@ -52,7 +56,7 @@ func (kp knowledgeable_parser) root() *combinerTrieRoot {
 	return kp.cxt.currentTable.root
 }
 
-func (kp knowledgeable_parser) table() *ReduceTable {
+func (kp knowledgeable_parser) table() *ReductionTable {
 	return &kp.cxt.currentTable
 }
 
@@ -175,41 +179,40 @@ func (p *parser) action() status.Status {
 	return forType(ty).followUpRule(p, rules, stat, ruleApplied)
 }
 
-func (p *parser) actOnRule(rule rule_interface, vars []ast.Ast) (stat status.Status, appliedRule bool) {
+func (p *parser) actOnRule(rule productionInterface, vars []ast.Ast) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = rule.call(p, vars...), true
 	return
 }
 
-func (p *parser) matchStack(pattern pattern) (nodes []ast.Ast, matches bool) {
+// tries to match
+func (p *parser) matchStack(pattern PatternInterface) (nodes []ast.Ast, matches bool) {
 	var stackStat stack.StackStatus
-	nodes, stackStat = p.stack.MultiCheck(len(pattern))
+	handleLength := pattern.MaxHandleLength()
+	nodes, stackStat = p.stack.MultiCheck(handleLength)
 	if stackStat.NotOk() {
 		return nil, false
 	}
-	matches = p.table().Match(pattern, nodes...)
+	matches = pattern.Match(nodes...)
 	return
 }
 
-func getSubset(ground *parser, rules ruleSet) (subSet []rule_interface) {
+func getSubset(ground *parser, rules productionOrder) (subSet []productionInterface) {
 	subSet = nil
 	// grab the top node and see if any subsets of rules exist w/ the top node as
 	// the last node
-	if node, stat := ground.stack.Peek(); stat.IsOk() {
-		var found bool
-		subSet, found = rules.ruleMap[node.NodeType()]
-		if !found {
-			subSet = nil
-		}
+	if node, stat := ground.stack.Peek(); stat.IsOk() && rules.classes != nil {
+		subSet, _ = rules.classes.getClass(node.NodeType()) // subSet = nil if not found
 	}
 	return
 }
 
-func (p *parser) reduce(rules ruleSet) (stat status.Status, appliedRule bool) {
+// Parser reduce action: replaces parse-stack handle with reduction rule
+// replacement. Returns reduction status along with the truthy-ness of whether
+// an actual rule was applied
+func (p *parser) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = status.EndAction, false
 
-	// experimental - start
 	subSet := getSubset(p, rules)
-	// experimental - end
 
 	for _, rule := range subSet {
 		pattern := rule.getPattern()
@@ -224,11 +227,11 @@ func (p *parser) reduce(rules ruleSet) (stat status.Status, appliedRule bool) {
 	return
 }
 
-func (p *loggableParser) reduce(rules ruleSet) (stat status.Status, appliedRule bool) {
+func (p *loggableParser) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
 	return p.ground().reduce(rules)
 }
 
-func (ty forType) actionLoop(p Parser, rules ruleSet, found bool) (stat status.Status, appliedRule bool) {
+func (ty forType) actionLoop(p Parser, rules productionOrder, found bool) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = status.Ok, false
 	if !found {
 		return status.EndAction, false
@@ -255,7 +258,7 @@ func (p *parser) reportError(ty ast.Type) status.Status {
 	return status.Error
 }
 
-func (ty forType) followUpRule(p Parser, rules ruleSet, stat status.Status, ruleApplied bool) status.Status {
+func (ty forType) followUpRule(p Parser, rules productionOrder, stat status.Status, ruleApplied bool) status.Status {
 	if ruleApplied {
 		if stat.Is(status.DoShift) {
 			p.shift()
@@ -270,7 +273,7 @@ func (ty forType) followUpRule(p Parser, rules ruleSet, stat status.Status, rule
 	return stat.MakeOk()
 }
 
-func (p blank_parser) UsingReductionTable(table ReduceTable) knowledgeable_parser {
+func (p blank_parser) UsingReductionTable(table ReductionTable) knowledgeable_parser {
 	kp := knowledgeable_parser{
 		blank_parser: p,
 		cxt:          new(ParserContext),
@@ -279,7 +282,7 @@ func (p blank_parser) UsingReductionTable(table ReduceTable) knowledgeable_parse
 	return kp
 }
 
-func (p knowledgeable_parser) Mapping(ty ast.Type, table ReduceTable) knowledgeable_parser {
+func (p knowledgeable_parser) Mapping(ty ast.Type, table ReductionTable) knowledgeable_parser {
 	p.cxt.MapTable(ty, table)
 	return p
 }
@@ -327,9 +330,9 @@ func (kp knowledgeable_parser) Load(tokens []token.Token, src source.StaticSourc
 // InitialStackPush pushes ast nodes onto the parse stack. This function panics
 // if the parser has already started parsing
 func (p *parser) InitialStackPush(nodes ...ast.Ast) *parser {
-	// check if parser has already started parsing (marks itself as unloaded at 
-  // start of parse)
-	if !p.loaded { 
+	// check if parser has already started parsing (marks itself as unloaded at
+	// start of parse)
+	if !p.loaded {
 		panic("illegal operation: stack cannot be initialized once parser has started parsing")
 	}
 
