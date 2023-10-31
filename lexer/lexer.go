@@ -111,15 +111,17 @@ func Initialize(path string, rawSource []byte, whitespace *regexp.Regexp) (*Lexe
 // using firstLine and firstChar, a char offset is applied to the tokens from
 // the start of tokens until a token that doesn't has a different line number
 // is reached; all tokens have their line number offset by `firstLine`.
-func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
-	lineOffs, charOffs := firstLine, firstChar
+func (lex *Lexer) ApplyOffset(offsetLine int, offsetLength int) {
 	if len(lex.tokens) == 0 {
 		return
 	}
 
 	initialLine, _ := lex.tokens[0].GetLineChar()
+	lineOffs := offsetLine - initialLine
+	charOffs := offsetLength
 
 	var i int = 0
+	// loop for tokens on the same line as `initialLine`
 	for ; i < len(lex.tokens); i++ {
 		ln, cr := lex.tokens[i].GetLineChar()
 		if ln != initialLine {
@@ -130,8 +132,22 @@ func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
 		lex.tokens[i] = lex.tokens[i].SetLineChar(ln+lineOffs, cr+charOffs)
 	}
 
-	charOffs = 0
+	// original:
+	// is.GetLineChar() == 3,6
+	// this.GetLineChar() == 3,1
+	// 3 |  this is some line
+	// 4 |  with another line
+	//
+	// => firstLine=3, firstChar=1
+	// is.GetLineChar() == 1,2 => charOffs = 3-1, lineOffs = this.GetLength() 
+	// charOffs, lineOffs == 2, 4
+	//                             v    vvvv
+	// 1 |   is some line      =>  3 |  ____ is some line 
+	// 2 |  with another line  =>  4 |  with another line
 
+	charOffs = 0 // dont shift chars now, that would be weird
+
+	// loop for tokens on lines > `initialLine`
 	for ; i < len(lex.tokens); i++ {
 		ln, cr := lex.tokens[i].GetLineChar()
 		lex.tokens[i] = lex.tokens[i].SetLineChar(ln+lineOffs, cr)
