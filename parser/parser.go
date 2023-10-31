@@ -37,6 +37,7 @@ type parser struct {
 	stack  *stack.Stack[ast.Ast]
 	src    source.StaticSource
 	tokens []token.Token
+	actions actionRequester
 }
 
 type blank_parser struct {

@@ -17,6 +17,7 @@ import (
 type Productions interface {
 	stringable.Stringable
 	do(nodes ...ast.Ast) ast.Ast // performs replacement
+	doWith(action ActionFunction, handle ...ast.Ast) ast.Ast // performs replacement w/ action
 }
 
 type Production struct{ Productions }
@@ -45,6 +46,8 @@ func (f ProductionFunction) do(nodes ...ast.Ast) ast.Ast {
 	return f(nodes...)
 }
 
+func (ProductionFunction) doWith(ActionFunction, ...ast.Ast) ast.Ast { panic("illegal operation") }
+
 func (f ProductionFunction) String() string {
 	return "production_function"
 }
@@ -57,6 +60,8 @@ type NamedProduction struct {
 func (f NamedProduction) do(nodes ...ast.Ast) ast.Ast {
 	return f.ProductionFunction(nodes...)
 }
+
+func (NamedProduction) doWith(ActionFunction, ...ast.Ast) ast.Ast { panic("illegal operation") }
 
 func (f NamedProduction) String() string {
 	return f.Name
