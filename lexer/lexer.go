@@ -132,8 +132,8 @@ func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
 	charOffs = 0
 
 	for i = i + 1; i < len(lex.tokens); i++ {
-		ln, cr := tok.GetLineChar()
-		lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr)
+		ln, cr := lex.tokens[i].GetLineChar()
+		lex.tokens[i] = lex.tokens[i].SetLineChar(ln + lineOffs, cr)
 	}
 }
 
