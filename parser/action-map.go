@@ -1,27 +1,27 @@
 package parser
 
-type ActionFunction func()
+type ActionFunction func(any)
 
 type Action struct {
 	Name string
-	Does func()
+	Does func(any)
 }
 
 type actionMap map[string]ActionFunction
 
 type actionRequester struct {
-	failGet func(name string) func()
+	failGet func(name string) func(any)
 	actionMap
 }
 
-func defaultFailGet(name string) func() { 
-	return func () {
+func defaultFailGet(name string) func(any) { 
+	return func (a any) {
 		panic("tried to load action `" + name + "`, but it does not exist")
 	}
 }
 
 // returns action named `name`, panics if name does not map to an action
-func (ar *actionRequester) get(name string) func() {
+func (ar *actionRequester) get(name string) func(any) {
 	action, found := ar.actionMap[name]
 	if !found {
 		return ar.failGet(name)
@@ -93,6 +93,6 @@ func (p *parser) UpdateAction(action Action) {
 	p.actions.actionMap[action.Name] = action.Does
 }
 
-func (p *parser) SetActionRequestFail(onFailGet func(name string) func()) {
+func (p *parser) SetActionRequestFail(onFailGet func(name string) func(any)) {
 	p.actions.failGet = onFailGet
 }

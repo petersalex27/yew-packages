@@ -32,7 +32,7 @@ func ActionRule() actionRuleNeedsReduceTo { return actionRuleNeedsReduceTo{} }
 
 func (w actionRuleNeedsReduceTo) Get(
 	production func(
-		action func(name string),
+		action func(name string) func(any),
 		handle ...ast.Ast,
 	) ast.Ast,
 ) actionRuleNeedsPattern {
@@ -51,15 +51,15 @@ func (w actionRuleNeedsPattern) From(ty ...ast.Type) productionInterface {
 // attached action is to allow for users of this package to have their own
 // parsing state inside the action function; the call to action would then
 // change the state, print errors, whatever
-type ProductionWith func(call func(name string), handle ...ast.Ast) ast.Ast
+type ProductionWith func(call func(name string) func(any), handle ...ast.Ast) ast.Ast
 
 func (f ProductionWith) call(p *parser, n uint, handle ...ast.Ast) status.Status {
 	// pop stack (this removes `nodes`)
 	p.stack.Clear(n) // must be called before pushing reduction result
 
 	// create closure, capturing state of parser
-	callRequester := func(name string) {
-		p.actions.get(name)() // call action
+	callRequester := func(name string) func(any) {
+		return p.actions.get(name) // call action
 	}
 	// do reduction action
 	reduced := f(callRequester, handle...)
