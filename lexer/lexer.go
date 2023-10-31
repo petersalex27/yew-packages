@@ -19,21 +19,21 @@ func (lex *Lexer) GetErrors() []error {
 }
 
 // order for capsAndOffsets is:
-//	- [0] source cap (default=32) (keep default but include next w/ < 0)
-//	- [1] tokens cap (default=32) (keep default but include next w/ < 0)
-//	- [2] errors cap (default=0) (keep default but include next w/ < 0)
-//	- [3] line offset (default=0) (keep defaul but include next w/ < 0)
-//  - [4] char offset (default=0) (for default, don't pass an argument
-//		or < 0)
+//   - [0] source cap (default=32) (keep default but include next w/ < 0)
+//   - [1] tokens cap (default=32) (keep default but include next w/ < 0)
+//   - [2] errors cap (default=0) (keep default but include next w/ < 0)
+//   - [3] line offset (default=0) (keep defaul but include next w/ < 0)
+//   - [4] char offset (default=0) (for default, don't pass an argument
+//     or < 0)
 func NewLexer(whitespace *regexp.Regexp, capsAndOffsets ...int) *Lexer {
 	lex := new(Lexer)
 	*lex = Lexer{
 		whitespace: whitespace,
-		source: nil,
-		tokens: nil,
-		errors:	nil,
-		line: 1, 
-		char: 1,
+		source:     nil,
+		tokens:     nil,
+		errors:     nil,
+		line:       1,
+		char:       1,
 	}
 
 	var inits [5]int = [5]int{
@@ -88,8 +88,8 @@ func (lex *Lexer) SetPath(path string) {
 func Initialize(path string, rawSource []byte, whitespace *regexp.Regexp) (*Lexer, error) {
 	avgTokenLen, avgLineLen := 5, 35 // this is just an estimate
 
-	sourceCap := len(rawSource)/avgLineLen
-	tokensCap := len(rawSource)/avgTokenLen
+	sourceCap := len(rawSource) / avgLineLen
+	tokensCap := len(rawSource) / avgTokenLen
 	errorsCap := 1
 
 	lex := NewLexer(whitespace, sourceCap, tokensCap, errorsCap)
@@ -109,7 +109,7 @@ func Initialize(path string, rawSource []byte, whitespace *regexp.Regexp) (*Lexe
 }
 
 // using firstLine and firstChar, a char offset is applied to the tokens from
-// the start of tokens until a token that doesn't has a different line number 
+// the start of tokens until a token that doesn't has a different line number
 // is reached; all tokens have their line number offset by `firstLine`.
 func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
 	lineOffs, charOffs := firstLine, firstChar
@@ -120,22 +120,21 @@ func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
 	initialLine, _ := lex.tokens[0].GetLineChar()
 
 	var i int = 0
-	var tok token.Token
 	for ; i < len(lex.tokens); i++ {
-		ln, cr := tok.GetLineChar()
+		ln, cr := lex.tokens[i].GetLineChar()
 		if ln != initialLine {
 			// have now moved onto a new line, no more char offset else all
 			// lines will be offset at the start
 			break
 		}
-		lex.tokens[i] = lex.tokens[i].SetLineChar(ln + lineOffs, cr + charOffs)
+		lex.tokens[i] = lex.tokens[i].SetLineChar(ln+lineOffs, cr+charOffs)
 	}
 
 	charOffs = 0
 
 	for ; i < len(lex.tokens); i++ {
 		ln, cr := lex.tokens[i].GetLineChar()
-		lex.tokens[i] = lex.tokens[i].SetLineChar(ln + lineOffs, cr)
+		lex.tokens[i] = lex.tokens[i].SetLineChar(ln+lineOffs, cr)
 	}
 }
 
@@ -184,9 +183,9 @@ func (lex *Lexer) SetLineChar(line, char int) {
 }
 
 func (lex *Lexer) AdvanceLine() source.Status {
-	if lex.line + 1 > lex.NumLines() {
+	if lex.line+1 > lex.NumLines() {
 		return source.Eof
-	} 
+	}
 	lex.line = lex.line + 1
 	lex.char = 1
 	return source.Ok
@@ -309,10 +308,10 @@ func (lex *Lexer) Status() source.Status {
 	if lex.line < 1 || lex.line > len(lex.source) {
 		return source.BadLineNumber
 	}
-	if lex.char < 1 || lex.char - 1 > len(lex.source[lex.line-1]) {
+	if lex.char < 1 || lex.char-1 > len(lex.source[lex.line-1]) {
 		return source.BadCharNumber
 	}
-	if lex.char + 1 == len(lex.source[lex.line-1]) {
+	if lex.char+1 == len(lex.source[lex.line-1]) {
 		if lex.line == len(lex.source) {
 			return source.Eof
 		}
@@ -337,12 +336,12 @@ func (lex *Lexer) stepDirection(n int) source.Status {
 			underflow := -char - 1
 			char = len(lex.source[line-1]) - underflow
 		}
-	} else if char > len(lex.source[line-1]) + 1 {
-		for char > len(lex.source[line-1]) + 1 {
+	} else if char > len(lex.source[line-1])+1 {
+		for char > len(lex.source[line-1])+1 {
 			if line+1 > len(lex.source) {
 				return source.BadLineNumber
 			}
-			char = (char-1) - len(lex.source[line-1])
+			char = (char - 1) - len(lex.source[line-1])
 			line = line + 1
 		}
 	}
@@ -352,7 +351,7 @@ func (lex *Lexer) stepDirection(n int) source.Status {
 
 type Lexer struct {
 	whitespace *regexp.Regexp
-	errors 	   []error
+	errors     []error
 	path       string
 	line       int
 	char       int
