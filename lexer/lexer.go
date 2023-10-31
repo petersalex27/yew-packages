@@ -108,32 +108,29 @@ func Initialize(path string, rawSource []byte, whitespace *regexp.Regexp) (*Lexe
 	return lex, nil
 }
 
+// NOTE: this also applies an offset to any indent tokens
 func (lex *Lexer) ApplyOffset(firstLine int, firstChar int) {
 	lineOffs, charOffs := firstLine, firstChar
 	if len(lex.tokens) == 0 {
 		return
 	}
 
-	var i int
-	var tok token.Token
-	for i, tok = range lex.tokens {
-		ln, cr := tok.GetLineChar()
-		if ln != firstLine {
-			if i == 0 {
-				lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr)
-			} else {
-				lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr + charOffs)
-			}
+	initialLine, _ := lex.tokens[0].GetLineChar()
+
+	var i int = 0
+	for ; i < len(lex.tokens); i++ {
+		tokenLine, tokenChar := lex.tokens[i].GetLineChar()
+		if tokenLine != initialLine {
 			break
 		}
-		lex.tokens[i] = tok.SetLineChar(ln + lineOffs, cr + charOffs)
+		lex.tokens[i] = lex.tokens[i].SetLineChar(tokenLine + lineOffs, tokenChar + charOffs)
 	}
 
 	charOffs = 0
 
-	for i = i + 1; i < len(lex.tokens); i++ {
-		ln, cr := lex.tokens[i].GetLineChar()
-		lex.tokens[i] = lex.tokens[i].SetLineChar(ln + lineOffs, cr)
+	for ; i < len(lex.tokens); i++ {
+		tokenLine, tokenChar := lex.tokens[i].GetLineChar()
+		lex.tokens[i] = lex.tokens[i].SetLineChar(tokenLine + lineOffs, tokenChar)
 	}
 }
 
