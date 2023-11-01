@@ -1,6 +1,9 @@
 package testutil
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func TestSubMsg(index, subindex int, format string, args ...any) string {
 	indexStr := fmt.Sprint(index + 1)
@@ -15,16 +18,43 @@ func TestMsg(index int, format string, args ...any) string {
 	return TestSubMsg(index, -1, format, args...)
 }
 
-// returns the following string
+// examples of calls and corresponding strings
+//	TestFail2("myTestCase", "my expected value", "my actual value", 0)
+//	`
+//	failed test #1 [myTestCase]:
+//	expected:
+//	my expected value
+//	actual:
+//	my actual value
+//	`
 //
-//	"failed test #<index>[.<subindex0>[.<subindex1> ..]]:\nexpected:\n<expected>\nactual:\n<actual>"
+//	TestFail2("myTestCase", "my expected value", "my actual value", 0, 0)
+//	`
+//	failed test #1/1 [myTestCase]:
+//	expected:
+//	my expected value
+//	actual:
+//	my actual value
+//	`
+//
+//	TestFail2("", "my expected value", "my actual value", 0, 1, 0)
+//	`
+//	failed test #1/2/1:
+//	expected:
+//	my expected value
+//	actual:
+//	my actual value
+//	`
 func TestFail2(title string, expected, actual any, index int, subindexes ...int) string {
-	indexStr := fmt.Sprint(index + 1)
-	for _, index := range subindexes {
-		indexStr = indexStr + "." + fmt.Sprint(index+1)
+	indexes := append([]int{index}, subindexes...)
+	indexStrs := make([]string, len(indexes))
+	for i, index := range indexes {
+		indexStrs[i] = fmt.Sprint(index+1)
 	}
+	indexStr := strings.Join(indexStrs, "/") // 1/2/1/3..
+
 	if title != "" {
-		title = fmt.Sprintf(" (%s)", title)
+		title = fmt.Sprintf(" [%s]", title)
 	}
 
 	return fmt.Sprintf("failed test #%s%s:\nexpected:\n%v\nactual:\n%v", indexStr, title, expected, actual)
