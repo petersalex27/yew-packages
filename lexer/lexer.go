@@ -34,6 +34,7 @@ func NewLexer(whitespace *regexp.Regexp, capsAndOffsets ...int) *Lexer {
 		errors:     nil,
 		line:       1,
 		char:       1,
+		Documentor: MakeDocumentor(nil),
 	}
 
 	var inits [5]int = [5]int{
@@ -373,6 +374,7 @@ type Lexer struct {
 	char       int
 	source     []string
 	tokens     []token.Token
+	*Documentor
 }
 
 func (lex *Lexer) GetTokens() []token.Token {
