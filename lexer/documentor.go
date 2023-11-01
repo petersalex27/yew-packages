@@ -21,6 +21,10 @@ type Documentor struct {
 	formatCommentLine func(this *Documentor, comment string) (newComment string)
 }
 
+func (documentor *Documentor) Run(comment string) (newComment string) {
+	return documentor.formatCommentLine(documentor, comment)
+}
+
 // removes all trailing whitespace (or more prec., ' ' and '\t') from `comment`
 // and returns it
 //
