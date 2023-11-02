@@ -13,6 +13,25 @@ import (
 // functions with the same names as the public methods of Description
 type Description string
 
+type TestingFor struct {
+	What string
+	Description
+}
+
+// Testing creates a name for the thing being tested with an optional 
+// description. If no argument is given for description, the output won't have
+// one. If one or more is given, then only the first description will be used
+func Testing(what string, description ...string) TestingFor {
+	desc := ""
+	if len(description) > 0 {
+		desc = description[0]
+	}
+	return TestingFor{
+		What: what,
+		Description: Description(desc),
+	}
+}
+
 // constant receiver for Description functions that causes description
 // related parts of functions to be ignored
 const NoDescription Description = Description("")
@@ -23,31 +42,48 @@ const NoDescription Description = Description("")
 //
 // example:
 //
-//	FailMessage([]int{1,2,3}, []int{1,2,2}, 15, 2, 3)
-//	return`
-//	failed test:
+//	Testing("stuff", "my test").FailMessagef("%s%v","arr = ",[]int{1,2,2})(15,2,3)
+//	return
+//	`failed test: arr = [1 2 2]
+//		testing: stuff
+//		description: "my test"
 //		case 16, sub 3:4
-//	expected:
-//	{1 2 3}
-//	actual:
-//	{1 2 2}`
-func (description Description) FailMessagef(format string, args ...any) func(indexes ...int) string {
-	// create user message
+// 	`
+func (test TestingFor) FailMessagef(format string, args ...any) func(indexes ...int) string {
+	// create user message	
 	userMessage := fmt.Sprintf(format, args...)
 
 	// inner function allowing multiple variable-length args to be used
 	return func(indexes ...int) string {
 		format = "failed test: %s"
-		maxArgLen := len(indexes) + 2 // +1 for user msg, +1 for description
+		// +1 for user msg, +1 for description, +1 for testing
+		maxArgLen := len(indexes) + 2 
 		args := make([]any, 0, maxArgLen)
 		args = append(args, userMessage)
 
-		format, args = getDescription(format, args, string(description))
+		format, args = getTesting(format, args, test.What)
+		format, args = getDescription(format, args, string(test.Description))
 		format, args = getMajorCase(format, args, indexes)
 		format, args = getSubCases(format, args, indexes)
 		format = format + "\n"
 		return fmt.Sprintf(format, args...)
 	}
+}
+
+// returns a message saying a test with `description` and, optionaly, test case
+// number indexes[0]+1 and sub case numbers index[1:] (+1 to value for ea.) and
+// a message formated according to `format` and `args` failed
+//
+// example:
+//
+//	Description("my test").FailMessagef("%s%v","arr = ",[]int{1,2,2})(15,2,3)
+//	return
+//	`failed test: arr = [1 2 2]
+//		description: "my test"
+//		case 16, sub 3:4
+// 	`
+func (description Description) FailMessagef(format string, args ...any) func(indexes ...int) string {
+	return Testing("").FailMessagef(format, args...)
 }
 
 // returns a message saying a test with test case number indexes[0]+1 and sub-
@@ -56,16 +92,13 @@ func (description Description) FailMessagef(format string, args ...any) func(ind
 //
 // example:
 //
-//	FailMessage([]int{1,2,3}, []int{1,2,2}, 15, 2, 3)
-//	return`
-//	failed test:
+//	FailMessagef("%s%v", "arr = ", []int{1, 2, 2})(15, 2, 3)
+//	return
+//	`failed test: arr = [1 2 2]
 //		case 16, sub 3:4
-//	expected:
-//	{1 2 3}
-//	actual:
-//	{1 2 2}`
+//	`
 func FailMessagef(format string, args ...any) func(indexes ...int) string {
-	return NoDescription.FailMessagef(format, args...)
+	return (TestingFor{"",NoDescription}).FailMessagef(format, args...)
 }
 
 // return updated format and args to account for major case number
@@ -101,6 +134,23 @@ func getSubCases(format string, args []any, indexes []int) (newFormat string, ne
 	for _, index := range indexes[2:] {
 		format = format + ":%d"
 		args = append(args, index+1)
+	}
+	return format, args
+}
+
+// if description is valid, return:
+//
+//	newFormat = format + "\n\tdescription: \"%s\""
+//	newArgs = append(args, description)
+//
+// else return:
+//
+//	newFormat = format
+//	newArgs = args
+func getTesting(format string, args []any, what string) (newFormat string, newArgs []any) {
+	if what != "" {
+		format = format + "\n\ttesting: %s"
+		args = append(args, what)
 	}
 	return format, args
 }
@@ -153,9 +203,9 @@ func getActual(format string, args []any, actual any) (newFormat string, newArgs
 //	failed test:
 //		case 16, sub 3:4
 //	expected:
-//	{1 2 3}
+//	[1 2 3]
 //	actual:
-//	{1 2 2}`
+//	[1 2 2]`
 func FailMessage(expected any, actual any, caseIndexes ...int) string {
 	return NoDescription.FailMessage(expected, actual, caseIndexes...)
 }
@@ -166,28 +216,31 @@ func FailMessage(expected any, actual any, caseIndexes ...int) string {
 //
 // example:
 //
-//	Description("some case").FailMessage([]int{1,2,3}, []int{1,2,2}, 15, 2, 3)
-//	return`
-//	failed test:
+//	Testing("stuff", "some case").FailMessage([]int{1,2,3}, []int{1,2,2}, 15, 2, 3)
+//	return
+//	`failed test:
+//		testing: stuff
 //		description: "some case"
 //		case 16, sub 3:4
 //	expected:
-//	{1 2 3}
+//	[1 2 3]
 //	actual:
-//	{1 2 2}`
-func (description Description) FailMessage(expected any, actual any, caseIndexes ...int) string {
+//	[1 2 2]`
+func (test TestingFor) FailMessage(expected any, actual any, caseIndexes ...int) string {
 	// in its full form:
 	//	_args:_____________index[0]___index[1:]___________expected______actual___
 	//	_spec:________________v_______vvvvvvvvvv_____________v____________v______
 	//	"failed test:\n\tcase %d, sub %d:%d..:%d\nexpected:\n%v\nactual:\n%v\n"
 	var format string = "failed test:"
-	// room for each arg
-	maxLen := 3 + len(caseIndexes)
+	// room for each arg: 
+	//	test.What=1, test.Description=1, expected=1, actual=1, len(caseIndexes)
+	maxLen := 4 + len(caseIndexes)
 	// accumulated arguments
 	args := make([]any, 0, maxLen)
 
 	// build format and args from parts
-	format, args = getDescription(format, args, string(description))
+	format, args = getTesting(format, args, test.What)
+	format, args = getDescription(format, args, string(test.Description))
 	format, args = getMajorCase(format, args, caseIndexes)
 	format, args = getSubCases(format, args, caseIndexes)
 	format, args = getExpected(format, args, expected)
@@ -196,6 +249,25 @@ func (description Description) FailMessage(expected any, actual any, caseIndexes
 
 	// return string-ed result
 	return fmt.Sprintf(format, args...)
+}
+
+// returns a message saying a test with `description` and, optionaly, test case
+// number indexes[0]+1 and sub case numbers index[1:] (+1 to value for ea.);
+// then gives the `expected` value and `actual` value
+//
+// example:
+//
+//	Description("some case").FailMessage([]int{1,2,3}, []int{1,2,2}, 15, 2, 3)
+//	return
+//	`failed test:
+//		description: "some case"
+//		case 16, sub 3:4
+//	expected:
+//	[1 2 3]
+//	actual:
+//	[1 2 2]`
+func (description Description) FailMessage(expected any, actual any, caseIndexes ...int) string {
+	return Testing("", string(description)).FailMessage(expected, actual, caseIndexes...)
 }
 
 // == deprecated stuff: STUFF BELOW WILL BE REMOVED! ==========================
