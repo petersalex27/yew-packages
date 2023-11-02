@@ -28,4 +28,4 @@ else
   REF=$3
 fi
 
-git add --all && git commit -m $MSG && git push $REPO $REF && sh show.shq
+git add --all && git commit -m $MSG && git push $REPO $REF && sh show.sh
