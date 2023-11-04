@@ -36,8 +36,9 @@ func (r contextRule) call(p *parser, nodes ...ast.Ast) status.Status {
 	}
 
 	if stat.Is(r.signalReduction) && p.cxt.reduction != nil {
-		node := p.cxt.reduction.do(nodes[r.whenLen:]...)
-		p.stack.Push(node)
+		reduced := p.cxt.reduction.do(nodes[r.whenLen:]...)
+		// save result?
+		p.maybePush(reduced)
 	}
 	return stat
 }

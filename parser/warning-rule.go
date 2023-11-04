@@ -33,11 +33,14 @@ func (r warningRule) call(p *parser, nodes ...ast.Ast) status.Status {
 	n := uint(len(nodes))
 	p.stack.Clear(n) // must be called before pushing reduction result
 
-	// do warning and reduction (reduction happens inside r.WarnFn)
+	// do warning and production action (production happens inside r.WarnFn)
 	warning := r.WarnFn.Warn(ast.TokenNode(tok), nodes...)
-	res := r.do(nodes...)
+	// add warning
 	p.warnings = append(p.warnings, warning)
-	p.stack.Push(res)
+	// do production action
+	product := r.do(nodes...)
+	// save result?
+	p.maybePush(product)
 	return status.Ok
 }
 

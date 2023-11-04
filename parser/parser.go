@@ -159,6 +159,13 @@ func (p *parser) HasErrors() bool { return len(p.errors) != 0 }
 
 func (p *parser) GetErrors() []error { return p.errors }
 
+// pushes ast node onto parse stack only when it isn't a None node
+func (p *parser) maybePush(node ast.Ast) {
+	if node.NodeType() != ast.None {
+		p.stack.Push(node)
+	}
+}
+
 type forType ast.Type
 
 func (a forType) modify(stat status.Status, appliedRule bool) status.Status {

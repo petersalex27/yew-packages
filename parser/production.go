@@ -25,9 +25,10 @@ type Production struct{ Productions }
 func (production Production) call(p *parser, n uint, handle ...ast.Ast) status.Status {
 	// pop stack (this removes `nodes`)
 	p.stack.Clear(n) // must be called before pushing reduction result
-	// do reduction action
-	result := production.do(handle...)
-	p.stack.Push(result)
+	// do production action
+	product := production.do(handle...)
+	// save result?
+	p.maybePush(product)
 	return status.Ok
 }
 

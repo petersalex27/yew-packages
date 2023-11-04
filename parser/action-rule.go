@@ -63,9 +63,8 @@ func (f ProductionWith) call(p *parser, n uint, handle ...ast.Ast) status.Status
 	}
 	// do reduction action
 	reduced := f(callRequester, handle...)
-
-	// save result
-	p.stack.Push(reduced)
+	// save result?
+	p.maybePush(reduced)
 
 	return status.Ok
 }
