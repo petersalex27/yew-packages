@@ -34,7 +34,5 @@ main_script() {
   git add --all && git commit -m "$MSG" && git push "$REPO" "$REF" && sh show.sh
 }
 
-TMP=$(printf "%q " "$@")
-echo $TMP
 main_script "$@"
 exit

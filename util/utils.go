@@ -39,6 +39,14 @@ func CopyMap[K comparable, V any](old map[K]V) map[K]V {
 	return new
 }
 
+// returns the absolute value of some integer type
+func Abs[T ~int](a T) T {
+	if a > 0 {
+		return a
+	}
+	return -a
+}
+
 func Max[T ~int](a, b T) T {
 	if a > b {
 		return a
