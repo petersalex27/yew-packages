@@ -19,8 +19,8 @@ func (r whenRule) String() string {
 
 func (r whenRule) getPattern() PatternInterface { return r.pattern }
 
-func (r whenRule) call(p *parser, nodes ...ast.Ast) status.Status {
-	return r.Production.call(p, r.clear, nodes[uint(len(nodes))-r.clear:]...)
+func (r whenRule) call(p *parser, nodes ...ast.Ast) (stat status.Status, ruleApplied bool) {
+	return r.Production.call(p, r.clear, nodes[uint(len(nodes))-r.clear:]...), true
 }
 
 // intermediate struct

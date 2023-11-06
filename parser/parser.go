@@ -10,6 +10,7 @@ import (
 	"github.com/petersalex27/yew-packages/parser/status"
 	"github.com/petersalex27/yew-packages/source"
 	"github.com/petersalex27/yew-packages/token"
+	"github.com/petersalex27/yew-packages/util/iterator"
 	"github.com/petersalex27/yew-packages/util/stack"
 )
 
@@ -187,8 +188,8 @@ func (p *parser) action() status.Status {
 	return forType(ty).followUpRule(p, rules, stat, ruleApplied)
 }
 
-func (p *parser) actOnRule(rule productionInterface, vars []ast.Ast) (stat status.Status, appliedRule bool) {
-	stat, appliedRule = rule.call(p, vars...), true
+func (p *parser) actOnRule(rule productionInterface, handle []ast.Ast) (stat status.Status, appliedRule bool) {
+	stat, appliedRule = rule.call(p, handle...)
 	return
 }
 
@@ -214,23 +215,49 @@ func getSubset(ground *parser, rules productionOrder) (subSet []productionInterf
 	return
 }
 
+// return true
+// 		precondition check failed: appliedRule=false, stat=Ok
+// return ?: (depends on rule held by precondition)
+//		precondition check success: appliedRule=?, stat=?
+// return false
+// 		error rule: appliedRule=true, stat=Ok
+// 		shift rule: appliedRule=true, stat=Shift
+// 		...       : appliedRule=true, stat=...
+func continueLoop(stat status.Status, appliedRule bool) bool {
+	return !appliedRule && stat.IsOk()
+}
+
+func initialStatAndApplied() (status.Status, bool) {
+	return status.EndAction, false
+}
+
+func (p *parser) matchThen(
+	pattern PatternInterface, 
+	rule productionInterface,
+) (status.Status, bool, bool) {
+	stat, appliedRule := initialStatAndApplied()
+	loop := true
+	if nodes, match := p.matchStack(pattern); match {
+		stat, appliedRule = p.actOnRule(rule, nodes)
+		loop = continueLoop(stat, appliedRule)
+	}
+	return stat, appliedRule, loop
+}
+
 // Parser reduce action: replaces parse-stack handle with reduction rule
 // replacement. Returns reduction status along with the truthy-ness of whether
 // an actual rule was applied
 func (p *parser) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
-	stat, appliedRule = status.EndAction, false
+	stat, appliedRule = initialStatAndApplied()
 
 	subSet := getSubset(p, rules)
 
-	for _, rule := range subSet {
+	it := iterator.Iterator(subSet)
+	rule, ok := it.Next()
+
+	for loop := true; ok && loop; rule, ok = it.Next() {
 		pattern := rule.getPattern()
-		//nodes, stackStat := ground.stack.MultiCheck(len(pattern))
-		//matches := ground.ReduceTable.Match(pattern, nodes...)
-		nodes, match := p.matchStack(pattern)
-		if match {
-			stat, appliedRule = p.actOnRule(rule, nodes)
-			break
-		}
+		stat, appliedRule, loop = p.matchThen(pattern, rule)
 	}
 	return
 }

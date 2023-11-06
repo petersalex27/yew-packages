@@ -19,8 +19,8 @@ func (ar actionRule) String() string {
 
 func (ar actionRule) getPattern() PatternInterface { return ar.pattern }
 
-func (ar actionRule) call(p *parser, handle ...ast.Ast) status.Status {
-	return ar.ProductionWith.call(p, uint(len(handle)), handle...)
+func (ar actionRule) call(p *parser, handle ...ast.Ast) (stat status.Status, ruleApplied bool) {
+	return ar.ProductionWith.call(p, uint(len(handle)), handle...), true
 }
 
 type actionRuleNeedsReduceTo struct{}

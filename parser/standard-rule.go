@@ -18,8 +18,8 @@ func (r rule) String() string {
 
 func (r rule) getPattern() PatternInterface { return r.pattern }
 
-func (r rule) call(p *parser, nodes ...ast.Ast) status.Status {
-	return r.Production.call(p, uint(len(nodes)), nodes...)
+func (r rule) call(p *parser, nodes ...ast.Ast) (stat status.Status, ruleApplied bool) {
+	return r.Production.call(p, uint(len(nodes)), nodes...), true
 }
 
 func (p needPattern) From(tys ...ast.Type) productionInterface {

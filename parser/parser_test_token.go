@@ -76,6 +76,9 @@ const (
 	open_t
 	close_t
 	comma_t
+	div_t
+	assertion_t
+	error_t
 	lastType_t_
 )
 

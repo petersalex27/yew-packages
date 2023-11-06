@@ -7,4 +7,5 @@ lib/
 go-precompile/
 format/
 symbol/
+parser/benchmark-test-old.txt
 __pycache__/

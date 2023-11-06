@@ -28,8 +28,8 @@ func (r contextRule) String() string {
 
 func (r contextRule) getPattern() PatternInterface { return r.pattern }
 
-func (r contextRule) call(p *parser, nodes ...ast.Ast) status.Status {
-	stat := r.action(p.cxt, nodes...)
+func (r contextRule) call(p *parser, nodes ...ast.Ast) (stat status.Status, ruleApplied bool) {
+	stat = r.action(p.cxt, nodes...)
 	if r.clear {
 		clearLen := uint(len(nodes)) - uint(r.whenLen)
 		p.stack.Clear(clearLen)
@@ -40,7 +40,7 @@ func (r contextRule) call(p *parser, nodes ...ast.Ast) status.Status {
 		// save result?
 		p.maybePush(reduced)
 	}
-	return stat
+	return stat, true
 }
 
 type contextFunction func(*ParserContext, ...ast.Ast) status.Status

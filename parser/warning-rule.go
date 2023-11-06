@@ -24,7 +24,7 @@ func (r warningRule) String() string {
 
 func (r warningRule) getPattern() PatternInterface { return r.pattern }
 
-func (r warningRule) call(p *parser, nodes ...ast.Ast) status.Status {
+func (r warningRule) call(p *parser, nodes ...ast.Ast) (stat status.Status, ruleApplied bool) {
 	// look ahead token is for warning information; it should not be used in
 	// reduction
 	tok, _ := p.lookAhead()
@@ -41,7 +41,7 @@ func (r warningRule) call(p *parser, nodes ...ast.Ast) status.Status {
 	product := r.do(nodes...)
 	// save result?
 	p.maybePush(product)
-	return status.Ok
+	return status.Ok, true
 }
 
 type warnNeedsReduction warningRule

@@ -21,10 +21,10 @@ func (r errorRule) String() string {
 
 func (r errorRule) getPattern() PatternInterface { return r.pattern }
 
-func (r errorRule) call(p *parser, nodes ...ast.Ast) status.Status {
+func (r errorRule) call(p *parser, nodes ...ast.Ast) (stat status.Status, ruleApplied bool) {
 	node, _ := p.top()
 	p.errors = append(p.errors, r.ErrorFn(node, nodes...))
-	return status.Error
+	return status.Error, true
 }
 
 type errorNeedsPattern errorRule

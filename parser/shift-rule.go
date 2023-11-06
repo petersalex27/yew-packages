@@ -11,8 +11,8 @@ type shiftRule pattern
 
 func (r shiftRule) getPattern() PatternInterface { return pattern(r) }
 
-func (shiftRule) call(_ *parser, _ ...ast.Ast) status.Status {
-	return status.DoShift // this will trigger shift
+func (shiftRule) call(*parser, ...ast.Ast) (stat status.Status, ruleApplied bool) {
+	return status.DoShift, true // this will trigger shift
 }
 
 func (r shiftRule) String() string {
