@@ -2,20 +2,21 @@ package util
 
 // reverses the slice `arr` in-place.
 //
-// example: 
+// example:
+//
 //	arr = []int{1,2,3,4}
 //	ReverseInPlace(arr)
 //	arr == []int{4,3,2,1}
 func ReverseInPlace[T any](arr []T) {
 	arrLen := len(arr)
-	for i := 0; i < arrLen / 2; i++ {
+	for i := 0; i < arrLen/2; i++ {
 		tmp := arr[i]
-		arr[i] = arr[arrLen-i]
-		arr[arrLen-i] = tmp
+		arr[i] = arr[(arrLen-1)-i]
+		arr[(arrLen-1)-i] = tmp
 	}
 }
 
-// makes a perfect-fit copy of slice `arr`, and then reverses the elements of 
+// makes a perfect-fit copy of slice `arr`, and then reverses the elements of
 // the new slice copy
 //
 // see `ReverseInPlace[T any]([]T)` for an example
