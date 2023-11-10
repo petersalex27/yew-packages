@@ -35,6 +35,11 @@ func NewContext[T nameable.Nameable]() *Context[T] {
 	return cxt
 }
 
+func NewTestableContext() *Context[nameable.Testable] {
+	cxt := NewContext[nameable.Testable]()
+	return cxt.SetNameMaker(nameable.MakeTestable)
+}
+
 func (cxt *Context[T]) GetInverse(e Expression[T]) (out Expression[T], ok bool) {
 	var c, invC Const[T]
 	out = nil

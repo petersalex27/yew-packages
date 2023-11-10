@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 )
 
@@ -23,6 +24,28 @@ func (cxt *Context[T]) PopMonotype() (Monotyped[T], error) {
 		return nil, errors.New("tried to use a non-monotype as a monotype")
 	}
 	return m, nil
+}
+
+func (cxt *Context[T]) PopNumMonotypes(num uint) (ms []Monotyped[T], e error) {
+	ts, stat := cxt.stack.MultiPop(num)
+	if stat.NotOk() {
+		// TODO: better error
+		return nil, errors.New("not enough types")
+	}
+
+	// catches panic from trying to cast type to monotype
+	defer func() {
+		if nil != recover() {
+			// TODO: better error
+			e = errors.New("expected monotype")
+		}
+	}()
+
+	ms = fun.FMap(ts, func(t Type[T]) Monotyped[T] {
+		return t.(Monotyped[T])
+	})
+
+	return
 }
 
 func (cxt *Context[T]) PopTypesAsPolys(n uint) ([]Polytype[T], error) {

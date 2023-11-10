@@ -3,11 +3,47 @@ package expr
 import (
 	"strings"
 
+	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
 type List[T nameable.Nameable] []Expression[T]
+
+func (list List[T]) ToAlmostPattern() (pat AlmostPattern[T], ok bool) {
+	res := fun.FMapFilter(
+		list,
+		func(e Expression[T]) (out matchable[T], ok bool) {
+			var p Patternable[T]
+			if p, ok = e.(Patternable[T]); !ok {
+				return
+			}
+			if tmp, ok := p.ToAlmostPattern(); ok {
+				out = tmp.pattern
+			}
+			return
+		},
+	)
+
+	// check if all elems fmap-ped
+	if len(res) != len(list) {
+		// not all elems fmap-ped
+		ok = false
+		return
+	}
+	return MakeSequence[T](PatternSequenceList, res...).ToAlmostPattern()
+}
+
+func (ls List[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
+	return List[T](
+		fun.FMap(
+			ls,
+			func(e Expression[T]) Expression[T] {
+				return e.BodyAbstract(v, name)
+			},
+		),
+	)
+}
 
 func (ls List[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
 	vars := []Variable[T]{}
@@ -62,7 +98,9 @@ func Cons[T nameable.Nameable](head Expression[T], tail List[T]) List[T] {
 }
 
 func (ls List[T]) String() string {
-	return list_l_enclose + str.Join(ls, str.String(list_split)) + list_r_enclose
+	sep := listSepString()
+	list := str.Join(ls, str.String(sep))
+	return encloseListString(list)
 }
 
 func (ls List[T]) StrictString() string {
@@ -70,7 +108,8 @@ func (ls List[T]) StrictString() string {
 	for i, l := range ls {
 		strs[i] = l.StrictString()
 	}
-	return list_l_enclose + strings.Join(strs, list_split) + list_r_enclose
+	list := strings.Join(strs, listSepString())
+	return encloseListString(list)
 }
 
 func (ls List[T]) Equals(cxt *Context[T], e Expression[T]) bool {

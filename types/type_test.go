@@ -22,8 +22,6 @@ func judgement[E expr.Expression[test_nameable]](e E, ty Type[test_nameable]) Ty
 	return Judgement(e, ty)
 }
 
-type refer ReferableType[test_nameable]
-
 var base = NewContext[test_nameable]().
 	SetNameMaker(test_nameable_fn)
 
@@ -108,7 +106,7 @@ func TestString(t *testing.T) {
 				},
 				Index[test_nameable](_App("Array", _Var("a"))),
 			},
-			expect: "mapall (n: Uint) . (Array a)",
+			expect: "mapval (n: Uint) . (Array a)",
 		},
 	}
 

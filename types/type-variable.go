@@ -12,6 +12,10 @@ type Variable[T nameable.Nameable] struct {
 	name         T
 }
 
+func (v Variable[T]) GetFreeVariables() []Variable[T] {
+	return []Variable[T]{v}
+}
+
 func (v Variable[T]) GetName() T {
 	return v.name
 }
@@ -79,8 +83,13 @@ func (v Variable[T]) Replace(w Variable[T], m Monotyped[T]) Monotyped[T] {
 	return v
 }
 
-func (v Variable[T]) ReplaceDependent(w Variable[T], m Monotyped[T]) DependentTyped[T] {
-	return v.Replace(w, m)
+func (v Variable[T]) ReplaceDependent(ws []Variable[T], ms []Monotyped[T]) Monotyped[T] {
+	for i, w := range ws {
+		if varEquals(v, w) {
+			return ms[i]
+		}
+	}
+	return v
 }
 
 // Var("a").Generalize() = `forall _ . a`
@@ -91,7 +100,7 @@ func (v Variable[T]) Generalize(cxt *Context[T]) Polytype[T] {
 	}
 }
 
-func (v Variable[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
+func (v Variable[T]) FreeInstantiation(cxt *Context[T]) Monotyped[T] {
 	if v.boundContext > 0 {
 		return cxt.dummyName(Variable[T]{})
 	}

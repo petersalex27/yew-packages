@@ -16,6 +16,26 @@ type Application[T nameable.Nameable] struct {
 	ts []Monotyped[T]
 }
 
+func (a Application[T]) GetFreeVariables() []Variable[T] {
+	leftVars := a.c.GetFreeVariables()
+	// get 2d slice of free vars from rhs
+	rightVars2d := fun.FMap(
+		a.ts, 
+		func(t Monotyped[T]) []Variable[T] {
+			return t.GetFreeVariables()
+		},
+	)
+	// flatten 2d slice
+	rightVars := fun.FoldLeft(
+		[]Variable[T]{},
+		rightVars2d,
+		func(vs, us []Variable[T]) []Variable[T] {
+			return append(vs, us...)
+		},
+	)
+	return append(leftVars, rightVars...)
+}
+
 func (a Application[T]) GetName() T {
 	return a.c.GetName()
 }
@@ -90,8 +110,8 @@ func (a Application[T]) Collect() []T {
 
 func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.GetName().GetName(), a.ts }
 
-func (a Application[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
-	f := func(mono Monotyped[T]) Monotyped[T] { return mono.Replace(v, m) }
+func (a Application[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
+	f := func(mono Monotyped[T]) Monotyped[T] { return mono.ReplaceDependent(vs, ms) }
 	return Apply(a.c, fun.FMap(a.ts, f)...)
 }
 
@@ -100,8 +120,8 @@ func (a Application[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T])
 	return Apply(a.c, fun.FMap(a.ts, f)...)
 }
 
-func (a Application[T]) FreeInstantiation(cxt *Context[T]) DependentTyped[T] {
-	f := func(m Monotyped[T]) Monotyped[T] { return m.FreeInstantiation(cxt).(Monotyped[T]) }
+func (a Application[T]) FreeInstantiation(cxt *Context[T]) Monotyped[T] {
+	f := func(m Monotyped[T]) Monotyped[T] { return m.FreeInstantiation(cxt) }
 	return Apply(a.c, fun.FMap(a.ts, f)...)
 }
 

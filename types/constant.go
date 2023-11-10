@@ -4,6 +4,10 @@ import "github.com/petersalex27/yew-packages/nameable"
 
 type Constant[T nameable.Nameable] struct{ name T }
 
+func (c Constant[T]) GetFreeVariables() []Variable[T] {
+	return []Variable[T]{}
+}
+
 func (c Constant[T]) GetName() T {
 	return c.name
 }
@@ -44,9 +48,9 @@ func (c Constant[T]) Generalize(cxt *Context[T]) Polytype[T] {
 func (c Constant[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] { return c }
 
 // c.FreeInstantiation() = c
-func (c Constant[T]) FreeInstantiation(*Context[T]) DependentTyped[T] { return c }
+func (c Constant[T]) FreeInstantiation(*Context[T]) Monotyped[T] { return c }
 
-func (c Constant[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
+func (c Constant[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
 	return c
 }
 

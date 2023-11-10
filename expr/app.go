@@ -7,8 +7,40 @@ type Application[T nameable.Nameable] struct {
 	right Expression[T]
 }
 
+func (a Application[T]) ToAlmostPattern() (pat AlmostPattern[T], ok bool) {
+	var left, right Patternable[T]
+	var lpat, rpat AlmostPattern[T]
+
+	left, ok = a.left.(Patternable[T])
+	if !ok {
+		return
+	}
+
+	right, ok = a.right.(Patternable[T])
+	if !ok {
+		return
+	}
+
+	lpat, ok = left.ToAlmostPattern()
+	if !ok{
+		return
+	}
+
+	rpat, ok = right.ToAlmostPattern()
+	if !ok {
+		return
+	}
+
+	seq := MakeSequence[T](PatternSequenceApplication, lpat.pattern, rpat.pattern)
+	return seq.ToAlmostPattern()
+}
+
 func (a Application[T]) Collect() []T {
 	return append(a.left.Collect(), a.right.Collect()...)
+}
+
+func (a Application[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
+	return Apply(a.left.BodyAbstract(v, name), a.right.BodyAbstract(v, name))
 }
 
 func (a Application[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
@@ -45,11 +77,11 @@ func Apply[T nameable.Nameable](e1, e2 Expression[T], es ...Expression[T]) Appli
 }
 
 func (a Application[T]) String() string {
-	return "(" + a.left.String() + apply_string + a.right.String() + ")"
+	return groupStringed(applyString(a.left.String(), a.right.String()))
 }
 
 func (a Application[T]) StrictString() string {
-	return "(" + a.left.StrictString() + apply_string + a.right.StrictString() + ")"
+	return groupStringed(applyString(a.left.StrictString(), a.right.StrictString()))
 }
 
 func applicationEquals[T nameable.Nameable](cxt *Context[T], a, b Application[T]) bool {

@@ -47,6 +47,11 @@ func NewContext[T nameable.Nameable]() *Context[T] {
 	return cxt
 }
 
+func NewTestableContext() *Context[nameable.Testable] {
+	cxt := NewContext[nameable.Testable]()
+	return cxt.SetNameMaker(nameable.MakeTestable)
+}
+
 func (cxt *Context[T]) SetNameMaker(f func(string)T) *Context[T] {
 	cxt.makeName = f
 	return cxt
@@ -65,6 +70,7 @@ const (
 	ExpandRule string = "expansion"
 	RealizeRule string = "realization"
 	ContextRule string = "contextualization"
+	ContextRecRule string = "contextualization-recursive"
 	InstanceRule string = "instantiation"
 	GeneralRule string = "generalization"
 )
@@ -78,6 +84,7 @@ const (
 	ExpandID
 	RealizeID
 	ContextID
+	ContextRecID
 	InstanceID
 	GeneralID
 )
@@ -91,6 +98,7 @@ var ruleLookup = map[string]RuleID{
 	ExpandRule: ExpandID,
 	RealizeRule: RealizeID,
 	ContextRule: ContextID,
+	ContextRecRule: ContextRecID,
 	InstanceRule: InstanceID,
 	GeneralRule: GeneralID,
 }
@@ -176,12 +184,30 @@ func rules_[T nameable.Nameable]() []ruleElement[Type[T], T] {
 		},
 		/*contextualization*/ {
 			ContextRule, func(cxt *Context[T]) (Type[T], error) {
-				ps, e := cxt.PopTypesAsPolys(2)
+				t, e := cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
+				_, e = cxt.PopMonotype()
 				if e != nil {
 					return nil, e
 				}
 				
-				return cxt.Contextualization(ps[1], ps[0]), nil
+				return cxt.Contextualization(nil, t), nil
+			},
+		},
+		/*contextualization-recursive*/ {
+			ContextRecRule, func(cxt *Context[T]) (Type[T], error) {
+				t, e := cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
+				_, e = cxt.PopMonotype()
+				if e != nil {
+					return nil, e
+				}
+				
+				return cxt.Contextualization(nil, t), nil
 			},
 		},
 		/*instantiation*/ {

@@ -21,6 +21,10 @@ func (c InfixConst[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) 
 	return c
 }
 
+func (c InfixConst[T]) GetFreeVariables() []Variable[T] {
+	return []Variable[T]{}
+}
+
 // Constant(x).Equals(y) = true iff y.(Constant) is true and string(y.(Constant)) == x
 func (c InfixConst[T]) Equals(t Type[T]) bool {
 	c2, ok := t.(InfixConst[T])
@@ -44,9 +48,9 @@ func (c InfixConst[T]) Generalize(cxt *Context[T]) Polytype[T] {
 func (c InfixConst[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] { return c }
 
 // c.FreeInstantiation() = c
-func (c InfixConst[T]) FreeInstantiation(*Context[T]) DependentTyped[T] { return c }
+func (c InfixConst[T]) FreeInstantiation(*Context[T]) Monotyped[T] { return c }
 
-func (c InfixConst[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
+func (c InfixConst[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
 	return c
 }
 

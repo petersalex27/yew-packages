@@ -1,106 +1,64 @@
 package types
 
 import (
-	expr "github.com/petersalex27/yew-packages/expr"
+	"github.com/petersalex27/yew-packages/expr"
 	"github.com/petersalex27/yew-packages/nameable"
-	"github.com/petersalex27/yew-packages/stringable"
 )
 
-type ExpressionJudgement[T nameable.Nameable, E expr.Expression[T]] interface {
-	stringable.Stringable
-	collectable[T]
-	asTypeJudgement() TypeJudgement[T, E]
-	MakeJudgement(E, Type[T]) ExpressionJudgement[T, E]
-}
-
-func GetType[T nameable.Nameable, E expr.Expression[T]](j ExpressionJudgement[T, E]) Type[T] {
-	return j.asTypeJudgement().ty
-}
-
-func GetExpression[T nameable.Nameable, E expr.Expression[T]](j ExpressionJudgement[T, E]) E {
-	return j.asTypeJudgement().expression
-}
-
-func Replace[T nameable.Nameable, E expr.Expression[T]](j ExpressionJudgement[T, E], v Variable[T], m Monotyped[T]) ExpressionJudgement[T,E] {
-	ex, ty := GetExpression(j), GetType(j)
-	return j.MakeJudgement(ex, MaybeReplace(ty, v, m))
-}
-
-func JudgesEquals[N nameable.Nameable, T, U expr.Expression[N]](j1 ExpressionJudgement[N,T], j2 ExpressionJudgement[N,U]) bool {
-	return Equals(j1.asTypeJudgement(), j2.asTypeJudgement())
-}
-
-func Collect[T nameable.Nameable, E expr.Expression[T]](j ExpressionJudgement[T, E]) []T {
-	return j.Collect()
-}
-
-func String[T nameable.Nameable, E expr.Expression[T]](j ExpressionJudgement[T, E]) string {
-	return j.String()
-}
-
-type TypeJudgement[T nameable.Nameable, E expr.Expression[T]] struct{
+type TypedJudgement[N nameable.Nameable, E expr.Expression[N], T Type[N]] struct {
 	expression E
-	ty Type[T]
+	typing T
 }
 
-func (j TypeJudgement[T, E]) asTypeJudgement() TypeJudgement[T, E] {
-	return j
+// returns typing of judgement
+//
+// e.g., given a judgement `e: t`
+//		return t
+func (judgement TypedJudgement[_,_,T]) GetType() T { return judgement.typing }
+
+// returns expression of judgement
+//
+// e.g., given a judgement `e: t`
+//		return e
+func (judgement TypedJudgement[_,E,_]) GetExpression() E { return judgement.expression }
+
+// splits the judgement into its components
+func (judgement TypedJudgement[_,E,T]) GetExpressionAndType() (E, T) {
+	return judgement.expression, judgement.typing
 }
 
-func (j TypeJudgement[T,_]) GetType() Type[T] {
-	return j.ty
+
+func (judgement TypedJudgement[N, E, T]) String() string {
+	return "(" + judgement.expression.String() + ": " + judgement.typing.String() + ")"
 }
 
-func (j TypeJudgement[_, E]) GetExpression() E {
-	return j.expression
+func (judgement TypedJudgement[N,E,_]) AsTypeJudgement() TypeJudgement[N, E] {
+	return TypeJudgement[N, E]{judgement.expression, judgement.typing}
 }
 
-/*
-decons: [a; n+1] -> (a, [a; n])
-decons (x::xs) = (x, xs)
-
-typeof(decons [1, 2, 3, 4])
-decons: forall a . map (Arr a)(n: Uint) . (Arr a)(n+1) -> (a, (Arr a)(n))
-[_, ..]: forall a . map (Arr a)(n: Uint) . (Arr a)(n)
-1: Int
-2: Int
-3: Int
-4: Int
-let x = [] in 
-	(Cons 1) . (Cons 2) . (Cons 3) . (Cons 4 x)
-	(Cons 4 x): (Arr Int)(1)
-	(Cons 3) . (Cons 4 x): (Arr Int)(2)
-	...
-	: (Arr Int)(4)
-decons$(Arr Int)(4): (Arr Int)(4) -> (Int, (Arr Int)(3))
-*/
-
-func (j TypeJudgement[T,_]) String() string {
-	return "(" + j.expression.String() + ": " + j.ty.String() + ")"
+func (judgement TypedJudgement[N,E,_]) MakeJudgement(e E, ty Type[N]) ExpressionJudgement[N, E] {
+	return TypedJudgement[N,E,Type[N]]{e,ty}
 }
 
-// Judgement makes the trivial type judgement `𝚪, e: ty ⊢ e: ty`
-func Judgement[T nameable.Nameable, E expr.Expression[T]](e E, ty Type[T]) TypeJudgement[T,E] {
-	return TypeJudgement[T,E]{
-		expression: e,
-		ty: ty,
+func JudgementEquals[N nameable.Nameable, E expr.Expression[N], T Type[N]](j0 ExpressionJudgement[N,E], j1 ExpressionJudgement[N,E]) bool {
+	var strictJudgement0, strictJudgement1 TypedJudgement[N,E,T]
+	var ok0, ok1 bool
+
+	// assert go type
+	strictJudgement0, ok0 = AsJudgement[N,E,T](j0)
+	strictJudgement1, ok1 = AsJudgement[N,E,T](j1)
+	if !(ok0 && ok1) {
+		return false
 	}
+
+	// split judgement into comp.
+	e0, t0 := strictJudgement0.GetExpressionAndType()
+	e1, t1 := strictJudgement1.GetExpressionAndType()
+
+	// test equality of components
+	return e0.StrictEquals(e1) && t0.Equals(t1)
 }
 
-func (TypeJudgement[T, E]) MakeJudgement(e E, ty Type[T]) ExpressionJudgement[T, E] {
-	return Judgement[T,E](e, ty)
-}
-
-func (j TypeJudgement[T,E]) Replace(v Variable[T], m Monotyped[T]) TypeJudgement[T,E] {
-	return Judgement(j.expression, MaybeReplace(j.ty, v, m))
-}
-
-func Equals[N nameable.Nameable, T, U expr.Expression[N]](j1 TypeJudgement[N,T], j2 TypeJudgement[N,U]) bool {
-	return j1.ty.Equals(j2.ty) && 
-			j1.expression.StrictEquals(j2.expression)
-			// TODO: ??? j1.expression.Equals(j2.expression) instead???
-}
-
-func (j TypeJudgement[T, E]) Collect() []T {
-	return append(j.expression.Collect(), j.ty.Collect()...)
+func (judgement TypedJudgement[N,E,T]) Collect() []N {
+	return append(judgement.expression.Collect(), judgement.typing.Collect()...)
 }

@@ -54,24 +54,28 @@ func (*Context[T]) instantiateDependentTyped(t DependentTyped[T]) Monotyped[T] {
 	panic("tried to declare an unclassifiable Type")
 }
 
+func (cxt *Context[T]) Recursive(_ []Monotyped[T], contextualizedType Monotyped[T]) Monotyped[T] {
+	return contextualizedType
+}
+
 func (cxt *Context[T]) Declare(t Type[T]) Monotyped[T] {
 	ty, ok := t.(Polytype[T])
 	if !ok {
 		return cxt.instantiateDependentTyped(t.(DependentTyped[T]))
 	}
 
-	// given a polyType[T] σ = forall a_1 a_2 .. a_n . D
+	// given a polyType σ = forall a_1 a_2 .. a_n . D
 	// given newvar(v_1, v_2, .., v_n)
 	// then Declare(σ) = ((D[a_1 := v_1])[a_2 := v_2]..)[a_n := v_n]
 
-	// create a new free variable for each Type[T] binder
+	// create a new free variable for each Type binder
 	vars := make([]Variable[T], len(ty.typeBinders))
 	for i := range vars {
 		vars[i] = cxt.NewVar()
 	}
 
-	// instantiate the polyType[T]'s with a different free variable for 
-	// each variable bound by the polyType[T]
+	// instantiate the polyType's with a different free variable for 
+	// each variable bound by the polyType
 	for _, v := range vars {
 		ty := t.(Polytype[T])
 		t = ty.Instantiate(v)
@@ -99,9 +103,6 @@ func (cxt *Context[T]) Realization(a, b, c Monotyped[T]) (Monotyped[T], error) {
 	return v3, nil
 }
 
-func (*Context[T]) Contextualization(p, q Polytype[T]) Type[T] {
-	if len(q.typeBinders) == 0 {
-		return q.bound
-	}
-	return q
+func (*Context[T]) Contextualization(_, t Monotyped[T]) Monotyped[T] {
+	return t
 }

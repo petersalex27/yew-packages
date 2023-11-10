@@ -14,12 +14,19 @@ type Function[T nameable.Nameable] struct {
 	e    Expression[T]
 }
 
+func (f Function[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
+	return Function[T]{
+		vars: f.vars,
+		e:    f.e.BodyAbstract(v, name),
+	}
+}
+
 func (f Function[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
 	var e Expression[T] = f.e
 	for _, v := range f.vars {
 		e, _ = e.Replace(v, dummyVar)
 	}
-	
+
 	return e.ExtractFreeVariables(dummyVar)
 }
 
@@ -316,12 +323,12 @@ func (f Function[T]) PrepareAsRHS() Expression[T] { return f }
 func (f Function[T]) Apply(e Expression[T]) Expression[T] {
 	lookFor := f.BindDepth() // Variable[T] number being replaced
 	e2 := e.
-		PrepareAsRHS(). // makes sure free variables have a depth > 0
+		PrepareAsRHS().        // makes sure free variables have a depth > 0
 		UpdateVars(0, lookFor) // updates free variables so they have a depth > f.BindDepth()
-	v := f.vars[0] // Variable[T] to replace (should have same number as `lookFor`)
-	res, again := f.e.Replace(v, e2) // replace variables matching `v` with `e2`
+	v := f.vars[0]                    // Variable[T] to replace (should have same number as `lookFor`)
+	res, again := f.e.Replace(v, e2)  // replace variables matching `v` with `e2`
 	res = res.UpdateVars(lookFor, -1) // dec. free vars to account for loss of binder
-	for again { // need to apply args again? 
+	for again {                       // need to apply args again?
 		res, again = res.Again()
 	}
 
@@ -336,7 +343,7 @@ func (f Function[T]) Apply(e Expression[T]) Expression[T] {
 
 func (f Function[T]) DoApplication(e Expression[T]) Expression[T] {
 	return f.Apply(e)
-} 
+}
 
 func (f Function[T]) ForceRequest() Expression[T] { return f }
 

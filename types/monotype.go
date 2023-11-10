@@ -7,6 +7,7 @@ type Monotyped[T nameable.Nameable] interface {
 	DependentTyped[T]
 	ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T]
 	Replace(Variable[T], Monotyped[T]) Monotyped[T]
+	GetFreeVariables() []Variable[T]
 }
 
 type Splitable[T nameable.Nameable] interface {

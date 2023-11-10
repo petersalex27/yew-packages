@@ -3,13 +3,14 @@ package expr
 import (
 	"strings"
 
+	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-// e when (\x1 .. -> e1) | (\x2 .. -> e2) | .. | (\xN .. -> eN)
+// match e in (\x1 .. -> e1) | (\x2 .. -> e2) | .. | (\xN .. -> eN)
 type Selection[T nameable.Nameable] struct {
-	selector Expression[T]
+	selector   Expression[T]
 	selections []Case[T]
 }
 
@@ -21,6 +22,17 @@ func (s Selection[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
 	return vars
 }
 
+func (s Selection[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
+	cases := fun.FMap(
+		s.selections,
+		func(c Case[T]) Case[T] {
+			return c.BodyAbstract(v, name)
+		},
+	)
+	selector := s.selector.BodyAbstract(v, name)
+	return Selection[T]{selector, cases}
+}
+
 func (s Selection[T]) Collect() []T {
 	res := s.selector.Collect()
 	for _, sel := range s.selections {
@@ -30,7 +42,7 @@ func (s Selection[T]) Collect() []T {
 }
 
 func Select[T nameable.Nameable](selector Expression[T], selections ...Case[T]) Selection[T] {
-	return Selection[T]{ selector: selector, selections: selections, }
+	return Selection[T]{selector: selector, selections: selections}
 }
 
 func (s Selection[T]) Merge(selections ...Case[T]) Selection[T] {
@@ -38,11 +50,11 @@ func (s Selection[T]) Merge(selections ...Case[T]) Selection[T] {
 	newSelec := make([]Case[T], length_s+len(selections))
 	copy(newSelec, s.selections)
 	copy(newSelec[length_s:], selections)
-	return Selection[T]{ selector: s.selector, selections: selections, }
+	return Selection[T]{selector: s.selector, selections: selections}
 }
 
 func (s Selection[T]) String() string {
-	return s.selector.String() + " when " + str.Join(s.selections, str.String(" | "))
+	return "match " + s.selector.String() + " in " + str.Join(s.selections, str.String(" | "))
 }
 
 func (s Selection[T]) Equals(cxt *Context[T], e Expression[T]) bool {
@@ -65,7 +77,7 @@ func (s Selection[T]) Equals(cxt *Context[T], e Expression[T]) bool {
 }
 
 func (s Selection[T]) StrictString() string {
-	head := s.selector.StrictString() + " when "
+	head := "match " + s.selector.StrictString() + " in "
 	tail := make([]string, len(s.selections))
 	for i := range tail {
 		tail[i] = s.selections[i].StrictString()
@@ -94,16 +106,9 @@ func (s Selection[T]) StrictEquals(e Expression[T]) bool {
 
 func (s Selection[T]) Replace(v Variable[T], e Expression[T]) (Expression[T], bool) {
 	f := func(x Expression[T]) (Expression[T], bool) { return x.Replace(v, e) }
-	selector, ok := s.selector.Replace(v, e)
-	if !ok {
-		return s, false
-	}
-	selections, allGood := selectionsMap(s.selections, f)
-	if !allGood {
-		return s, false
-	}
-
-	return Select(selector, selections...), true
+	selector, _ := s.selector.Replace(v, e)
+	selections, _ := selectionsMap(s.selections, f)
+	return Select(selector, selections...), false
 }
 
 func (s Selection[T]) UpdateVars(gt int, by int) Expression[T] {

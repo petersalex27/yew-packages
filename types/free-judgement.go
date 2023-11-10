@@ -7,7 +7,7 @@ import (
 
 type FreeJudgement[T nameable.Nameable, E expr.Expression[T]] TypeJudgement[T, E]
 
-func (j FreeJudgement[T, E]) asTypeJudgement() TypeJudgement[T, E] {
+func (j FreeJudgement[T, E]) AsTypeJudgement() TypeJudgement[T, E] {
 	return TypeJudgement[T, E](j)
 }
 

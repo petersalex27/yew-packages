@@ -7,6 +7,10 @@ type EnclosingConst[T nameable.Nameable] struct {
 	Constant[T]
 }
 
+func (c EnclosingConst[T]) GetFreeVariables() []Variable[T] {
+	return []Variable[T]{}
+}
+
 func (c EnclosingConst[T]) GetName() T {
 	return c.name
 }
@@ -52,9 +56,9 @@ func (c EnclosingConst[T]) Generalize(cxt *Context[T]) Polytype[T] {
 func (c EnclosingConst[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] { return c }
 
 // c.FreeInstantiation() = c
-func (c EnclosingConst[T]) FreeInstantiation(*Context[T]) DependentTyped[T] { return c }
+func (c EnclosingConst[T]) FreeInstantiation(*Context[T]) Monotyped[T] { return c }
 
-func (c EnclosingConst[T]) ReplaceDependent(v Variable[T], m Monotyped[T]) DependentTyped[T] {
+func (c EnclosingConst[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
 	return c
 }
 

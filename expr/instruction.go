@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 )
 
@@ -22,6 +23,19 @@ type InstructionArgs[T nameable.Nameable] struct {
 type Instruction[T nameable.Nameable] struct {
 	InstructionHead[T]
 	InstructionArgs[T]
+}
+
+func (instr Instruction[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
+	args := fun.FMap(
+		instr.args,
+		func(e Expression[T]) Expression[T] {
+			return e.BodyAbstract(v, name)
+		},
+	)
+	return Instruction[T]{
+		InstructionHead: instr.InstructionHead,
+		InstructionArgs: InstructionArgs[T]{args},
+	}
 }
 
 func (instr Instruction[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
@@ -82,7 +96,7 @@ func (instr InstructionArgs[T]) GetArgAtPosition(position int) Expression[T] {
 	if position < 1 {
 		panic("tried to get an argument at a position[T] < 1; positions start at 1\n")
 	} else {
-		return instr.GetArgAtIndex(position-1)
+		return instr.GetArgAtIndex(position - 1)
 	}
 }
 
@@ -107,7 +121,7 @@ func (instr Instruction[T]) Bind(bs BindersOnly[T]) Expression[T] {
 	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
 	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{args: newArgs},
 	}
 }
 
@@ -130,7 +144,7 @@ func (instr Instruction[T]) Equals(cxt *Context[T], e Expression[T]) bool {
 	return instructionHeadEquals(instr.InstructionHead, instr2.InstructionHead)
 }
 
-func (instr Instruction[T]) Find(v Variable[T]) bool { 
+func (instr Instruction[T]) Find(v Variable[T]) bool {
 	for _, arg := range instr.args {
 		if arg.Find(v) {
 			return true
@@ -150,7 +164,7 @@ func (instr Instruction[T]) PrepareAsRHS() Expression[T] {
 	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
 	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{args: newArgs},
 	}
 }
 
@@ -166,7 +180,7 @@ func (instr Instruction[T]) Rebind() Expression[T] {
 	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
 	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{args: newArgs},
 	}
 }
 
@@ -178,7 +192,7 @@ func (instr Instruction[T]) Replace(v Variable[T], e Expression[T]) (Expression[
 	head := DefineInstruction[T](instr.name, instr.nArgs, instr.action)
 	return Instruction[T]{
 		InstructionHead: head,
-		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{args: newArgs},
 	}, false
 }
 
@@ -199,7 +213,7 @@ func (instr Instruction[T]) DoApplication(e Expression[T]) Expression[T] {
 }
 
 func instructionHeadEquals[T nameable.Nameable](ih1, ih2 InstructionHead[T]) bool {
-	return ih1.nArgs == ih2.nArgs && ih1.name == ih2.name && 
+	return ih1.nArgs == ih2.nArgs && ih1.name == ih2.name &&
 		((ih1.action == nil && ih2.action == nil) || (ih1.action != nil && ih2.action != nil))
 }
 
@@ -253,28 +267,27 @@ func (ia InstructionArgs[T]) Copy() InstructionArgs[T] {
 	for i, arg := range ia.args {
 		out[i] = arg.Copy()
 	}
-	return InstructionArgs[T]{ args: out, }
+	return InstructionArgs[T]{args: out}
 }
 
-func (instr Instruction[T]) UpdateVars(gt int, by int) Expression[T] { 
+func (instr Instruction[T]) UpdateVars(gt int, by int) Expression[T] {
 	newArgs := instr.InstructionArgs.makeBlankCopy()
 	for i, arg := range instr.args {
 		newArgs[i] = arg.UpdateVars(gt, by)
 	}
 	return Instruction[T]{
 		InstructionHead: instr.InstructionHead,
-		InstructionArgs: InstructionArgs[T]{ args: newArgs, },
+		InstructionArgs: InstructionArgs[T]{args: newArgs},
 	}
 }
 
-var EqualityInstruction = 
-	DefineInstruction[test_named]("testEquality", 2, func(instr InstructionArgs[test_named]) Expression[test_named] {
-		e1, e2 := instr.GetArgAtIndex(0), instr.GetArgAtIndex(1)
-		if e1.StrictEquals(e2) {
-			return TrueFunction
-		}
-		return FalseFunction
-	})
+var EqualityInstruction = DefineInstruction[test_named]("testEquality", 2, func(instr InstructionArgs[test_named]) Expression[test_named] {
+	e1, e2 := instr.GetArgAtIndex(0), instr.GetArgAtIndex(1)
+	if e1.StrictEquals(e2) {
+		return TrueFunction
+	}
+	return FalseFunction
+})
 
 func (ih InstructionHead[T]) MakeInstance() Instruction[T] {
 	return Instruction[T]{

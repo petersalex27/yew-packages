@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
@@ -128,13 +129,17 @@ func (p Polytype[T]) Equals(t Type[T]) bool {
 
 // replaces all variables bound directly by the polytype with new
 // free variables, then returns the resulting dependent type
-func (p Polytype[T]) Specialize(cxt *Context[T]) DependentTyped[T] {
+func (p Polytype[T]) Specialize(cxt *Context[T]) Monotyped[T] {
 	var t DependentTyped[T] = p.bound
-	
-	for _, v := range p.typeBinders {
-		t = MaybeReplace[T](t, v, cxt.NewVar()).(DependentTyped[T])
-	}
-	return t
+	// create new type variables
+	vs := fun.FMap(
+		p.typeBinders,
+		func(v Variable[T]) Monotyped[T] {
+			return cxt.NewVar()
+		},
+	)
+	// replace all bound variables w/ newly created type variables
+	return t.ReplaceDependent(p.typeBinders, vs)
 }
 
 // replaces the first variable bound by the polytype with a 

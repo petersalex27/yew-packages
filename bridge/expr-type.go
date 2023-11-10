@@ -138,3 +138,8 @@ func (judgement JudgementAsExpression[T, _]) Collect() (out []T) {
 	out = append(out, e.Collect()...)
 	return out
 }
+
+func (judgement JudgementAsExpression[T, E]) BodyAbstract(v expr.Variable[T], name expr.Const[T]) expr.Expression[T] {
+	ty, e := judgement.TypeAndExpr()
+	return JudgementAsExpression[T,E](types.Judgement(e, ty))
+}

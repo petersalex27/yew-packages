@@ -11,8 +11,14 @@ type Variable[T nameable.Nameable] struct {
 	depth int
 }
 
+func (v Variable[T]) ToAlmostPattern() (AlmostPattern[T], bool) {
+	return MakeElem[T](PatternElementVar, v.name).ToAlmostPattern()
+}
+
+func (v Variable[T]) BodyAbstract(Variable[T], Const[T]) Expression[T] { return v }
+
 func (v Variable[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	if v.name.GetName() != dummyVar.name.GetName() { 
+	if v.name.GetName() != dummyVar.name.GetName() {
 		// variable is free variable; all bound variables were replaced w/ dummy
 		// variable
 		return []Variable[T]{v}

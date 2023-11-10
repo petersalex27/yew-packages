@@ -7,19 +7,27 @@ import (
 )
 
 type Case[T nameable.Nameable] struct {
-	binders []Variable[T]
-	when    Expression[T]
-	then    Expression[T]
+	binders    []Variable[T]
+	pattern    Expression[T]
+	expression Expression[T]
+}
+
+func (c Case[T]) BodyAbstract(v Variable[T], name Const[T]) Case[T] {
+	return Case[T]{
+		c.binders,
+		c.pattern.BodyAbstract(v, name),
+		c.expression.BodyAbstract(v, name),
+	}
 }
 
 func (c Case[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	var when, then Expression[T] = c.when, c.then
+	var when, then Expression[T] = c.pattern, c.expression
 	for _, v := range c.binders {
 		when, _ = when.Replace(v, dummyVar)
 		then, _ = then.Replace(v, dummyVar)
 	}
 
-	return append(c.when.ExtractFreeVariables(dummyVar), c.then.ExtractFreeVariables(dummyVar)...)
+	return append(c.pattern.ExtractFreeVariables(dummyVar), c.expression.ExtractFreeVariables(dummyVar)...)
 }
 
 func (a Case[T]) Collect() []T {
@@ -27,8 +35,8 @@ func (a Case[T]) Collect() []T {
 	for _, binder := range a.binders {
 		res = append(res, binder.Collect()...)
 	}
-	res = append(res, a.when.Collect()...)
-	res = append(res, a.then.Collect()...)
+	res = append(res, a.pattern.Collect()...)
+	res = append(res, a.expression.Collect()...)
 	return res
 }
 
@@ -36,25 +44,25 @@ type PartialCase_when[T nameable.Nameable] Case[T]
 
 func (bs BindersOnly[T]) InCase(when Expression[T], then Expression[T]) Case[T] {
 	out := Case[T]{binders: bs}
-	out.when = when.Bind(bs)
-	out.then = then.Bind(bs)
+	out.pattern = when.Bind(bs)
+	out.expression = then.Bind(bs)
 	return out
 }
 
 func (bs BindersOnly[T]) When(e Expression[T]) PartialCase_when[T] {
 	return PartialCase_when[T]{
 		binders: bs,
-		when:    e.Bind(bs),
+		pattern: e.Bind(bs),
 	}
 }
 
 func (pcw PartialCase_when[T]) Then(e Expression[T]) Case[T] {
-	pcw.then = e.Bind(pcw.binders)
+	pcw.expression = e.Bind(pcw.binders)
 	return Case[T](pcw)
 }
 
 func (c Case[T]) String() string {
-	return "(" + c.when.String() + " -> " + c.then.String() + ")"
+	return groupStringed(c.pattern.String() + onMatchString() + c.expression.String())
 }
 
 func (c Case[T]) StrictString() string {
@@ -68,9 +76,7 @@ func (c Case[T]) StrictString() string {
 		hiddenBinders = "Λ" + strings.Join(strs, " ") + " . "
 	}
 
-	return "(" + hiddenBinders +
-		c.when.StrictString() + " -> " +
-		c.then.StrictString() + ")"
+	return groupStringed(hiddenBinders + c.pattern.StrictString() + onMatchString() + c.expression.StrictString())
 }
 
 func (c Case[T]) Equals(cxt *Context[T], k Case[T]) bool {
@@ -78,7 +84,7 @@ func (c Case[T]) Equals(cxt *Context[T], k Case[T]) bool {
 		return false
 	}
 
-	ok := c.when.Equals(cxt, k.when) && c.then.Equals(cxt, k.then)
+	ok := c.pattern.Equals(cxt, k.pattern) && c.expression.Equals(cxt, k.expression)
 	if !ok {
 		return false
 	}
@@ -96,7 +102,7 @@ func (c Case[T]) StrictEquals(k Case[T]) bool {
 		return false
 	}
 
-	ok := c.when.StrictEquals(k.when) && c.then.StrictEquals(k.then)
+	ok := c.pattern.StrictEquals(k.pattern) && c.expression.StrictEquals(k.expression)
 	if !ok {
 		return false
 	}
@@ -114,19 +120,19 @@ func selectionsMap[T nameable.Nameable](selections []Case[T], f func(Expression[
 	for i, c := range selections {
 		var when, then Expression[T]
 		var ok bool
-		when, ok = f(c.when)
+		when, ok = f(c.pattern)
 		if !ok {
 			return selections, false
 		}
-		then, ok = f(c.then)
+		then, ok = f(c.expression)
 		if !ok {
 			return selections, false
 		}
-		out[i] = Case[T]{when: when, then: then}
+		out[i] = Case[T]{pattern: when, expression: then}
 	}
 	return out, true
 }
 
 func (c Case[T]) Find(v Variable[T]) bool {
-	return c.when.Find(v) || c.then.Find(v)
+	return c.pattern.Find(v) || c.expression.Find(v)
 }
