@@ -9,4 +9,5 @@ go-precompile/
 format/
 symbol/
 parser/benchmark-test-old.txt
+inf/example/
 __pycache__/

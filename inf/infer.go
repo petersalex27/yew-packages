@@ -14,6 +14,12 @@ import (
 	"github.com/petersalex27/yew-packages/types"
 )
 
+// [Index] rule:
+//		x: δ ∈ 𝚪    x0: t0 ∈    t = Inst(δ)    𝚪 ⊢ p1: t1 .. 𝚪 ⊢ pN: tN
+//		𝚪, x: mapval (x0: t0') .. (xN: tN') . (t''; p0 p1 .. pN)    𝚪, e0: t ⊢ e1: t1
+//		--------------------------------------------- [Index]
+//		                𝚪 ⊢ e1: t1
+
 // [Var] rule:
 //		x: σ ∈ 𝚪    t = Inst(σ)
 //    ----------------------- [Var]
@@ -68,7 +74,7 @@ func (cxt *Context[T]) App(j0, j1 bridge.JudgementAsExpression[T, expr.Expressio
 }
 
 // [Abs] rule:
-//		t0 = newvar    𝚪, param: t ⊢ e: t1
+//		t0 = newvar    𝚪, param: t0 ⊢ e: t1
 //		-----------------------------------
 //		    𝚪 ⊢ (λparam . e): t0 -> t1
 //
@@ -145,6 +151,10 @@ func (cxt *Context[T]) Let(name T, j0 bridge.JudgementAsExpression[T, expr.Expre
 
 // generalizes a type: binds all free variables w/in monotype
 func (cxt *Context[T]) Gen(ty types.Monotyped[T]) types.Polytype[T] {
+	/*var res types.DependentTyped[T] 
+	if dti, ok := ty.(types.DependentTypeInstance[T]); ok {
+		dti.GetFreeVariables()
+	}*/
 	vs := ty.GetFreeVariables()
 	return types.Forall(vs...).Bind(ty)
 }

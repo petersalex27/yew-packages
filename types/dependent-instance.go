@@ -52,6 +52,14 @@ type DependentTypeInstance[T nameable.Nameable] struct {
 	Application[T]            // dependent type function
 	index          indexes[T] // arguments to function
 }
+/*
+func (dti DependentTypeInstance[T]) GetFreeKindVariables() []expr.Variable[T] {
+	vars := []expr.Variable{}
+	for _, index := range dti.index {
+
+		index.AsTypeJudgement().expression.ExtractFreeVariables()
+	}
+}*/
 
 func (dti DependentTypeInstance[T]) GetFreeVariables() []Variable[T] {
 	vars := dti.Application.c.GetFreeVariables()

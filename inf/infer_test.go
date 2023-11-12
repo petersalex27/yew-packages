@@ -266,6 +266,7 @@ func TestAbs(t *testing.T) {
 		}
 	}
 }
+
 /*
 func TestLet(t *testing.T) {
 	var v0 types.Variable[nameable.Testable]
@@ -303,35 +304,8 @@ func TestLet(t *testing.T) {
 			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
 			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array),
 			bridge.Judgement[nameable.Testable, expr.NameContext[nameable.Testable]](
-				expr.Bind[nameable.Testable](ve0).In(y),
-				types.Apply[nameable.Testable](arrow, v0, Array),
-			),
-		},
-		{
-			`x => (x y): Array => (\$0 -> $0 y): $0 -> Array`,
-			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), Array),
-			bridge.Judgement[nameable.Testable, expr.Function[nameable.Testable]](
-				expr.Bind[nameable.Testable](ve0).In(expr.Apply[nameable.Testable](ve0, y)),
-				types.Apply[nameable.Testable](arrow, v0, Array),
-			),
-		},
-		{
-			`x => (x y): a => (\$0 -> $0 y): $0 -> a`,
-			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), a),
-			bridge.Judgement[nameable.Testable, expr.Function[nameable.Testable]](
-				expr.Bind[nameable.Testable](ve0).In(expr.Apply[nameable.Testable](ve0, y)),
-				types.Apply[nameable.Testable](arrow, v0, a),
-			),
-		},
-		{
-			`x => (x y): Array a => (\$0 -> $0 y): $0 -> Array a`,
-			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), Array_a),
-			bridge.Judgement[nameable.Testable, expr.Function[nameable.Testable]](
-				expr.Bind[nameable.Testable](ve0).In(expr.Apply[nameable.Testable](ve0, y)),
-				types.Apply[nameable.Testable](arrow, v0, Array_a),
+				expr.Let[nameable.Testable](x, y, x),
+				Array,
 			),
 		},
 	}
@@ -352,8 +326,9 @@ func TestLet(t *testing.T) {
 		}
 	}
 }
-*/
+
 // some integration tests
 func TestProofValidation(t *testing.T) {
 
 }
+*/
