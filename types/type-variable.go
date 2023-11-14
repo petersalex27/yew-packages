@@ -16,8 +16,12 @@ func (v Variable[T]) GetFreeVariables() []Variable[T] {
 	return []Variable[T]{v}
 }
 
-func (v Variable[T]) GetName() T {
+func (v Variable[T]) GetReferred() T {
 	return v.name
+}
+
+func (v Variable[T]) GetName() string {
+	return v.name.GetName()
 }
 
 // ReplaceKindVar implements Monotyped[T].
@@ -90,14 +94,6 @@ func (v Variable[T]) ReplaceDependent(ws []Variable[T], ms []Monotyped[T]) Monot
 		}
 	}
 	return v
-}
-
-// Var("a").Generalize() = `forall _ . a`
-func (v Variable[T]) Generalize(cxt *Context[T]) Polytype[T] {
-	return Polytype[T]{
-		typeBinders: cxt.MakeDummyVars(1),
-		bound:       v,
-	}
 }
 
 func (v Variable[T]) FreeInstantiation(cxt *Context[T]) Monotyped[T] {

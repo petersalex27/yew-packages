@@ -14,6 +14,15 @@ type RecIn[T nameable.Nameable] struct {
 	contextualized Expression[T]
 }
 
+func (rec RecIn[T]) Flatten() []Expression[T] {
+	f := (Def[T]).Flatten
+	fold := func(l, r []Expression[T]) []Expression[T] {
+		return append(l, r...)
+	}
+	left := fun.FoldLeft([]Expression[T]{}, fun.FMap(rec.defs, f), fold)
+	return append(left, rec.contextualized.Flatten()...)
+}
+
 func (rec RecIn[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	// first, validate
 	for _, def := range rec.defs {
@@ -256,10 +265,10 @@ func (rec RecIn[T]) ForceRequest() Expression[T] {
 	return Rec[T](defs, contextualized)
 }
 
-func (rec RecIn[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+func (rec RecIn[T]) ExtractVariables(gt int) []Variable[T] {
 	// extracts free variables from defs--creates 2d slice
 	freeVars2d := fun.FMap(rec.defs, func(def Def[T]) []Variable[T] {
-		return def.assignment.ExtractFreeVariables(dummyVar)
+		return def.assignment.ExtractVariables(gt)
 	})
 	// flattens the extracted, 2d slice into a 1d slice
 	freeVars := fun.FoldLeft([]Variable[T]{}, freeVars2d, func(xs, ys []Variable[T]) []Variable[T] {
@@ -267,7 +276,7 @@ func (rec RecIn[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
 	})
 
 
-	contextualizedFreeVars := rec.contextualized.ExtractFreeVariables(dummyVar)
+	contextualizedFreeVars := rec.contextualized.ExtractVariables(gt)
 
 	freeVars = append(freeVars, contextualizedFreeVars...)
 	return freeVars

@@ -14,10 +14,19 @@ type Selection[T nameable.Nameable] struct {
 	selections []Case[T]
 }
 
-func (s Selection[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	vars := s.selector.ExtractFreeVariables(dummyVar)
+func (s Selection[T]) Flatten() []Expression[T] {
+	f := (Case[T]).Flatten
+	fold := func(l, r []Expression[T]) []Expression[T] {
+		return append(l, r...)
+	}
+	right := fun.FoldLeft([]Expression[T]{}, fun.FMap(s.selections, f), fold)
+	return append(s.selector.Flatten(), right...)
+}
+
+func (s Selection[T]) ExtractVariables(gt int) []Variable[T] {
+	vars := s.selector.ExtractVariables(gt)
 	for _, c := range s.selections {
-		vars = append(vars, c.ExtractFreeVariables(dummyVar)...)
+		vars = append(vars, c.ExtractVariables(gt)...)
 	}
 	return vars
 }

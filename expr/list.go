@@ -5,10 +5,17 @@ import (
 
 	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
-	str "github.com/petersalex27/yew-packages/stringable"
 )
 
 type List[T nameable.Nameable] []Expression[T]
+
+func (ls List[T]) Flatten() []Expression[T] {
+	f := (Expression[T]).Flatten
+	fold := func(l, r []Expression[T]) []Expression[T] {
+		return append(l, r...)
+	}
+	return fun.FoldLeft([]Expression[T]{}, fun.FMap(ls, f), fold)
+}
 
 func (list List[T]) ToAlmostPattern() (pat AlmostPattern[T], ok bool) {
 	res := fun.FMapFilter(
@@ -45,10 +52,10 @@ func (ls List[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	)
 }
 
-func (ls List[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+func (ls List[T]) ExtractVariables(gt int) []Variable[T] {
 	vars := []Variable[T]{}
 	for _, elem := range ls {
-		vars = append(vars, elem.ExtractFreeVariables(dummyVar)...)
+		vars = append(vars, elem.ExtractVariables(gt)...)
 	}
 	return vars
 }
@@ -97,17 +104,21 @@ func Cons[T nameable.Nameable](head Expression[T], tail List[T]) List[T] {
 	return out
 }
 
+func (ls List[T]) rawInner(f func(Expression[T])string) []string {
+	return fun.FMap(ls, f)
+}
+
 func (ls List[T]) String() string {
 	sep := listSepString()
-	list := str.Join(ls, str.String(sep))
+	f := (Expression[T]).String
+	ls.rawInner(f)
+	list := strings.Join(ls.rawInner(f), sep)
 	return encloseListString(list)
 }
 
 func (ls List[T]) StrictString() string {
-	strs := make([]string, len(ls))
-	for i, l := range ls {
-		strs[i] = l.StrictString()
-	}
+	f := (Expression[T]).StrictString
+	strs := ls.rawInner(f)
 	list := strings.Join(strs, listSepString())
 	return encloseListString(list)
 }

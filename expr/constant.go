@@ -4,6 +4,14 @@ import "github.com/petersalex27/yew-packages/nameable"
 
 type Const[T nameable.Nameable] struct {Name T}
 
+func (c Const[T]) GetReferred() T {
+	return c.Name
+}
+
+func (c Const[T]) Flatten() []Expression[T] {
+	return []Expression[T]{c}
+}
+
 func (c Const[T]) ToAlmostPattern() (pat AlmostPattern[T], ok bool) {
 	return MakeElem(PatternElementConst, c.Name).ToAlmostPattern()
 }
@@ -15,7 +23,7 @@ func (c Const[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	return c
 }
 
-func (Const[T]) ExtractFreeVariables(Variable[T]) []Variable[T] {
+func (Const[T]) ExtractVariables(int) []Variable[T] {
 	return []Variable[T]{}
 }
 

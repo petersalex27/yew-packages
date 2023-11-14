@@ -17,9 +17,15 @@ type Replaceable[T nameable.Nameable] interface {
 	BodyAbstract(v Variable[T], name Const[T]) Expression[T]
 }
 
+type Referable[T nameable.Nameable] interface {
+	Expression[T]
+	GetReferred() T
+}
+
 type Expression[T nameable.Nameable] interface {
 	str.Stringable
 	Bindable[T]
+	nameable.Collectable[T]
 	Replaceable[T]
 	Equals(*Context[T], Expression[T]) bool
 	StrictString() string
@@ -29,8 +35,8 @@ type Expression[T nameable.Nameable] interface {
 	PrepareAsRHS() Expression[T]
 	Copy() Expression[T]
 	ForceRequest() Expression[T]
-	ExtractFreeVariables(dummyVar Variable[T]) []Variable[T]
-	Collect() []T
+	ExtractVariables(gt int) []Variable[T]
+	Flatten() []Expression[T]
 }
 
 type ApplicableExpression[T nameable.Nameable] interface {

@@ -14,6 +14,15 @@ type Function[T nameable.Nameable] struct {
 	e    Expression[T]
 }
 
+func (f Function[T]) Flatten() []Expression[T] {
+	body := f.e.Flatten()
+	es := make([]Expression[T], 0, len(f.vars) + len(body))
+	for _, v := range f.vars {
+		es = append(es, v)
+	}
+	return append(es, body...)
+}
+
 func (f Function[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	return Function[T]{
 		vars: f.vars,
@@ -21,13 +30,11 @@ func (f Function[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	}
 }
 
-func (f Function[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	var e Expression[T] = f.e
-	for _, v := range f.vars {
-		e, _ = e.Replace(v, dummyVar)
-	}
-
-	return e.ExtractFreeVariables(dummyVar)
+func (f Function[T]) ExtractVariables(gt int) []Variable[T] {
+	depth := f.BindDepth()
+	res := f.e.ExtractVariables(gt + f.BindDepth())
+	 // remove bound depth from variable vals
+	return BindersOnly[T](res).UpdateVars(gt + depth, -depth)
 }
 
 func (f Function[T]) Collect() []T {
@@ -155,6 +162,19 @@ func (f Function[T]) Rebind() Expression[T] {
 
 type BindersOnly[T nameable.Nameable] []Variable[T]
 
+func (bs BindersOnly[T]) StrictEquals(bs2 BindersOnly[T]) bool {
+	if len(bs) != len(bs2) {
+		return false
+	}
+
+	for i, b := range bs {
+		if !b.StrictEquals(bs2[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 func (bs BindersOnly[T]) Collect() []T {
 	res := make([]T, 0, len(bs))
 	for _, v := range bs {
@@ -207,6 +227,23 @@ func StrictBind[T nameable.Nameable](binder Variable[T], more ...Variable[T]) Bi
 
 func Bind[T nameable.Nameable](binders ...Variable[T]) BindersOnly[T] {
 	return mkfunc(binders...)
+}
+
+func (bs BindersOnly[T]) UpdateVars(gt int, by int) BindersOnly[T] {
+	out := make(BindersOnly[T], len(bs))
+	for i, b := range bs {
+		out[i] = Var(b.name)
+
+		// set depth
+		depth := b.depth
+		if depth > gt {
+			depth = depth + by	
+		}
+
+		// set var depth
+		out[i].depth = depth
+	}
+	return out
 }
 
 func (bs BindersOnly[T]) Update(add int) BindersOnly[T] {
@@ -357,17 +394,26 @@ func (f Function[T]) Again() (Expression[T], bool) {
 }
 
 func (f Function[T]) AgainApply(e Expression[T]) (Expression[T], bool) {
-	lookFor := f.BindDepth() // same value, bindDepth is just uint
+	lookFor := f.BindDepth() // any variables <= lookFor are bound, else free
+	// update variables in expression so when it's applied to the function, the 
+	// function doesn't capture them
 	e2 := e.UpdateVars(0, lookFor)
+	// get replace to replace--the outer-most binder
 	v := f.vars[0]
+	// (λv.e) e2 = e[v/e2], i.e., replace all instances of variable `v` w/ 
+	// expression `e2`
 	res, again := f.e.Replace(v, e2)
+	// need to dec. all free vars to match the new binding depth
 	res = res.UpdateVars(lookFor, -1)
 
+	// still function after application, so return function
 	if lookFor > 1 {
 		return Function[T]{
 			vars: f.vars[1:],
 			e:    res,
 		}, again
 	}
+
+	// no binders left, not a function
 	return res, again
 }

@@ -13,11 +13,13 @@ import (
 // tests variable inference rule
 func TestVar(t *testing.T) {
 	var v0 types.Variable[nameable.Testable]
+	var ve0 expr.Variable[nameable.Testable]
 
 	{
 		// block prevents accidental use of cxt
 		cxt := NewTestableContext()
 		v0 = cxt.typeContext.NewVar()
+		ve0 = cxt.exprContext.NewVar()
 	}
 
 	xName := nameable.MakeTestable("x")
@@ -32,16 +34,19 @@ func TestVar(t *testing.T) {
 	Array_a := types.Apply[nameable.Testable](Array, a) // Array a
 	n := expr.Var(nName)                                // n
 	Uint := types.MakeConst(uintName)                   // Uint
-	n_Uint := types.Judgement(expr.Expression[nameable.Testable](n), types.Type[nameable.Testable](Uint))
+	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))
+	ve0_Uint := types.Judgement(expr.Referable[nameable.Testable](ve0), types.Type[nameable.Testable](Uint))
 	var_n_Uint := types.Judgement[nameable.Testable, expr.Variable[nameable.Testable]](n, Uint)
-	domain := []types.ExpressionJudgement[nameable.Testable, expr.Expression[nameable.Testable]]{n_Uint}
+	domain := []types.ExpressionJudgement[nameable.Testable, expr.Referable[nameable.Testable]]{n_Uint}
+	domain2 := []types.ExpressionJudgement[nameable.Testable, expr.Referable[nameable.Testable]]{ve0_Uint}
 	Array_a_n := types.Index(Array_a, domain...)       // (Array a; n)
+	Array_a_ve0 := types.Index(Array_a, domain2...)    // (Array a; x0)
 	mapval_n_Uint__Array_a := types.MakeDependentType( // mapval (n: Uint) . (Array a)
 		[]types.TypeJudgement[nameable.Testable, expr.Variable[nameable.Testable]]{var_n_Uint},
 		Array_a,
 	)
 	Array_v0 := types.Apply[nameable.Testable](Array, v0)
-	Array_v0_n := types.Index(Array_v0, domain...)
+	Array_v0_ve0 := types.Index(Array_v0, domain2...)
 
 	tests := []struct {
 		description string
@@ -79,14 +84,14 @@ func TestVar(t *testing.T) {
 			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a_n),
 		},
 		{
-			"x: mapval (n: Uint) . (Array a) => x: (Array a; n)",
+			"x: mapval (n: Uint) . (Array a) => x: (Array a; $0)",
 			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, mapval_n_Uint__Array_a),
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a_n),
+			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a_ve0),
 		},
 		{
-			"x: forall a . mapval (n: Uint) . (Array a) => x: (Array $0; n)",
+			"x: forall a . mapval (n: Uint) . (Array a) => x: (Array $0; $e0)",
 			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(mapval_n_Uint__Array_a)),
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_v0_n),
+			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_v0_ve0),
 		},
 	}
 
@@ -172,7 +177,7 @@ func TestApp(t *testing.T) {
 					FailMessage(test.expect, actual, i))
 		}
 
-		findOutActual := cxt.typeContext.Find(test.findIn)
+		findOutActual := cxt.Find(test.findIn)
 		eq = test.findOut.Equals(findOutActual)
 		if !eq {
 			t.Fatal(
@@ -202,8 +207,8 @@ func TestAbs(t *testing.T) {
 
 	x := expr.Const[nameable.Testable]{Name: xName}
 	y := expr.Const[nameable.Testable]{Name: yName}
-	Array := types.MakeConst(arrName) // Array
-	a := types.Var(aName)             // a
+	Array := types.MakeConst(arrName)                   // Array
+	a := types.Var(aName)                               // a
 	Array_a := types.Apply[nameable.Testable](Array, a) // Array a
 
 	tests := []struct {
@@ -267,8 +272,77 @@ func TestAbs(t *testing.T) {
 	}
 }
 
-/*
-func TestLet(t *testing.T) {
+func TestGen(t *testing.T) {
+	// var v0 types.Variable[nameable.Testable]
+
+	// {
+	// 	// block prevents accidental use of cxt
+	// 	cxt := NewTestableContext()
+	// 	v0 = cxt.typeContext.NewVar()
+	// }
+
+	arrName := nameable.MakeTestable("Array")
+	aName := nameable.MakeTestable("a")
+	nName := nameable.MakeTestable("n")
+	uintName := nameable.MakeTestable("Uint")
+
+	Array := types.MakeConst(arrName)                   // Array
+	a := types.Var(aName)                               // a
+	Array_a := types.Apply[nameable.Testable](Array, a) // Array a
+	n := expr.Var(nName)                                // n
+	Uint := types.MakeConst(uintName)                   // Uint
+	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))
+	var_n_Uint := types.Judgement[nameable.Testable, expr.Variable[nameable.Testable]](n, Uint)
+	domain := []types.ExpressionJudgement[nameable.Testable, expr.Referable[nameable.Testable]]{n_Uint}
+	vs := []types.TypeJudgement[nameable.Testable, expr.Variable[nameable.Testable]]{var_n_Uint}
+	Array_a_n := types.Index(Array_a, domain...) // (Array a; n)
+	Array_n := types.Index(types.Apply[nameable.Testable](Array), domain...)
+
+	tests := []struct {
+		description string
+		in          types.Monotyped[nameable.Testable]
+		expect      types.Polytype[nameable.Testable]
+	}{
+		{
+			"Array => forall _ . Array",
+			Array,
+			types.Forall[nameable.Testable]().Bind(Array),
+		},
+		{
+			"a => forall a . a",
+			a,
+			types.Forall(a).Bind(a),
+		},
+		{
+			"Array a => forall a . Array a",
+			Array_a,
+			types.Forall(a).Bind(Array_a),
+		},
+		{
+			"Array; n => forall _ . mapval (n: Uint) . Array",
+			Array_n,
+			types.Forall[nameable.Testable]().Bind(types.MakeDependentType[nameable.Testable](vs, types.Apply[nameable.Testable](Array))),
+		},
+		{
+			"Array a; n => forall a . mapval (n: Uint) . Array a",
+			Array_a_n,
+			types.Forall(a).Bind(types.MakeDependentType[nameable.Testable](vs, Array_a)),
+		},
+	}
+
+	for i, test := range tests {
+		cxt := NewContext[nameable.Testable]()
+		actual := cxt.Gen(test.in)
+		if !actual.Equals(test.expect) {
+			t.Fatal(
+				testutil.Testing("equality", test.description).
+					FailMessage(test.expect, actual, i),
+			)
+		}
+	}
+}
+
+/*func TestLet(t *testing.T) {
 	var v0 types.Variable[nameable.Testable]
 	var ve0 expr.Variable[nameable.Testable]
 	arrow := types.MakeInfixConst[nameable.Testable](nameable.MakeTestable("->"))
@@ -325,10 +399,245 @@ func TestLet(t *testing.T) {
 					FailMessage(test.expect, actual, i))
 		}
 	}
+}*/
+
+func TestFind(t *testing.T) {
+	intName := nameable.MakeTestable("Int")
+	myTypeName := nameable.MakeTestable("MyType")
+	aName, bName := nameable.MakeTestable("a"), nameable.MakeTestable("b")
+
+	Int := types.MakeConst(intName)
+	a, b := types.Var(aName), types.Var(bName)
+	MyType := types.MakeConst(myTypeName)
+	MyType_a := types.Apply[nameable.Testable](MyType, a)
+	MyType_b := types.Apply[nameable.Testable](MyType, b)
+
+	tests := []struct {
+		desc string
+		targ types.Variable[nameable.Testable]
+		sub  types.Monotyped[nameable.Testable]
+	}{
+		{
+			"a = Int",
+			a, Int,
+		},
+		{
+			"a = b",
+			a, b,
+		},
+		{
+			"a = MyType b",
+			a, MyType_b,
+		},
+		{
+			"a = MyType a",
+			a, MyType_a,
+		},
+	}
+
+	for i, test := range tests {
+		expectBefore, expectAfter := test.targ, test.sub
+		cxt := NewContext[nameable.Testable]()
+
+		// test find before substitution added
+		beforeSub := cxt.Find(test.targ)
+		if !beforeSub.Equals(expectBefore) {
+			t.Fatal(
+				testutil.
+					Testing("find before sub. added", test.desc).
+					FailMessage(expectBefore, beforeSub, i))
+		}
+
+		// now add substitution
+		cxt.typeSubs.Add(test.targ.GetReferred(), test.sub)
+
+		// test find after substitution added
+		afterSub := cxt.Find(test.targ)
+		if !afterSub.Equals(expectAfter) {
+			t.Fatal(
+				testutil.
+					Testing("find after sub. added", test.desc).
+					FailMessage(expectAfter, afterSub, i))
+		}
+	}
+}
+
+func TestUnify(t *testing.T) {
+	type expected struct {
+		inTable bool
+		in, out types.Monotyped[nameable.Testable]
+	}
+	intName := nameable.MakeTestable("Int")
+	myTypeName := nameable.MakeTestable("MyType")
+	myOtherTypeName := nameable.MakeTestable("MyOtherType")
+	aName, bName := nameable.MakeTestable("a"), nameable.MakeTestable("b")
+
+	Int := types.MakeConst(intName)
+	a, b := types.Var(aName), types.Var(bName)
+	MyType := types.MakeConst(myTypeName)
+	MyOtherType := types.MakeConst(myOtherTypeName)
+	MyType_a_b := types.Apply[nameable.Testable](MyType, a, b)
+	MyOtherType_a := types.Apply[nameable.Testable](MyOtherType, a)
+	MyOtherType_b := types.Apply[nameable.Testable](MyOtherType, b)
+	MyType_a := types.Apply[nameable.Testable](MyType, a)
+	MyType_b := types.Apply[nameable.Testable](MyType, b)
+
+	tests := []struct {
+		desc        string
+		left, right types.Monotyped[nameable.Testable]
+		expectStat  Status
+		expect []expected
+	}{
+		{
+			"Unify(a, b)",
+			a, b,
+			Ok,
+			[]expected{
+				{true, a, b},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(a, Int)",
+			a, Int,
+			Ok,
+			[]expected{
+				{true, a, Int},
+				{false, Int, Int},
+			},
+		},
+		{
+			"Unify(Int, Int)",
+			Int, Int,
+			Ok, 
+			[]expected{
+				{false, Int, Int},
+			},
+		},
+		{
+			"Unify(a, MyType b)",
+			a, MyType_b,
+			Ok,
+			[]expected{
+				{true, a, MyType_b},
+				{false, MyType_b, MyType_b},
+			},
+		},
+		{
+			"Unify(MyType b, MyType b)",
+			MyType_b, MyType_b,
+			OccursCheckFailed, 
+			[]expected{
+				{false, MyType, MyType},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(MyType a, MyType b)",
+			MyType_a, MyType_b,
+			Ok, 
+			[]expected{
+				{false, MyType, MyType},
+				{true, a, b},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(MyOtherType b, MyType b)",
+			MyOtherType_b, MyType_b,
+			ConstantMismatch, 
+			[]expected{
+				{false, MyOtherType, MyOtherType},
+				{false, MyType, MyType},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(MyOtherType a, MyType b)",
+			MyOtherType_a, MyType_b,
+			ConstantMismatch, 
+			[]expected{
+				{false, MyOtherType, MyOtherType},
+				{false, MyType, MyType},
+				{false, a, a},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(MyType a b, MyType b)",
+			MyType_a_b, MyType_b,
+			ParamLengthMismatch, 
+			[]expected{
+				{false, MyType, MyType},
+				{false, a, a},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(a, MyType a)",
+			a, MyType_a,
+			OccursCheckFailed, 
+			[]expected{
+				{false, MyType, MyType},
+				{false, a, a},
+			},
+		},
+		{
+			"Unify(a, MyType a b)",
+			a, MyType_a_b,
+			OccursCheckFailed, 
+			[]expected{
+				{false, MyType, MyType},
+				{false, a, a},
+				{false, b, b},
+			},
+		},
+		{
+			"Unify(b, MyType a b)",
+			b, MyType_a_b,
+			OccursCheckFailed, 
+			[]expected{
+				{false, MyType, MyType},
+				{false, a, a},
+				{false, b, b},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		cxt := NewContext[nameable.Testable]()
+
+		stat := cxt.Unify(test.left, test.right)
+		if stat != test.expectStat {
+			t.Fatal(
+				testutil.
+					Testing("stat", test.desc).
+					FailMessage(test.expectStat, stat, i))
+		}
+
+		for j, expect := range test.expect {
+			// check if expected value for whether in sub. table
+			_, inTable := cxt.typeSubs.Get(expect.in.GetReferred())
+			if inTable != expect.inTable {
+				t.Fatal(
+					testutil.
+						Testing("found in sub. table", test.desc).
+						FailMessage(expect.inTable, inTable, i, j))
+			}
+
+			// check if expected result for find
+			out := cxt.Find(expect.in)
+			if !out.Equals(expect.out) {
+				t.Fatal(
+					testutil.
+						Testing("find return value", test.desc).
+						FailMessage(expect.out, out, i, j))
+			}
+		}
+	}
 }
 
 // some integration tests
 func TestProofValidation(t *testing.T) {
 
 }
-*/

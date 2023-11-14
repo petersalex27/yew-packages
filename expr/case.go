@@ -12,6 +12,16 @@ type Case[T nameable.Nameable] struct {
 	expression Expression[T]
 }
 
+func (c Case[T]) Flatten() []Expression[T] {
+	es := make([]Expression[T], len(c.binders))
+	for i, v := range c.binders {
+		es[i] = v
+	}
+	return append(
+		append(es, c.pattern.Flatten()...), 
+		c.expression.Flatten()...)
+}
+
 func (c Case[T]) BodyAbstract(v Variable[T], name Const[T]) Case[T] {
 	return Case[T]{
 		c.binders,
@@ -20,14 +30,8 @@ func (c Case[T]) BodyAbstract(v Variable[T], name Const[T]) Case[T] {
 	}
 }
 
-func (c Case[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	var when, then Expression[T] = c.pattern, c.expression
-	for _, v := range c.binders {
-		when, _ = when.Replace(v, dummyVar)
-		then, _ = then.Replace(v, dummyVar)
-	}
-
-	return append(c.pattern.ExtractFreeVariables(dummyVar), c.expression.ExtractFreeVariables(dummyVar)...)
+func (c Case[T]) ExtractVariables(gt int) []Variable[T] {
+	return append(c.pattern.ExtractVariables(gt), c.expression.ExtractVariables(gt)...)
 }
 
 func (a Case[T]) Collect() []T {

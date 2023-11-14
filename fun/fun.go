@@ -19,6 +19,16 @@ func FMap[T, U any](xs []T, f func(T) U) []U {
 	return out
 }
 
+func Filter[T any](predicate func(T) bool, xs []T) []T {
+	out := []T{}
+	for _, x := range xs {
+		if predicate(x) {
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
 func FMapFilter[T, U any](xs []T, f func(T) (U, bool)) []U {
 	out := make([]U, 0, len(xs))
 	for _, x := range xs {

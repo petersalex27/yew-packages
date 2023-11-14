@@ -8,8 +8,12 @@ func (c Constant[T]) GetFreeVariables() []Variable[T] {
 	return []Variable[T]{}
 }
 
-func (c Constant[T]) GetName() T {
+func (c Constant[T]) GetReferred() T {
 	return c.name
+}
+
+func (c Constant[T]) GetName() string {
+	return c.name.GetName()
 }
 
 func MakeConst[T nameable.Nameable](t T) Constant[T] {

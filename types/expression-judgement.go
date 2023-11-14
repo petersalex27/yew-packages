@@ -8,7 +8,7 @@ import (
 
 type ExpressionJudgement[T nameable.Nameable, E expr.Expression[T]] interface {
 	stringable.Stringable
-	collectable[T]
+	nameable.Collectable[T]
 	AsTypeJudgement() TypeJudgement[T, E]
 	MakeJudgement(E, Type[T]) ExpressionJudgement[T, E]
 }

@@ -7,6 +7,10 @@ type Application[T nameable.Nameable] struct {
 	right Expression[T]
 }
 
+func (a Application[T]) Flatten() []Expression[T] {
+	return append(a.left.Flatten(), a.right.Flatten()...)
+}
+
 func (a Application[T]) ToAlmostPattern() (pat AlmostPattern[T], ok bool) {
 	var left, right Patternable[T]
 	var lpat, rpat AlmostPattern[T]
@@ -43,8 +47,8 @@ func (a Application[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T]
 	return Apply(a.left.BodyAbstract(v, name), a.right.BodyAbstract(v, name))
 }
 
-func (a Application[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	return append(a.left.ExtractFreeVariables(dummyVar), a.right.ExtractFreeVariables(dummyVar)...)
+func (a Application[T]) ExtractVariables(gt int) []Variable[T] {
+	return append(a.left.ExtractVariables(gt), a.right.ExtractVariables(gt)...)
 }
 
 func (a Application[T]) Copy() Expression[T] {

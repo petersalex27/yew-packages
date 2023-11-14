@@ -5,15 +5,10 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type collectable[T nameable.Nameable] interface {
-	Collect() []T
-}
-
 type Type[T nameable.Nameable] interface {
 	str.Stringable
 	Equals(Type[T]) bool
-	Generalize(cxt *Context[T]) Polytype[T]
-	collectable[T]
+	nameable.Collectable[T]
 }
 
 func MaybeReplace[T nameable.Nameable](ty Type[T], v Variable[T], m Monotyped[T]) Type[T] {
@@ -24,10 +19,10 @@ func MaybeReplace[T nameable.Nameable](ty Type[T], v Variable[T], m Monotyped[T]
 }
 
 func Merge[T nameable.Nameable](head Application[T], tail Monotyped[T]) Application[T] {
-	newTypes := make([]Monotyped[T], 0, len(head.ts) + 1)
+	newTypes := make([]Monotyped[T], 0, len(head.ts)+1)
 	copy(newTypes, head.ts)
 	return Application[T]{
-		c: head.c,
+		c:  head.c,
 		ts: append(newTypes, tail),
 	}
 }

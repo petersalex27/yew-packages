@@ -11,14 +11,22 @@ type Variable[T nameable.Nameable] struct {
 	depth int
 }
 
+func (v Variable[T]) Flatten() []Expression[T] {
+	return []Expression[T]{v}
+}
+
+func (v Variable[T]) GetReferred() T {
+	return v.name
+}
+
 func (v Variable[T]) ToAlmostPattern() (AlmostPattern[T], bool) {
 	return MakeElem[T](PatternElementVar, v.name).ToAlmostPattern()
 }
 
 func (v Variable[T]) BodyAbstract(Variable[T], Const[T]) Expression[T] { return v }
 
-func (v Variable[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	if v.name.GetName() != dummyVar.name.GetName() {
+func (v Variable[T]) ExtractVariables(gt int) []Variable[T] {
+	if v.depth > gt {
 		// variable is free variable; all bound variables were replaced w/ dummy
 		// variable
 		return []Variable[T]{v}
@@ -83,21 +91,25 @@ func (v Variable[T]) Bind(bs BindersOnly[T]) Expression[T] {
 
 	name := v.name
 	out := Var(name)
-	// is free Variable[T]
+	// is free Variable
 	for _, b := range bs {
 		if name.GetName() == b.name.GetName() {
-			// Variable[T] gets bound at b.depth
+			// Variable gets bound at b.depth
 			out.depth = b.depth
 			return out
 		}
-		// Variable[T] does not get bound, maybe next binder..?
+		// Variable does not get bound, maybe next binder..?
 	}
 
-	// Variable[T] remains unbound
+	// Variable remains unbound
+
+	// Set variable as a free variable; free var# + depth of binders;
+	// this represents a free variable w/ number value "#" that is free w/in 
+	// the "depth" enclosing binders
 	out.depth = v.depth + depth
-	if v.depth == 0 {
-		// Variable[T] is free but unrecognized as free
-		out.depth = out.depth + 1 // look at that! +1! Variable[T] is recognized :)
+	if v.depth == 0 { // free variables should not have value 0
+		// set variable number as 1
+		out.depth = out.depth + 1 // look at that! +1! Variable is recognized :)
 	}
 	return out
 }

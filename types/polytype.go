@@ -19,22 +19,10 @@ type Polytype[T nameable.Nameable] struct {
 	bound       DependentTyped[T]
 }
 
-// Returns the same slice that `p` has access to; be very careful
-// about modifying the contents of the return value. See
-//
-//	(Polytype[T]) GetBinders() []Variable[T]
-//
-// for a safer alternative
-func (p Polytype[T]) GetBinders_shallow() []Variable[T] {
-	return p.typeBinders
-}
-
-// returns a copy of the slice that `p` has access to; it is safe
+// returns the same slice of variables that `p` has access to; it is NOT safe
 // to modify the slice returned
 func (p Polytype[T]) GetBinders() []Variable[T] {
-	binders := make([]Variable[T], len(p.typeBinders))
-	copy(binders, p.typeBinders)
-	return binders
+	return p.typeBinders
 }
 
 // returns type bound by polytype
@@ -81,17 +69,6 @@ func (p Polytype[T]) String() string {
 		str.Join(p.typeBinders, j) +
 		" . " +
 		p.bound.String()
-}
-
-// generalizes a polytype by adding an additional binder:
-// 	forall a . T => forall x a . T
-func (p Polytype[T]) Generalize(cxt *Context[T]) Polytype[T] {
-	var poly Polytype[T]
-	poly.bound = p.bound
-	poly.typeBinders = make([]Variable[T], len(p.typeBinders)+1)
-	copy(poly.typeBinders[1:], p.typeBinders)
-	poly.typeBinders[0] = cxt.NewVar()
-	return poly
 }
 
 func (p Polytype[T]) Collect() []T {

@@ -4,8 +4,12 @@ import "github.com/petersalex27/yew-packages/nameable"
 
 type InfixConst[T nameable.Nameable] Constant[T]
 
-func (c InfixConst[T]) GetName() T {
+func (c InfixConst[T]) GetReferred() T {
 	return c.name
+}
+
+func (c InfixConst[T]) GetName() string {
+	return c.name.GetName()
 }
 
 func MakeInfixConst[T nameable.Nameable](t T) InfixConst[T] {

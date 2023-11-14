@@ -7,13 +7,13 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type indexes[T nameable.Nameable] []ExpressionJudgement[T, expr.Expression[T]]
+type indexes[T nameable.Nameable] []ExpressionJudgement[T, expr.Referable[T]]
 
 func (idxs indexes[T]) GetFreeVariables() []Variable[T] {
 	// 2d slice of free variables
 	vs2d := fun.FMap(
 		idxs,
-		func(ej ExpressionJudgement[T, expr.Expression[T]]) []Variable[T] {
+		func(ej ExpressionJudgement[T, expr.Referable[T]]) []Variable[T] {
 			mono := ej.AsTypeJudgement().ty.(Monotyped[T]) // should always pass b/c indexes's values must be typed by monotypes
 			return mono.GetFreeVariables()
 		},
@@ -31,11 +31,11 @@ func (idxs indexes[T]) GetFreeVariables() []Variable[T] {
 func (idxs indexes[T]) FreeInstantiation(cxt *Context[T]) indexes[T] {
 	return fun.FMap(
 		idxs,
-		func(idx ExpressionJudgement[T, expr.Expression[T]]) ExpressionJudgement[T, expr.Expression[T]] {
+		func(idx ExpressionJudgement[T, expr.Referable[T]]) ExpressionJudgement[T, expr.Referable[T]] {
 			tj := idx.AsTypeJudgement()
 			t, e := tj.GetType(), tj.GetExpression()
 			m := t.(Monotyped[T]).FreeInstantiation(cxt)
-			return Judgement[T, expr.Expression[T]](e, m)
+			return Judgement[T, expr.Referable[T]](e, m)
 		},
 	)
 }
@@ -52,26 +52,30 @@ type DependentTypeInstance[T nameable.Nameable] struct {
 	Application[T]            // dependent type function
 	index          indexes[T] // arguments to function
 }
-/*
-func (dti DependentTypeInstance[T]) GetFreeKindVariables() []expr.Variable[T] {
-	vars := []expr.Variable{}
-	for _, index := range dti.index {
 
-		index.AsTypeJudgement().expression.ExtractFreeVariables()
+func (dti DependentTypeInstance[T]) GetIndexes() []ExpressionJudgement[T, expr.Referable[T]] {
+	return dti.index
+}
+
+func (dti DependentTypeInstance[T]) GetFreeKindVariables() []expr.Variable[T] {
+	vars := []expr.Variable[T]{}
+	for _, index := range dti.index {
+		vars = append(vars, index.AsTypeJudgement().expression.ExtractVariables(0)...)
 	}
-}*/
+	return vars
+}
 
 func (dti DependentTypeInstance[T]) GetFreeVariables() []Variable[T] {
-	vars := dti.Application.c.GetFreeVariables()
+	vars := dti.Application.GetFreeVariables()
 	vars = append(vars, dti.index.GetFreeVariables()...)
 	return vars
 }
 
-func (dti DependentTypeInstance[T]) GetName() T {
-	return dti.Application.GetName()
+func (dti DependentTypeInstance[T]) GetReferred() T {
+	return dti.Application.GetReferred()
 }
 
-func Index[T nameable.Nameable](family Application[T], domain ...ExpressionJudgement[T, expr.Expression[T]]) DependentTypeInstance[T] {
+func Index[T nameable.Nameable](family Application[T], domain ...ExpressionJudgement[T, expr.Referable[T]]) DependentTypeInstance[T] {
 	return DependentTypeInstance[T]{
 		Application: family,
 		index:       domain,
@@ -82,9 +86,9 @@ func (dti DependentTypeInstance[T]) AsFreeInstance(freeExprVars []expr.Variable[
 	application := dti.Application
 	indexed := fun.ZipWith(
 		// `binder` is a binder in `mapall (binder1) (binder2) .. (binderN) . dti`
-		func(freeExprVar expr.Variable[T], binder TypeJudgement[T, expr.Variable[T]]) ExpressionJudgement[T, expr.Expression[T]] {
+		func(freeExprVar expr.Variable[T], binder TypeJudgement[T, expr.Variable[T]]) ExpressionJudgement[T, expr.Referable[T]] {
 			t := binder.GetType()                  // type of index value
-			var e expr.Expression[T] = freeExprVar // free variable that indexes dependent type (equiv'ly, arg. to dep. ty. func.)
+			var e expr.Referable[T] = freeExprVar // free variable that indexes dependent type (equiv'ly, arg. to dep. ty. func.)
 			return Judgement(e, t)                 // judgement of `e: t`
 		},
 		freeExprVars,

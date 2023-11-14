@@ -10,6 +10,10 @@ type TypedJudgement[N nameable.Nameable, E expr.Expression[N], T Type[N]] struct
 	typing T
 }
 
+func TypedJudge[N nameable.Nameable, E expr.Expression[N], T Type[N]](e E, t T) TypedJudgement[N,E,T] {
+	return TypedJudgement[N,E,T]{e,t}
+}
+
 // returns typing of judgement
 //
 // e.g., given a judgement `e: t`
@@ -23,7 +27,7 @@ func (judgement TypedJudgement[_,_,T]) GetType() T { return judgement.typing }
 func (judgement TypedJudgement[_,E,_]) GetExpression() E { return judgement.expression }
 
 // splits the judgement into its components
-func (judgement TypedJudgement[_,E,T]) GetExpressionAndType() (E, T) {
+func (judgement TypedJudgement[N,_,_]) GetExpressionAndType() (expr.Expression[N], Type[N]) {
 	return judgement.expression, judgement.typing
 }
 

@@ -10,6 +10,10 @@ type Def[T nameable.Nameable] struct {
 	assignment Expression[T]
 }
 
+func (def Def[T]) Flatten() []Expression[T] {
+	return []Expression[T]{def.name, def.assignment}
+}
+
 func (def Def[T]) Equals(cxt *Context[T], def2 Def[T]) bool {
 	return def.name.Equals(cxt, def2.name) &&
 		def.assignment.Equals(cxt, def2.assignment)
@@ -46,6 +50,10 @@ type LetIn[T nameable.Nameable] struct {
 	contextualized Expression[T]
 }
 
+func (letin LetIn[T]) Flatten() []Expression[T] {
+	return append(letin.Def.Flatten(), letin.contextualized.Flatten()...)
+}
+
 type NameContext[T nameable.Nameable] struct {
 	// whether context is at head of NameContext or tail
 	// false (i.e., at head) =>
@@ -54,6 +62,10 @@ type NameContext[T nameable.Nameable] struct {
 	// 	<contextualized> where <name> = <assignment>
 	tailedContext bool
 	LetIn[T]
+}
+
+func (cxt NameContext[T]) Flatten() []Expression[T] {
+	return cxt.LetIn.Flatten()
 }
 
 // Creates a non-tailed NameContext expression; in Haskell this would be a 
@@ -278,9 +290,9 @@ func (nameCxt NameContext[T]) ForceRequest() Expression[T] {
 	}
 }
 
-func (nameCxt NameContext[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
-	cxtzdVars := nameCxt.contextualized.ExtractFreeVariables(dummyVar)
-	assgnVars := nameCxt.assignment.ExtractFreeVariables(dummyVar)
+func (nameCxt NameContext[T]) ExtractVariables(gt int) []Variable[T] {
+	cxtzdVars := nameCxt.contextualized.ExtractVariables(gt)
+	assgnVars := nameCxt.assignment.ExtractVariables(gt)
 	// the following statements ensure the order of the free vars matches the 
 	// order they would appear in code
 	if nameCxt.tailedContext {

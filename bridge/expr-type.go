@@ -8,9 +8,23 @@ import (
 
 type JudgementAsExpression[T nameable.Nameable, E expr.Expression[T]] types.TypeJudgement[T, E]
 
-func (judgement JudgementAsExpression[T, E]) ExtractFreeVariables(dummyVar expr.Variable[T]) []expr.Variable[T] {
+func (judgement JudgementAsExpression[T, E]) Flatten() []expr.Expression[T] {
 	_, e := judgement.TypeAndExpr()
-	return e.ExtractFreeVariables(dummyVar)
+	if _, ok := expr.Expression[T](e).(expr.Variable[T]); ok {
+		return []expr.Expression[T]{judgement}
+	} else if _, ok := expr.Expression[T](e).(expr.Const[T]); ok {
+		return []expr.Expression[T]{judgement}
+	}
+	return e.Flatten()
+}
+
+func (judgement JudgementAsExpression[N, _]) GetExpressionAndType() (expr.Expression[N], types.Type[N]) {
+	return judgement.ToTypeJudgement().GetExpressionAndType()
+}
+
+func (judgement JudgementAsExpression[T, E]) ExtractVariables(gt int) []expr.Variable[T] {
+	_, e := judgement.TypeAndExpr()
+	return e.ExtractVariables(gt)
 }
 
 func (judgement JudgementAsExpression[T, E]) ToTypeJudgement() types.TypeJudgement[T, E] {

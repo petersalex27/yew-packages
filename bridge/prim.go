@@ -16,6 +16,10 @@ type PrimInterface[T nameable.Nameable] interface {
 	GetType() types.Monotyped[T]
 }
 
+func (prim Prim[T]) Flatten() []expr.Expression[T] {
+	return []expr.Expression[T]{prim}
+}
+
 func (prim Prim[T]) ToPattern() Pattern[T] {
 	val := prim.Val.Val()
 	ty := prim.Val.GetType()
@@ -28,7 +32,7 @@ type Prim[T nameable.Nameable] struct {
 	Val PrimInterface[T]
 }
 
-func (Prim[T]) ExtractFreeVariables(dummyVar expr.Variable[T]) []expr.Variable[T] {
+func (Prim[T]) ExtractVariables(int) []expr.Variable[T] {
 	return []expr.Variable[T]{}
 }
 

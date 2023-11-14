@@ -25,6 +25,14 @@ type Instruction[T nameable.Nameable] struct {
 	InstructionArgs[T]
 }
 
+func (instr Instruction[T]) Flatten() []Expression[T] {
+	f := (Expression[T]).Flatten
+	fold := func(l, r []Expression[T]) []Expression[T] {
+		return append(l, r...)
+	}
+	return fun.FoldLeft([]Expression[T]{}, fun.FMap(instr.args, f), fold)
+}
+
 func (instr Instruction[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	args := fun.FMap(
 		instr.args,
@@ -38,10 +46,10 @@ func (instr Instruction[T]) BodyAbstract(v Variable[T], name Const[T]) Expressio
 	}
 }
 
-func (instr Instruction[T]) ExtractFreeVariables(dummyVar Variable[T]) []Variable[T] {
+func (instr Instruction[T]) ExtractVariables(gt int) []Variable[T] {
 	vars := []Variable[T]{}
 	for _, arg := range instr.args {
-		vars = append(vars, arg.ExtractFreeVariables(dummyVar)...)
+		vars = append(vars, arg.ExtractVariables(gt)...)
 	}
 	return vars
 }

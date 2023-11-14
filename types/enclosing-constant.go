@@ -11,8 +11,12 @@ func (c EnclosingConst[T]) GetFreeVariables() []Variable[T] {
 	return []Variable[T]{}
 }
 
-func (c EnclosingConst[T]) GetName() T {
+func (c EnclosingConst[T]) GetReferred() T {
 	return c.name
+}
+
+func (c EnclosingConst[T]) GetName() string {
+	return c.Constant.GetName()
 }
 
 func MakeEnclosingConst[T nameable.Nameable](at uint, t T) EnclosingConst[T] {

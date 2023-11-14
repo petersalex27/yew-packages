@@ -15,9 +15,9 @@ type DependentTyped[T nameable.Nameable] interface {
 
 //type DependentTypeFunction[T nameable.Nameable] Application[T]
 
-// Dependent Type: `(mapall (a: A) (b: B) ..) . (F a b ..)`
+// Dependent Type: `(mapcal (a: A) (b: B) ..) . (F a b ..)`
 type DependentType[T nameable.Nameable] struct {
-	mapall []TypeJudgement[T, expr.Variable[T]]
+	mapval []TypeJudgement[T, expr.Variable[T]]
 	DependentTypeInstance[T]
 }
 
@@ -33,9 +33,9 @@ type DependentType[T nameable.Nameable] struct {
 //		ArraySelector_a := Apply(ArraySelector, a)
 //		MakeDependentType(mapval, ArraySelector_a).
 //			String() == "mapval (n: Uint) . (ArraySelector a)"
-func MakeDependentType[T nameable.Nameable](mapall []TypeJudgement[T, expr.Variable[T]], typeFunc Application[T]) DependentType[T] {
+func MakeDependentType[T nameable.Nameable](mapval []TypeJudgement[T, expr.Variable[T]], typeFunc Application[T]) DependentType[T] {
 	return DependentType[T]{
-		mapall: mapall,
+		mapval: mapval,
 		DependentTypeInstance: DependentTypeInstance[T]{
 			Application: typeFunc,
 			index: nil,
@@ -44,24 +44,24 @@ func MakeDependentType[T nameable.Nameable](mapall []TypeJudgement[T, expr.Varia
 }
 
 func (d DependentType[T]) String() string {
-	return "mapval " + str.Join(d.mapall, str.String(" ")) + " . " + d.DependentTypeInstance.String()
+	return "mapval " + str.Join(d.mapval, str.String(" ")) + " . " + d.DependentTypeInstance.String()
 }
 
 // index dependent type, making it a dependent type index
 func (d DependentType[T]) FreeIndex(cxt *expr.Context[T]) DependentTypeInstance[T] {
-	return d.DependentTypeInstance.FreeInstantiateKinds(cxt, d.mapall...)
+	return d.DependentTypeInstance.FreeInstantiateKinds(cxt, d.mapval...)
 }
 
-func kindInstantiation[T nameable.Nameable](d DependentType[T], defaultElem expr.Expression[T]) DependentTypeInstance[T] {
-	index := make([]ExpressionJudgement[T, expr.Expression[T]], len(d.mapall))
+func kindInstantiation[T nameable.Nameable](d DependentType[T], defaultElem expr.Referable[T]) DependentTypeInstance[T] {
+	index := make([]ExpressionJudgement[T, expr.Referable[T]], len(d.mapval))
 	for i := range index {
-		var elem expr.Expression[T]
+		var elem expr.Referable[T]
 		if defaultElem == nil {
-			elem = d.mapall[i].expression
+			elem = d.mapval[i].expression
 		} else {
 			elem = defaultElem
 		}
-		index[i] = Judgement(elem, d.mapall[i].ty)
+		index[i] = Judgement(elem, d.mapval[i].ty)
 	}
 	return DependentTypeInstance[T]{
 		Application: d.DependentTypeInstance.Application,
@@ -75,22 +75,22 @@ func (d DependentType[T]) KindInstantiation() DependentTypeInstance[T] {
 
 // just assumes e: A
 // 	((mapval (a: A) (b: B) ..) . C) -> ((mapval (b: B) ..) . (C e))
-func (cxt *Context[T]) InstantiateKind(d DependentType[T], e expr.Expression[T]) DependentTyped[T] {
+func (cxt *Context[T]) InstantiateKind(d DependentType[T], e expr.Referable[T]) DependentTyped[T] {
 	inst := d.DependentTypeInstance
-	ty := d.mapall[0].ty // type of expression should be type of variable being replaced
-	index := make([]ExpressionJudgement[T, expr.Expression[T]], len(inst.index)+1)
+	ty := d.mapval[0].ty // type of expression should be type of variable being replaced
+	index := make([]ExpressionJudgement[T, expr.Referable[T]], len(inst.index)+1)
 	copy(index, inst.index)
-	index[len(inst.index)] = (FreeJudgement[T, expr.Expression[T]]{}).MakeJudgement(e, ty)
+	index[len(inst.index)] = (FreeJudgement[T, expr.Referable[T]]{}).MakeJudgement(e, ty)
 	
 	out := DependentType[T]{
-		mapall: d.mapall[1:],
+		mapval: d.mapval[1:],
 		DependentTypeInstance: DependentTypeInstance[T]{
 			Application: d.Application,
 			index: index,
 		},
 	}
 
-	if len(out.mapall) == 0 {
+	if len(out.mapval) == 0 {
 		return out.DependentTypeInstance
 	}
 	return out
@@ -98,7 +98,7 @@ func (cxt *Context[T]) InstantiateKind(d DependentType[T], e expr.Expression[T])
 
 func (d DependentType[T]) FreeInstantiation(cxt *Context[T]) Monotyped[T] {
 	v := expr.Var(cxt.makeName("_"))
-	return kindInstantiation(d, expr.Expression[T](v))
+	return kindInstantiation(d, expr.Referable[T](v))
 }
 
 // This test exact equality, not judgemental equality. For example,
@@ -115,16 +115,16 @@ func (d DependentType[T]) Equals(t Type[T]) bool {
 		return false
 	}
 
-	if len(d.mapall) != len(d2.mapall) {
+	if len(d.mapval) != len(d2.mapval) {
 		return false
 	}
 
-	for i, judge := range d.mapall {
-		if !judge.ty.Equals(d2.mapall[i].ty) {
+	for i, judge := range d.mapval {
+		if !judge.ty.Equals(d2.mapval[i].ty) {
 			return false
 		}
 		// nil is okay here because variables don't require context object for equality
-		if !judge.expression.Equals(nil, d2.mapall[i].expression) {
+		if !judge.expression.Equals(nil, d2.mapval[i].expression) {
 			return false
 		}
 	}
@@ -141,9 +141,9 @@ func (d DependentType[T]) Generalize(cxt *Context[T]) Polytype[T] {
 
 func (d DependentType[T]) Collect() []T {
 	var res []T = []T{}
-	if len(d.mapall) != 0 {
-		res = d.mapall[0].Collect()
-		for _, m := range d.mapall[1:] {
+	if len(d.mapval) != 0 {
+		res = d.mapval[0].Collect()
+		for _, m := range d.mapval[1:] {
 			res = append(res, m.Collect()...)
 		}
 	}
@@ -155,7 +155,7 @@ func (d DependentType[T]) Collect() []T {
 func (d DependentType[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
 	// redo kind-variable binders's types
 	mapall := fun.FMap(
-		d.mapall, 
+		d.mapval, 
 		func(tj TypeJudgement[T, expr.Variable[T]]) TypeJudgement[T, expr.Variable[T]] {
 			mono, _ := tj.ty.(Monotyped[T]) // should always pass since dependent types only have monotype binders
 			var ty Type[T] = mono.ReplaceDependent(vs, ms)

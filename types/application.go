@@ -6,13 +6,8 @@ import (
 	str "github.com/petersalex27/yew-packages/stringable"
 )
 
-type ReferableType[T nameable.Nameable] interface {
-	Monotyped[T]
-	GetName() T
-}
-
 type Application[T nameable.Nameable] struct {
-	c  ReferableType[T]
+	c  Monotyped[T]
 	ts []Monotyped[T]
 }
 
@@ -36,8 +31,8 @@ func (a Application[T]) GetFreeVariables() []Variable[T] {
 	return append(leftVars, rightVars...)
 }
 
-func (a Application[T]) GetName() T {
-	return a.c.GetName()
+func (a Application[T]) GetReferred() T {
+	return a.c.GetReferred()
 }
 
 func (a Application[T]) Merge(ms ...Monotyped[T]) Application[T] {
@@ -47,7 +42,7 @@ func (a Application[T]) Merge(ms ...Monotyped[T]) Application[T] {
 	}
 }
 
-func Apply[T nameable.Nameable](c ReferableType[T], ts ...Monotyped[T]) Application[T] {
+func Apply[T nameable.Nameable](c Monotyped[T], ts ...Monotyped[T]) Application[T] {
 	if app, isApp := c.(Application[T]); isApp {
 		return app.Merge(ts...)
 	}
@@ -88,27 +83,21 @@ func (a Application[T]) String() string {
 
 func (a Application[T]) Replace(v Variable[T], m Monotyped[T]) Monotyped[T] {
 	f := func(mono Monotyped[T]) Monotyped[T] { return mono.Replace(v, m) }
-	res := a.c.Replace(v, m)
-	left, ok := res.(ReferableType[T])
+	left := a.c.Replace(v, m)
 	right := fun.FMap(a.ts, f)
-	if !ok { 
-		// this branch cannot be entered with current set-up since all monotypes are 
-		// also referable types
-		return Apply(a.c, right...)
-	}
 	return Apply(left, right...)
 }
 
 func (a Application[T]) Collect() []T {
 	res := make([]T, 0, len(a.ts)+1)
-	res = append(res, a.c.GetName())
+	res = append(res, a.c.GetReferred())
 	for _, t := range a.ts {
 		res = append(res, t.Collect()...)
 	}
 	return res
 }
 
-func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.GetName().GetName(), a.ts }
+func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.GetReferred().GetName(), a.ts }
 
 func (a Application[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
 	f := func(mono Monotyped[T]) Monotyped[T] { return mono.ReplaceDependent(vs, ms) }
@@ -138,7 +127,7 @@ func (a Application[T]) Equals(t Type[T]) bool {
 		return false
 	}
 
-	if a.c.GetName().GetName() != a2.c.GetName().GetName() || len(a.ts) != len(a2.ts) {
+	if a.c.GetReferred().GetName() != a2.c.GetReferred().GetName() || len(a.ts) != len(a2.ts) {
 		return false
 	}
 
