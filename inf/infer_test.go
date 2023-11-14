@@ -342,28 +342,25 @@ func TestGen(t *testing.T) {
 	}
 }
 
-/*func TestLet(t *testing.T) {
-	var v0 types.Variable[nameable.Testable]
-	var ve0 expr.Variable[nameable.Testable]
+func TestLet(t *testing.T) {
 	arrow := types.MakeInfixConst[nameable.Testable](nameable.MakeTestable("->"))
-
-	{
-		// block prevents accidental use of cxt
-		cxt := NewTestableContext()
-		v0 = cxt.typeContext.NewVar()
-		ve0 = cxt.exprContext.NewVar()
-	}
-
 	xName := nameable.MakeTestable("x")
 	yName := nameable.MakeTestable("y")
 	arrName := nameable.MakeTestable("Array")
 	aName := nameable.MakeTestable("a")
+	zeroName := nameable.MakeTestable("0")
+	intName := nameable.MakeTestable("Int")
 
-	x := expr.Const[nameable.Testable]{Name: xName}
-	y := expr.Const[nameable.Testable]{Name: yName}
-	Array := types.MakeConst(arrName) // Array
-	a := types.Var(aName)             // a
-	Array_a := types.Apply[nameable.Testable](Array, a) // Array a
+	x := expr.Const[nameable.Testable]{Name: xName}       // x (constant)
+	y := expr.Const[nameable.Testable]{Name: yName}       // y (constant)
+	zero := expr.Const[nameable.Testable]{Name: zeroName} // 0 (constant)
+	yVar := expr.Var(yName)                               // y (variable)
+	idFunc := expr.Bind[nameable.Testable](yVar).In(yVar) // (\y -> y)
+	Int := types.MakeConst(intName)                       // Int
+	Array := types.MakeConst(arrName)                     // Array
+	a := types.Var(aName)                                 // a
+	aToA := types.Apply[nameable.Testable](arrow, a, a)   // a -> a
+	x_0 := expr.Apply[nameable.Testable](x, zero)         // (x 0)
 
 	tests := []struct {
 		description string
@@ -382,13 +379,23 @@ func TestGen(t *testing.T) {
 				Array,
 			),
 		},
+		{
+			`x, (\y -> y): a -> a => (x 0): Int => let x = (\y -> y) in x 0: Int`,
+			xName,
+			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](idFunc, aToA),
+			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x_0, Int),
+			bridge.Judgement[nameable.Testable, expr.NameContext[nameable.Testable]](
+				expr.Let[nameable.Testable](x, idFunc, x_0),
+				Int,
+			),
+		},
 	}
 
 	for i, test := range tests {
 		cxt := NewTestableContext()
-		actual := cxt.Abs(test.inputParam)(test.inputExpr)
+		actual := cxt.Let(test.inputParam, test.inputAssign)(test.inputExpr)
 
-		eq := types.JudgementEquals[nameable.Testable, expr.Function[nameable.Testable], types.Type[nameable.Testable]](
+		eq := types.JudgementEquals[nameable.Testable, expr.NameContext[nameable.Testable], types.Type[nameable.Testable]](
 			actual.ToTypeJudgement(),
 			test.expect.ToTypeJudgement(),
 		)
@@ -399,7 +406,7 @@ func TestGen(t *testing.T) {
 					FailMessage(test.expect, actual, i))
 		}
 	}
-}*/
+}
 
 func TestFind(t *testing.T) {
 	intName := nameable.MakeTestable("Int")
@@ -486,7 +493,7 @@ func TestUnify(t *testing.T) {
 		desc        string
 		left, right types.Monotyped[nameable.Testable]
 		expectStat  Status
-		expect []expected
+		expect      []expected
 	}{
 		{
 			"Unify(a, b)",
@@ -509,7 +516,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(Int, Int)",
 			Int, Int,
-			Ok, 
+			Ok,
 			[]expected{
 				{false, Int, Int},
 			},
@@ -526,7 +533,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(MyType b, MyType b)",
 			MyType_b, MyType_b,
-			OccursCheckFailed, 
+			OccursCheckFailed,
 			[]expected{
 				{false, MyType, MyType},
 				{false, b, b},
@@ -535,7 +542,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(MyType a, MyType b)",
 			MyType_a, MyType_b,
-			Ok, 
+			Ok,
 			[]expected{
 				{false, MyType, MyType},
 				{true, a, b},
@@ -545,7 +552,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(MyOtherType b, MyType b)",
 			MyOtherType_b, MyType_b,
-			ConstantMismatch, 
+			ConstantMismatch,
 			[]expected{
 				{false, MyOtherType, MyOtherType},
 				{false, MyType, MyType},
@@ -555,7 +562,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(MyOtherType a, MyType b)",
 			MyOtherType_a, MyType_b,
-			ConstantMismatch, 
+			ConstantMismatch,
 			[]expected{
 				{false, MyOtherType, MyOtherType},
 				{false, MyType, MyType},
@@ -566,7 +573,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(MyType a b, MyType b)",
 			MyType_a_b, MyType_b,
-			ParamLengthMismatch, 
+			ParamLengthMismatch,
 			[]expected{
 				{false, MyType, MyType},
 				{false, a, a},
@@ -576,7 +583,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(a, MyType a)",
 			a, MyType_a,
-			OccursCheckFailed, 
+			OccursCheckFailed,
 			[]expected{
 				{false, MyType, MyType},
 				{false, a, a},
@@ -585,7 +592,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(a, MyType a b)",
 			a, MyType_a_b,
-			OccursCheckFailed, 
+			OccursCheckFailed,
 			[]expected{
 				{false, MyType, MyType},
 				{false, a, a},
@@ -595,7 +602,7 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(b, MyType a b)",
 			b, MyType_a_b,
-			OccursCheckFailed, 
+			OccursCheckFailed,
 			[]expected{
 				{false, MyType, MyType},
 				{false, a, a},
