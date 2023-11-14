@@ -126,11 +126,13 @@ func TestApp(t *testing.T) {
 	yName := nameable.MakeTestable("x")
 	arrName := nameable.MakeTestable("Array")
 	aName := nameable.MakeTestable("a")
+	bName := nameable.MakeTestable("b")
 
 	x := expr.Const[nameable.Testable]{Name: xName}
 	y := expr.Const[nameable.Testable]{Name: yName}
 	Array := types.MakeConst(arrName) // Array
 	a := types.Var(aName)             // a
+	b := types.Var(bName)             // b
 
 	tests := []struct {
 		description string
@@ -151,12 +153,12 @@ func TestApp(t *testing.T) {
 			),
 		},
 		{
-			"(x: a) (x: a) => (x x): $0",
+			"(y: b) (x: a) => (y x): $0",
+			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, b),
 			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, a),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, a),
-			a, types.Apply[nameable.Testable](arrow, a, v0), // a = a -> $0
+			b, types.Apply[nameable.Testable](arrow, a, v0), // b = a -> $0
 			bridge.Judgement[nameable.Testable, expr.Application[nameable.Testable]](
-				expr.Apply[nameable.Testable](x, x),
+				expr.Apply[nameable.Testable](y, x),
 				v0,
 			),
 		},
@@ -165,6 +167,13 @@ func TestApp(t *testing.T) {
 	for i, test := range tests {
 		cxt := NewTestableContext()
 		actual := cxt.App(test.input0, test.input1)
+
+		if cxt.HasErrors() {
+			t.Fatal(
+				testutil.
+					Testing("errors", test.description).
+					FailMessage(nil, cxt.GetReports(), i))
+		}
 
 		eq := types.JudgementEquals[nameable.Testable, expr.Application[nameable.Testable], types.Type[nameable.Testable]](
 			actual.ToTypeJudgement(),
@@ -533,10 +542,10 @@ func TestUnify(t *testing.T) {
 		{
 			"Unify(MyType b, MyType b)",
 			MyType_b, MyType_b,
-			OccursCheckFailed,
+			Ok,
 			[]expected{
 				{false, MyType, MyType},
-				{false, b, b},
+				{true, b, b},
 			},
 		},
 		{
@@ -646,5 +655,100 @@ func TestUnify(t *testing.T) {
 
 // some integration tests
 func TestProofValidation(t *testing.T) {
+	// prove:
+	//	let x = (\y -> y) in x 0: Int
+	//
+	// full proof:
+	//	𝚪 = {0: Int, (λy.y): a -> a}:
+	//
+	//		                           [ x: forall a. a -> a ]¹    Inst(forall a. a -> a)
+	//		                           -------------------------------------------------- [Var]
+	//		                   0: Int                      x: v -> v                       t0, Int = v
+	//		                   ----------------------------------------------------------------------- [App]
+	//		                                               x 0: t0
+	//		                                               ------- [Id]
+	//		  (λy.y): a -> a                               x 0: Int
+	//		1 ----------------------------------------------------- [Let]
+	//		               let x = (λy.y) in x 0: Int
 
+	arrow := types.MakeInfixConst[nameable.Testable](nameable.MakeTestable("->"))
+	xName := nameable.MakeTestable("x")
+	yName := nameable.MakeTestable("y")
+	aName := nameable.MakeTestable("a")
+	zeroName := nameable.MakeTestable("0")
+	intName := nameable.MakeTestable("Int")
+
+	x := expr.Const[nameable.Testable]{Name: xName}       // x (constant)
+	zero := expr.Const[nameable.Testable]{Name: zeroName} // 0 (constant)
+	yVar := expr.Var(yName)                               // y (variable)
+	idFunc := expr.Bind[nameable.Testable](yVar).In(yVar) // (\y -> y)
+	Int := types.MakeConst(intName)                       // Int
+	a := types.Var(aName)                                 // a
+	aToA := types.Apply[nameable.Testable](arrow, a, a)   // a -> a
+	x_0 := expr.Apply[nameable.Testable](x, zero)         // (x 0)
+
+	letExpr := expr.Let[nameable.Testable](x, idFunc, x_0)
+
+	cxt := NewTestableContext()
+
+	Γ := struct {
+		id, zero bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+	}{
+		// (λy.y): a -> a
+		id: bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](idFunc, aToA),
+		// 0: Int
+		zero: bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](zero, Int),
+	}
+
+	// step 1: add context (i.e., `x: Gen(a -> a)`) and first premise for let expression
+	step := 0
+	discharge_x_assumption := cxt.Let(xName, Γ.id) // returns function that discharges assumption
+
+	// step 2: get assumption for first premise of Var
+	step++
+	x_assumption, found := cxt.Get(x)
+	if !found {
+		t.Fatal(testutil.Testing("x assumption get").FailMessage(true, found, step))
+	}
+
+	// step 3: do Var rule
+	step++
+	var_x := cxt.Var(x_assumption)
+
+	// step 4: do App rule
+	step++
+	app_x_0_conclusion := cxt.App(bridge.Judgement(var_x.GetExpressionAndType()), Γ.zero)
+
+	if cxt.HasErrors() {
+		t.Fatal(testutil.Testing("app rule errors").FailMessage(nil, cxt.GetReports(), step))
+	}
+
+	{
+		actualExpr, actualType := app_x_0_conclusion.GetExpressionAndType()
+		expectExpr, expectType := x_0, Int
+
+		if !expectExpr.StrictEquals(actualExpr) {
+			t.Fatal(testutil.Testing("app rule expression result").FailMessage(expectExpr, actualExpr, step))
+		}
+
+		if !expectType.Equals(actualType) {
+			t.Fatal(testutil.Testing("app rule type result").FailMessage(expectType, actualType, step))
+		}
+	}
+
+	// step 5: discharge assumption and introduce let expression w/ type Int
+	step++
+	conclusion := discharge_x_assumption(bridge.Judgement(app_x_0_conclusion.GetExpressionAndType()))
+	{
+		actualExpr, actualType := conclusion.GetExpressionAndType()
+		expectExpr, expectType := letExpr, Int
+
+		if !expectExpr.StrictEquals(actualExpr) {
+			t.Fatal(testutil.Testing("let rule expression result").FailMessage(expectExpr, actualExpr, step))
+		}
+
+		if !expectType.Equals(actualType) {
+			t.Fatal(testutil.Testing("let rule type result").FailMessage(expectType, actualType, step))
+		}
+	}
 }

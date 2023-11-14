@@ -95,7 +95,7 @@ func (cxt *Context[T]) App(j0, j1 bridge.JudgementAsExpression[T, expr.Expressio
 	}
 	// "(e0 e1)" in result of rule
 	appliedExpression := expr.Apply(e0, e1)
-	v := types.Type[T](t2)
+	v := types.Type[T](cxt.Find(t2)) // find t2's substitution
 	// (e0 e1): t2
 	return bridge.Judgement(appliedExpression, v)
 }
@@ -188,8 +188,13 @@ type TypeJudgement[N nameable.Nameable] interface {
 	GetExpressionAndType() (expr.Expression[N], types.Type[N])
 }
 
-// check if variable v occurs in monotype t. If it does, return true; else, return false
+// check if variable v occurs in monotype t. If it does, return true; else, return false.
+// if t = v, then v is not in t, v is t
 func (cxt *Context[T]) occurs(v types.Variable[T], t types.Monotyped[T]) (vOccursInT bool) {
+	if IsVariable(t) {
+		return false
+	}
+
 	for _, u := range t.GetFreeVariables() {
 		if v.Equals(u) {
 			return true
