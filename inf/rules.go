@@ -223,7 +223,7 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 
 			e0, t0 := tj.GetExpressionAndType()
 			mono := t0.(types.Monotyped[N])
-			rec := expr.Rec(defs, e0)
+			rec := expr.Rec(defs...)(e0)
 			return Conclude[N](rec, mono)
 		}
 	}

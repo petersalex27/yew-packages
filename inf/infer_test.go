@@ -668,6 +668,111 @@ func TestLet(t *testing.T) {
 	}
 }
 
+func TestRec(t *testing.T) {
+	arrow := types.MakeInfixConst[nameable.Testable](nameable.MakeTestable("->"))
+	xName := nameable.MakeTestable("x")
+	yName := nameable.MakeTestable("y")
+	fName := nameable.MakeTestable("f")
+	gName := nameable.MakeTestable("g")
+	v1Name := nameable.MakeTestable("v1")
+	v2Name := nameable.MakeTestable("v2")
+	v3Name := nameable.MakeTestable("v3")
+	addName := nameable.MakeTestable("add")
+	arrName := nameable.MakeTestable("Array")
+	//aName := nameable.MakeTestable("a")
+	twoName := nameable.MakeTestable("2")
+	intName := nameable.MakeTestable("Int")
+
+	x := expr.Const[nameable.Testable]{Name: xName}          // x (constant)
+	y := expr.Const[nameable.Testable]{Name: yName}          // y (constant)
+	f := expr.Const[nameable.Testable]{Name: fName}          // f (constant)
+	g := expr.Const[nameable.Testable]{Name: gName}          // g (constant)
+	xVar := expr.Var(xName)                                  // x (variable)
+	yVar := expr.Var(yName)                                  // y (variable)
+	addConst := expr.Const[nameable.Testable]{Name: addName} // add (constant)
+	two := expr.Const[nameable.Testable]{Name: twoName}      // 2 (constant)
+	add := expr.Bind(yVar, xVar).In(                         // (\y x -> f (add x y))
+		expr.Apply[nameable.Testable](
+			f,
+			expr.Apply[nameable.Testable](addConst, xVar, yVar),
+		),
+	)
+	add2 := add.Apply(two)                                                   // (\x -> f (add x 2))
+	composeG_x := expr.Bind(xVar).In(expr.Apply[nameable.Testable](g, xVar)) // (\x -> g x)
+	fOfTwo := expr.Apply[nameable.Testable](f, two)                          // f 2
+
+	v1 := types.Var(v1Name)
+	v2 := types.Var(v2Name)
+	v3 := types.Var(v3Name)
+	// idFunc := expr.Bind[nameable.Testable](yVar).In(yVar) // (\y -> y)
+	Int := types.MakeConst(intName) // Int
+	v1_to_v2 := types.Apply[nameable.Testable](arrow, v1, v2)
+	Int_to_v3 := types.Apply[nameable.Testable](arrow, Int, v3)
+	Array := types.MakeConst(arrName) // Array
+	// a := types.Var(aName)                                 // a
+	// aToA := types.Apply[nameable.Testable](arrow, a, a)   // a -> a
+	// x_0 := expr.Apply[nameable.Testable](x, zero)         // (x 0)
+
+	tests := []struct {
+		description string
+		inputParams []nameable.Testable
+		inputAssign []TypeJudgement[nameable.Testable]
+		inputExpr   bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		expect      Conclusion[nameable.Testable, expr.RecIn[nameable.Testable], types.Monotyped[nameable.Testable]]
+	}{
+		{
+			`x => y: Array => x: Array => rec x = y in x: Array`,
+			[]nameable.Testable{xName},
+			[]TypeJudgement[nameable.Testable]{
+				bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
+			},
+			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array),
+			Conclude[nameable.Testable](
+				expr.Rec[nameable.Testable](expr.Declare(x.Name).Instantiate(y))(x),
+				types.Monotyped[nameable.Testable](Array),
+			),
+		},
+		{
+			`f, g => (\x -> g x): v1->v2, (\x -> f (add x 2)): Int->v3 => f 0: v3 => rec f x = (g x) and g x = f (add x 2) in f 2: v3`,
+			[]nameable.Testable{fName, gName},
+			[]TypeJudgement[nameable.Testable]{
+				bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](composeG_x, v1_to_v2),
+				bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](add2, Int_to_v3),
+			},
+			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](fOfTwo, v3),
+			Conclude[nameable.Testable](
+				expr.Rec[nameable.Testable](
+					expr.Declare(fName).Instantiate(composeG_x),
+					expr.Declare(gName).Instantiate(add2),
+				)(fOfTwo),
+				types.Monotyped[nameable.Testable](v3),
+			),
+		},
+	}
+
+	for i, test := range tests {
+		cxt := NewTestableContext()
+		actual := cxt.Rec(
+			test.inputParams,
+		)(
+			test.inputAssign,
+		)(
+			test.inputExpr,
+		)
+
+		eq := types.JudgementEquals[nameable.Testable, expr.RecIn[nameable.Testable], types.Type[nameable.Testable]](
+			actual.judgement.AsTypeJudgement(),
+			test.expect.judgement.AsTypeJudgement(),
+		)
+		if !eq {
+			t.Fatal(
+				testutil.
+					Testing("equality", test.description).
+					FailMessage(test.expect, actual, i))
+		}
+	}
+}
+
 func TestFind(t *testing.T) {
 	intName := nameable.MakeTestable("Int")
 	myTypeName := nameable.MakeTestable("MyType")

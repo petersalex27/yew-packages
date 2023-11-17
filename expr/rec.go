@@ -37,7 +37,7 @@ func (rec RecIn[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 		rec.defs,
 		func(def Def[T]) Def[T] {
 			return Def[T]{
-				name: def.name,
+				name:       def.name,
 				assignment: def.assignment.BodyAbstract(v, name),
 			}
 		},
@@ -46,24 +46,27 @@ func (rec RecIn[T]) BodyAbstract(v Variable[T], name Const[T]) Expression[T] {
 	// bind contextualized
 	contextualized := rec.contextualized.BodyAbstract(v, name)
 
-	return RecIn[T]{ defs, contextualized }
+	return RecIn[T]{defs, contextualized}
 }
 
 // creates something similar to a let-in expression but that allows recursion
-// 		rec 
-//			name1 = assignment1 and 
-//			name2 = assignment2 and 
-//			.. 
-//			namen = assignmentn in 
-//				contextualized
+//
+//	rec
+//		name1 = assignment1 and
+//		name2 = assignment2 and
+//		..
+//		namen = assignmentn in
+//			contextualized
 //
 // NOTE: panics if len(defs) == 0
-func Rec[T nameable.Nameable](defs []Def[T], contextualized Expression[T]) RecIn[T] {
+func Rec[T nameable.Nameable](defs ...Def[T]) func(contextualized Expression[T]) RecIn[T] {
 	if len(defs) == 0 {
 		panic("must have at least one name definition")
 	}
 
-	return RecIn[T]{defs, contextualized}
+	return func(contextualized Expression[T]) RecIn[T] {
+		return RecIn[T]{defs, contextualized}
+	}
 }
 
 // Setter method for struct member `contextualized`
@@ -83,7 +86,7 @@ func (rec RecIn[T]) GetDefs() []Def[T] { return rec.defs }
 
 // returns list of all names defined at top level
 func (rec RecIn[T]) GetNames() []Const[T] {
-	// defs[0] exist assuming `Rec` was used to create `rec` 
+	// defs[0] exist assuming `Rec` was used to create `rec`
 	defs := rec.GetDefs()
 	names := make([]Const[T], len(defs))
 	for i, def := range defs {
@@ -94,7 +97,7 @@ func (rec RecIn[T]) GetNames() []Const[T] {
 
 // returns all things assigned to defs
 func (rec RecIn[T]) GetAssignments() []Expression[T] {
-	// defs[0] exist assuming `Rec` was used to create `rec` 
+	// defs[0] exist assuming `Rec` was used to create `rec`
 	defs := rec.GetDefs()
 	exprs := make([]Expression[T], len(defs))
 	for i, def := range defs {
@@ -174,7 +177,7 @@ func (rec RecIn[T]) Replace(v Variable[T], e Expression[T]) (Expression[T], bool
 
 	contextualized, _ := rec.contextualized.Replace(v, e)
 
-	return Rec[T](defs, contextualized), false
+	return Rec[T](defs...)(contextualized), false
 }
 
 func (rec RecIn[T]) UpdateVars(gt int, by int) Expression[T] {
@@ -185,7 +188,7 @@ func (rec RecIn[T]) UpdateVars(gt int, by int) Expression[T] {
 
 	contextualized := rec.contextualized.UpdateVars(gt, by)
 
-	return Rec[T](defs, contextualized)
+	return Rec[T](defs...)(contextualized)
 }
 
 func (rec RecIn[T]) Again() (Expression[T], bool) {
@@ -195,9 +198,9 @@ func (rec RecIn[T]) Again() (Expression[T], bool) {
 		again = again || tmp
 		return Def[T]{def.name, assign}
 	})
-	
+
 	contextualized, again2 := rec.contextualized.Again()
-	return Rec[T](defs, contextualized), again || again2
+	return Rec[T](defs...)(contextualized), again || again2
 }
 
 func (rec RecIn[T]) Bind(binders BindersOnly[T]) Expression[T] {
@@ -208,7 +211,7 @@ func (rec RecIn[T]) Bind(binders BindersOnly[T]) Expression[T] {
 
 	contextualized := rec.contextualized.Bind(binders)
 
-	return Rec[T](defs, contextualized)
+	return Rec[T](defs...)(contextualized)
 }
 
 func (rec RecIn[T]) Find(v Variable[T]) bool {
@@ -229,7 +232,7 @@ func (rec RecIn[T]) PrepareAsRHS() Expression[T] {
 
 	contextualized := rec.contextualized.PrepareAsRHS()
 
-	return Rec[T](defs, contextualized)
+	return Rec[T](defs...)(contextualized)
 }
 
 func (rec RecIn[T]) Rebind() Expression[T] {
@@ -240,7 +243,7 @@ func (rec RecIn[T]) Rebind() Expression[T] {
 
 	contextualized := rec.contextualized.Rebind()
 
-	return Rec[T](defs, contextualized)
+	return Rec[T](defs...)(contextualized)
 }
 
 func (rec RecIn[T]) Copy() Expression[T] {
@@ -251,7 +254,7 @@ func (rec RecIn[T]) Copy() Expression[T] {
 
 	contextualized := rec.contextualized.Copy()
 
-	return Rec[T](defs, contextualized)
+	return Rec[T](defs...)(contextualized)
 }
 
 func (rec RecIn[T]) ForceRequest() Expression[T] {
@@ -262,7 +265,7 @@ func (rec RecIn[T]) ForceRequest() Expression[T] {
 
 	contextualized := rec.contextualized.ForceRequest()
 
-	return Rec[T](defs, contextualized)
+	return Rec[T](defs...)(contextualized)
 }
 
 func (rec RecIn[T]) ExtractVariables(gt int) []Variable[T] {
@@ -274,7 +277,6 @@ func (rec RecIn[T]) ExtractVariables(gt int) []Variable[T] {
 	freeVars := fun.FoldLeft([]Variable[T]{}, freeVars2d, func(xs, ys []Variable[T]) []Variable[T] {
 		return append(xs, ys...)
 	})
-
 
 	contextualizedFreeVars := rec.contextualized.ExtractVariables(gt)
 
