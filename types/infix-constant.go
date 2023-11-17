@@ -20,11 +20,6 @@ func (cxt *Context[T]) InfixCon(name string) InfixConst[T] {
 	return InfixConst[T]{cxt.makeName(name)}
 }
 
-// just returns receiver `c`
-func (c InfixConst[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
-	return c
-}
-
 func (c InfixConst[T]) GetFreeVariables() []Variable[T] {
 	return []Variable[T]{}
 }

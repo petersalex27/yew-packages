@@ -9,9 +9,11 @@ import (
 )
 
 type Data[T nameable.Nameable] struct {
-	tag expr.Const[T]
+	tag     expr.Const[T]
 	Members []JudgementAsExpression[T, expr.Expression[T]]
 }
+
+func (data Data[T]) GetTag() expr.Const[T] { return data.tag }
 
 func (data Data[T]) Flatten() []expr.Expression[T] {
 	f := (JudgementAsExpression[T, expr.Expression[T]]).Flatten
@@ -38,8 +40,9 @@ func makeData[T nameable.Nameable](tag expr.Const[T], members []JudgementAsExpre
 }
 
 // string rep. of data type
-//  MakeData(MyData, App((+), n, 1), App(whatever, thing, this, 1)).String()
-//	=> "(MyData (n + 1) (whatever thing this 1))"
+//
+//	 MakeData(MyData, App((+), n, 1), App(whatever, thing, this, 1)).String()
+//		=> "(MyData (n + 1) (whatever thing this 1))"
 func (data Data[T]) String() string {
 	strs := make([]string, 1, 1+len(data.Members))
 	strs[0] = data.tag.String()
@@ -107,7 +110,7 @@ func (data Data[T]) Equals(cxt *expr.Context[T], e expr.Expression[T]) bool {
 	if !data.tag.Equals(cxt, data2.tag) {
 		return false
 	}
-	
+
 	for i, mem := range data.Members {
 		if !mem.Equals(cxt, data2.Members[i]) {
 			return false
@@ -116,7 +119,6 @@ func (data Data[T]) Equals(cxt *expr.Context[T], e expr.Expression[T]) bool {
 
 	return true
 }
-
 
 func (data Data[T]) StrictEquals(e expr.Expression[T]) bool {
 	data2, ok := e.(Data[T])
@@ -131,7 +133,7 @@ func (data Data[T]) StrictEquals(e expr.Expression[T]) bool {
 	if !data.tag.StrictEquals(data2.tag) {
 		return false
 	}
-	
+
 	for i, mem := range data.Members {
 		if !mem.StrictEquals(data2.Members[i]) {
 			return false

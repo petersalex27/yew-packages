@@ -24,11 +24,6 @@ func (cxt *Context[T]) Con(name string) Constant[T] {
 	return Constant[T]{cxt.makeName(name)}
 }
 
-// just returns receiver `c`
-func (c Constant[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
-	return c
-}
-
 // Constant(x).Equals(y) = true iff y.(Constant) is true and string(y.(Constant)) == x
 func (c Constant[T]) Equals(t Type[T]) bool {
 	c2, ok := t.(Constant[T])

@@ -9,12 +9,21 @@ const (
 	Ok Status = iota
 	// constants at same positions in unification did not match
 	ConstantMismatch
+	// kind-constants at same positions in unification did not match
+	KindConstantMismatch
 	// application monotype kind did not have same number of type params as other
 	// monotype being unified
 	ParamLengthMismatch
+	// dependent instance did not have same number of type indexes as other
+	// monotype being unified
+	IndexLengthMismatch
+	// data did not have same number of members as other expression being unified
+	MemsLengthMismatch
 	// unification of variable and monotype failed because variable occured w/in
 	// monotype
 	OccursCheckFailed
+	// failed to find given name in available context
+	NameNotInContext
 	// unification of variables succeeded, so signals that there is nothing left 
 	// to unify
 	skipUnify
@@ -26,10 +35,18 @@ func (stat Status) String() string {
 		return "Ok"
 	case ConstantMismatch:
 		return "ConstantMismatch"
+	case KindConstantMismatch:
+		return "KindConstantMismatch"
 	case ParamLengthMismatch:
 		return "ParamLengthMismatch"
+	case IndexLengthMismatch:
+		return "IndexLengthMismatch"
+	case MemsLengthMismatch:
+		return "MemsLengthMismatch"
 	case OccursCheckFailed:
 		return "OccursCheckFailed"
+	case NameNotInContext:
+		return "NameNotInContext"
 	case skipUnify:
 		return "skipUnify"
 	default:

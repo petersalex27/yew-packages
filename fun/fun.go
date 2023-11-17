@@ -70,6 +70,14 @@ func UncheckedZipWith[T, U, V any](f func(T, U) V, xs []T, ys []U) []V {
 	return vs
 }
 
+func GenZipWith[T, U, V any](f func(T, U) V) func (xs []T) func(ys []U) []V {
+	return func(xs []T) func(ys []U) []V {
+		return func(ys []U) []V {
+			return ZipWith(f, xs, ys)
+		}
+	}
+}
+
 // calls a function w/ an element at same index in xs and ys for each index of
 // the input (see below) and then returns the result of each function call in a
 // slice; i.e., returns

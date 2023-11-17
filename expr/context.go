@@ -35,6 +35,22 @@ func NewContext[T nameable.Nameable]() *Context[T] {
 	return cxt
 }
 
+func (cxt *Context[T]) NumNewVars(num int) []Variable[T] {
+	out := make([]Variable[T], num)
+	for i := range out {
+		out[i] = cxt.NewVar()
+	}
+	return out
+}
+
+func (cxt *Context[T]) NumNewReferable(num int) []Referable[T] {
+	out := make([]Referable[T], num)
+	for i := range out {
+		out[i] = cxt.NewVar()
+	}
+	return out
+}
+
 func NewTestableContext() *Context[nameable.Testable] {
 	cxt := NewContext[nameable.Testable]()
 	return cxt.SetNameMaker(nameable.MakeTestable)

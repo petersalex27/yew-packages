@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/petersalex27/yew-packages/expr"
 	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
@@ -11,11 +12,37 @@ type Application[T nameable.Nameable] struct {
 	ts []Monotyped[T]
 }
 
+func (a Application[N]) Rebuild(findMono func(Monotyped[N]) Monotyped[N], _ func(expr.Referable[N]) expr.Referable[N]) TypeFunction[N] {
+	return Application[N]{
+		findMono(a.c),
+		fun.FMap(a.ts, findMono),
+	}
+}
+
+func (a Application[T]) FunctionAndIndexes() (function Application[T], indexes Indexes[T]) {
+	return a, nil
+}
+
+func (a Application[T]) SubVars(preSub []TypeJudgement[T, expr.Variable[T]], postSub []expr.Referable[T]) TypeFunction[T] {
+	return Application[T]{
+		a.c,
+		fun.FMap(
+			a.ts,
+			func(m Monotyped[T]) Monotyped[T] {
+				if f, ok := m.(TypeFunction[T]); ok {
+					return f.SubVars(preSub, postSub)
+				}
+				return m
+			},
+		),
+	}
+}
+
 func (a Application[T]) GetFreeVariables() []Variable[T] {
 	leftVars := a.c.GetFreeVariables()
 	// get 2d slice of free vars from rhs
 	rightVars2d := fun.FMap(
-		a.ts, 
+		a.ts,
 		func(t Monotyped[T]) []Variable[T] {
 			return t.GetFreeVariables()
 		},
@@ -97,20 +124,12 @@ func (a Application[T]) Collect() []T {
 	return res
 }
 
-func (a Application[T]) Split() (string, []Monotyped[T]) { return a.c.GetReferred().GetName(), a.ts }
+func (a Application[T]) Split() (name string, params []Monotyped[T]) {
+	return a.c.GetReferred().GetName(), a.ts
+}
 
 func (a Application[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
 	f := func(mono Monotyped[T]) Monotyped[T] { return mono.ReplaceDependent(vs, ms) }
-	return Apply(a.c, fun.FMap(a.ts, f)...)
-}
-
-func (a Application[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
-	f := func(m Monotyped[T]) Monotyped[T] { return m.ReplaceKindVar(replacing, with) }
-	return Apply(a.c, fun.FMap(a.ts, f)...)
-}
-
-func (a Application[T]) FreeInstantiation(cxt *Context[T]) Monotyped[T] {
-	f := func(m Monotyped[T]) Monotyped[T] { return m.FreeInstantiation(cxt) }
 	return Apply(a.c, fun.FMap(a.ts, f)...)
 }
 

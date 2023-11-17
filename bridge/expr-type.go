@@ -18,6 +18,10 @@ func (judgement JudgementAsExpression[T, E]) Flatten() []expr.Expression[T] {
 	return e.Flatten()
 }
 
+func (judgement JudgementAsExpression[N, _]) MakeJudgement(expr.Expression[N], types.Type[N]) types.ExpressionJudgement[N, expr.Expression[N]] {
+	return judgement
+}
+
 func (judgement JudgementAsExpression[N, _]) GetExpressionAndType() (expr.Expression[N], types.Type[N]) {
 	return judgement.ToTypeJudgement().GetExpressionAndType()
 }
@@ -25,6 +29,11 @@ func (judgement JudgementAsExpression[N, _]) GetExpressionAndType() (expr.Expres
 func (judgement JudgementAsExpression[T, E]) ExtractVariables(gt int) []expr.Variable[T] {
 	_, e := judgement.TypeAndExpr()
 	return e.ExtractVariables(gt)
+}
+
+func (judgement JudgementAsExpression[T, E]) AsTypeJudgement() types.TypeJudgement[T, expr.Expression[T]] {
+	e, t := judgement.GetExpressionAndType()
+	return types.Judgement(expr.Expression[T](e), t)
 }
 
 func (judgement JudgementAsExpression[T, E]) ToTypeJudgement() types.TypeJudgement[T, E] {
@@ -36,12 +45,12 @@ func Judgement[T nameable.Nameable, E expr.Expression[T]](e E, t types.Type[T]) 
 }
 
 func (judgement JudgementAsExpression[T, E]) TypeAndExpr() (types.Type[T], E) {
-	j := judgement.ToTypeJudgement()
-	return j.GetType(), j.GetExpression()
+	j := judgement.AsTypeJudgement()
+	return j.GetType(), j.GetExpression().(E)
 }
 
 func (judgement JudgementAsExpression[T, _]) String() string {
-	return judgement.ToTypeJudgement().String()
+	return judgement.AsTypeJudgement().String()
 }
 
 func (judgement JudgementAsExpression[T, E]) equalsHead(e expr.Expression[T]) (e1, e2 expr.Expression[T], ok bool) {
@@ -51,7 +60,7 @@ func (judgement JudgementAsExpression[T, E]) equalsHead(e expr.Expression[T]) (e
 		return
 	}
 
-	j1, j2 := judgement.ToTypeJudgement(), judgement2.ToTypeJudgement()
+	j1, j2 := judgement.AsTypeJudgement(), judgement2.AsTypeJudgement()
 	return j1.GetExpression(), j2.GetExpression(), j1.GetType().Equals(j2.GetType())
 }
 
@@ -71,7 +80,7 @@ func (judgement JudgementAsExpression[T, _]) Equals(cxt *expr.Context[T], e expr
 }
 
 func (judgement JudgementAsExpression[T, _]) StrictString() string {
-	return judgement.ToTypeJudgement().GetExpression().StrictString()
+	return judgement.AsTypeJudgement().GetExpression().StrictString()
 }
 
 func (judgement JudgementAsExpression[T, _]) StrictEquals(e expr.Expression[T]) bool {

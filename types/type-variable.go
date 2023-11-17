@@ -24,14 +24,6 @@ func (v Variable[T]) GetName() string {
 	return v.name.GetName()
 }
 
-// ReplaceKindVar implements Monotyped[T].
-func (v Variable[T]) ReplaceKindVar(replacing Variable[T], with Monotyped[T]) Monotyped[T] {
-	if varEquals(v, replacing) {
-		return with
-	}
-	return v
-}
-
 func NonBindableVar[T nameable.Nameable](name T) Variable[T] {
 	return Variable[T]{boundContext: -1, name: name}
 }

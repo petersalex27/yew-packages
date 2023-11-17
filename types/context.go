@@ -42,3 +42,11 @@ func IsKindVariable[T nameable.Nameable](e expr.Expression[T]) bool {
 	_, ok := e.(expr.Variable[T])
 	return ok
 }
+
+func (cxt *Context[T]) NumNewVars(num int) []Variable[T] {
+	out := make([]Variable[T], num)
+	for i := range out {
+		out[i] = cxt.NewVar()
+	}
+	return out
+}
