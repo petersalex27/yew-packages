@@ -10,6 +10,15 @@ type Def[T nameable.Nameable] struct {
 	assignment Expression[T]
 }
 
+func Declare[T nameable.Nameable](name T) Def[T] {
+	return Def[T]{name: Const[T]{name}}
+}
+
+func (def Def[T]) Instantiate(e Expression[T]) Def[T] {
+	def.assignment = e
+	return def
+}
+
 func (def Def[T]) Flatten() []Expression[T] {
 	return []Expression[T]{def.name, def.assignment}
 }

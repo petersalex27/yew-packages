@@ -135,7 +135,7 @@ type letAssumptionDischarge[N nameable.Nameable] func(TypeJudgement[N]) Conclusi
 //
 // This rule allows for a kind of polymorphism. Here's an example given
 //
-//	𝚪 = {0: Int, (λx.x): a -> a}:
+//	𝚪 = {0: Int, (λy.y): a -> a}:
 //
 //		  [ x: forall a. a -> a ]¹    Inst(forall a. a -> a)
 //		  -------------------------------------------------- [Var]
@@ -160,5 +160,61 @@ func (cxt *Context[N]) Let(name N, j0 TypeJudgement[N]) letAssumptionDischarge[N
 		mono := t1.(types.Monotyped[N])
 		let := expr.Let(nameConst, e0, e1)
 		return Conclude[N](let, mono)
+	}
+}
+
+// [Rec] rule:
+//
+//	𝚪,𝚪ʹ ⊢ e1: t1   ...   𝚪,𝚪ʹ ⊢ eN: tN    𝚪,𝚪ʹʹ ⊢ e0: t0
+//	----------------------------------------------------- [Rec]
+//	    𝚪 ⊢ rec v1 = e1 and ... and vN = eN in e0: t0
+//	where
+//	    𝚪ʹ = v1: t1, ..., vN: tN
+//	    𝚪ʹʹ = v1: Gen(t1), ..., vN: Gen(tN)
+func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+	vs := cxt.typeContext.NumNewVars(len(names))
+	defs := make([]expr.Def[N], len(names))
+	// add 𝚪ʹ to context
+	for i, name := range names {
+		defs[i] = expr.Declare(name)
+		c := defs[i].GetName()
+		cxt.Add(c, vs[i])
+	}
+
+	// function for discharging 𝚪ʹ or 𝚪ʹʹ
+	removeNames := func() {
+		for _, def := range defs {
+			cxt.Remove(def.GetName())
+		}
+	}
+
+	return func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+		removeNames() // discharge 𝚪ʹ
+
+		if len(js) != len(names) {
+			// report error and return fail fn
+			cxt.appendReport(makeReport("Rec", RecArgsLengthMismatch, js...))
+			return func(TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+				return CannotConclude[N, expr.RecIn[N], types.Monotyped[N]](RecArgsLengthMismatch)
+			}
+		}
+
+		// add 𝚪ʹʹ to context
+		for i, def := range defs {
+			e, t := js[i].GetExpressionAndType()
+			m := t.(types.Monotyped[N])
+			defs[i] = def.Instantiate(e)
+			sigma := cxt.Gen(m) // generalize
+			cxt.Add(def.GetName(), sigma)
+		}
+
+		return func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+			removeNames() // discharge 𝚪ʹʹ
+
+			e0, t0 := tj.GetExpressionAndType()
+			mono := t0.(types.Monotyped[N])
+			rec := expr.Rec(defs, e0)
+			return Conclude[N](rec, mono)
+		}
 	}
 }

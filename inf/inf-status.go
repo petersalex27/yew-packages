@@ -24,6 +24,9 @@ const (
 	OccursCheckFailed
 	// failed to find given name in available context
 	NameNotInContext
+	// length of judgements slice passed to second part of `Rec` did not match
+	// length of names slice passed to the first part of `Rec`
+	RecArgsLengthMismatch
 	// unification of variables succeeded, so signals that there is nothing left 
 	// to unify
 	skipUnify
@@ -47,6 +50,8 @@ func (stat Status) String() string {
 		return "OccursCheckFailed"
 	case NameNotInContext:
 		return "NameNotInContext"
+	case RecArgsLengthMismatch:
+		return "RecArgsLengthMismatch"
 	case skipUnify:
 		return "skipUnify"
 	default:
