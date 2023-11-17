@@ -172,6 +172,16 @@ func (cxt *Context[N]) Let(name N, j0 TypeJudgement[N]) letAssumptionDischarge[N
 //	    𝚪ʹ = v1: t1, ..., vN: tN
 //	    𝚪ʹʹ = v1: Gen(t1), ..., vN: Gen(tN)
 func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+	// non-zero length slice of names
+	if len(names) < 1 {
+		cxt.appendReport(makeReport[N]("Rec", RecArgsLengthMismatch))
+		return func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+			return func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+				return CannotConclude[N, expr.RecIn[N], types.Monotyped[N]](RecArgsLengthMismatch)
+			}
+		}
+	}
+
 	vs := cxt.typeContext.NumNewVars(len(names))
 	defs := make([]expr.Def[N], len(names))
 	// add 𝚪ʹ to context

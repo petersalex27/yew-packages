@@ -1002,42 +1002,6 @@ func TestProofValidation(t *testing.T) {
 	}
 }
 
-/*
-family Monotypes = { a where a }
-data Monad a =
-	Just a  : a -> Monad a
-	Nothing : Monad a
-
-Try a b =
-	Ok (Some a b)
-	| Catch a
-
-Some t (Array a)
-
-Maybe a =
-	Just a : Some a b ->
-
-Forall a b = Forall (b; a) : Forall a b
---                  ^^^^^^`b` varies with `a`
-
-Forall [a; Uint] : Forall Uint [a]
-
-data Forall a b where b = b; x: a =
-	Dfun (a -> b )
-Forall a b = All (b; a) : Forall a b
-All [a; x]
-Exists a b = (_, _) a (a ->> Monotypes) : Exists a (b a)
-
-Array a of n: Uint =
-	Empty : Array a; 0 (: (Array a) )
-	Cons a (Array a; n) : (Array a; Succ n)
-
-[a; n: Uint] =
-	[]              : [a; 0]
-	(_::_) a [a; n] : [a; Succ n]
-Forall [Things; n]
-*/
-
 // prove:
 //
 //	tail (0::(0::[])): [Uint; Succ 0]
