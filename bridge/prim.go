@@ -10,7 +10,7 @@ import (
 func (p Prim[T]) BodyAbstract(expr.Variable[T], expr.Const[T]) expr.Expression[T] { return p }
 
 type PrimInterface[T nameable.Nameable] interface {
-	FromString(string)
+	FromString(string) error
 	Equals(PrimInterface[T]) bool
 	Val() T
 	GetType() types.Monotyped[T]
