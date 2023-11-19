@@ -63,7 +63,16 @@ func (s Selection[T]) Merge(selections ...Case[T]) Selection[T] {
 }
 
 func (s Selection[T]) String() string {
-	return "match " + s.selector.String() + " in " + str.Join(s.selections, str.String(" | "))
+	return matchHeadString(s.selector.String(), str.Join(s.selections, str.String(caseSepString())))
+}
+
+func (s Selection[T]) StrictString() string {
+	head := s.selector.StrictString()
+	tail := make([]string, len(s.selections))
+	for i := range tail {
+		tail[i] = s.selections[i].StrictString()
+	}
+	return matchHeadString(head, strings.Join(tail, caseSepString()))
 }
 
 func (s Selection[T]) Equals(cxt *Context[T], e Expression[T]) bool {
@@ -83,15 +92,6 @@ func (s Selection[T]) Equals(cxt *Context[T], e Expression[T]) bool {
 	}
 
 	return true
-}
-
-func (s Selection[T]) StrictString() string {
-	head := "match " + s.selector.StrictString() + " in "
-	tail := make([]string, len(s.selections))
-	for i := range tail {
-		tail[i] = s.selections[i].StrictString()
-	}
-	return head + strings.Join(tail, " | ")
 }
 
 func (s Selection[T]) StrictEquals(e Expression[T]) bool {

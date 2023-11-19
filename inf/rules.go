@@ -228,3 +228,20 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 		}
 	}
 }
+
+// // [Couple] rule:
+// //
+// //	𝚪 ⊢ e0: t0   ...   𝚪 ⊢ eN: tN
+// //	------------------------------ [Couple]
+// //	𝚪 ⊢ (e0, .., eN): (t0, .., tN)
+// func (cxt *Context[N]) Couple(js ...TypeJudgement[N]) Conclusion[N, expr.List[N], types.Monotyped[N]] {
+
+// }
+
+// // [Decouple] rule:
+// //
+// //	𝚪 ⊢ (e0, .., eN): (t0, .., tN)
+// //	------------------------------ [Deouple]
+// //	         𝚪 ⊢ eI: tI
+// //	where
+// //	    0 <= I <= N

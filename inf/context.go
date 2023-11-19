@@ -14,7 +14,28 @@ import (
 //
 // Data = (\x y -> Data x y): a -> Int -> Type a
 type consJudge[N nameable.Nameable] struct {
-	types.TypedJudgement[N, expr.Function[N], types.Monotyped[N]]
+	forType types.Polytype[N]
+	constructors constructorMapType[N]
+}
+
+type constructorMapType[N nameable.Nameable] map[string]types.TypedJudgement[N, expr.Function[N], types.Polytype[N]]
+
+// tries to find constructor named `constructorName` w/in construtor map receiver
+func (constructors consJudge[N]) Find(constructorName N) (constructor types.TypedJudgement[N, expr.Function[N], types.Polytype[N]], found bool) {
+	if constructors.constructors == nil {
+		found = false
+	} else {
+		constructor, found = constructors.constructors[constructorName.GetName()]
+	}
+	return
+}
+
+func (constructors consJudge[N]) GetType() types.Polytype[N] {
+	if constructors.constructors == nil {
+		panic("bug: constructor map is uninitialized")
+	}
+	
+	return constructors.forType
 }
 
 type Context[N nameable.Nameable] struct {
@@ -63,66 +84,11 @@ func (cxt *Context[N]) Inst(sigma types.Polytype[N]) types.Monotyped[N] {
 	return t.ReplaceDependent(typeVars, vs)
 }
 
-func (cxt *Context[N]) appendReport(report errorReport[N]) {
-	cxt.reports = append(cxt.reports, report)
-}
-
-func (cxt *Context[N]) GetReports() []errorReport[N] {
-	return cxt.reports
-}
-
-func (cxt *Context[N]) HasErrors() bool {
-	return len(cxt.reports) != 0
-}
-
 func NewTestableContext() *Context[nameable.Testable] {
 	cxt := NewContext[nameable.Testable]()
 	cxt.typeContext = cxt.typeContext.SetNameMaker(nameable.MakeTestable)
 	cxt.exprContext = cxt.exprContext.SetNameMaker(nameable.MakeTestable)
 	return cxt
-}
-
-// removes name binding from context
-func (cxt *Context[N]) Remove(name expr.Const[N]) {
-	key := name.Name
-	sym, ok := cxt.syms.Get(key)
-	if !ok {
-		// TODO: do nothing, ig?
-		return
-	}
-
-	// unshadow/remove sym
-	remove := sym.Unshadow()
-	if remove {
-		// symbol is not shadowed, remove it
-		cxt.syms.Remove(key)
-	}
-}
-
-// adds judgement to context
-func (cxt *Context[N]) Add(name expr.Const[N], ty types.Type[N]) {
-	key := name.Name
-	// attempt to look up existing symbol
-	sym, ok := cxt.syms.Get(key)
-	if !ok {
-		// no symbol in table, create new, empty symbol to be filled in
-		sym = MakeSymbol[N]()
-	}
-	// create/shadow symbol
-	sym.Shadow(name, ty)
-	// add symbol to table
-	cxt.syms.Add(name.Name, sym)
-}
-
-// tries to find symbol w/ name
-func (cxt *Context[N]) Get(name expr.Const[N]) (judgedName bridge.JudgementAsExpression[N, expr.Const[N]], found bool) {
-	key := name.Name
-	var sym Symbol[N]
-	sym, found = cxt.syms.Get(key)
-	if found {
-		judgedName = sym.Get()
-	}
-	return
 }
 
 // applies kind and type substitutions to expression and type of judgement respectively

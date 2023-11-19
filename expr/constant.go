@@ -2,7 +2,11 @@ package expr
 
 import "github.com/petersalex27/yew-packages/nameable"
 
-type Const[T nameable.Nameable] struct {Name T}
+type Const[T nameable.Nameable] struct{ Name T }
+
+func MakeConst[N nameable.Nameable](name N) Const[N] {
+	return Const[N]{name}
+}
 
 func (c Const[T]) GetReferred() T {
 	return c.Name
@@ -50,7 +54,7 @@ func (c Const[T]) StrictString() string { return c.Name.GetName() }
 
 func (c Const[T]) Replace(Variable[T], Expression[T]) (Expression[T], bool) { return c, false }
 
-func (c Const[T]) StrictEquals(e Expression[T]) bool { 
+func (c Const[T]) StrictEquals(e Expression[T]) bool {
 	if c2, ok := e.(Const[T]); ok {
 		return constEquals(c, c2)
 	}

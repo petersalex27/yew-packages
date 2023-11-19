@@ -2,6 +2,7 @@ package types
 
 import (
 	expr "github.com/petersalex27/yew-packages/expr"
+	"github.com/petersalex27/yew-packages/fun"
 	"github.com/petersalex27/yew-packages/nameable"
 	str "github.com/petersalex27/yew-packages/stringable"
 )
@@ -9,12 +10,29 @@ import (
 type DependentTyped[T nameable.Nameable] interface {
 	Type[T]
 	ReplaceDependent(vs []Variable[T], with []Monotyped[T]) Monotyped[T]
+	GetFreeVariables() []Variable[T]
 }
 
 // Dependent Type: `(mapval (a: A) (b: B) ..) . (F a b ..)`
 type DependentType[T nameable.Nameable] struct {
 	mapval   []TypeJudgement[T, expr.Variable[T]]
 	Function TypeFunction[T]
+}
+
+// get type that depends on value
+func GetDependent[N nameable.Nameable](d DependentTyped[N]) Monotyped[N] {
+	if dt, ok := d.(DependentType[N]); ok {
+		return dt.Function
+	}
+	return d.(Monotyped[N])
+}
+
+// get values that create dependency for some type
+func GetDependees[N nameable.Nameable](d DependentTyped[N]) (dependee []TypeJudgement[N, expr.Variable[N]]) {
+	if dt, ok := d.(DependentType[N]); ok {
+		dependee = dt.mapval
+	}
+	return
 }
 
 // creates a dependent type that depends on variables in `mapall` and is
@@ -128,6 +146,22 @@ func (d DependentType[T]) Collect() []T {
 	}
 	res = append(res, d.Function.Collect()...)
 	return res
+}
+
+func (d DependentType[T]) GetFreeVariables() (frees []Variable[T]) {
+	frees = []Variable[T]{}
+	frees = fun.FoldLeft(
+		frees,
+		d.mapval,
+		func(vs []Variable[T], dependee TypeJudgement[T, expr.Variable[T]]) []Variable[T] {
+			if dt, ok := dependee.ty.(DependentTyped[T]); ok {
+				return append(vs, dt.GetFreeVariables()...)
+			}
+			return vs
+		},
+	)
+	frees = append(frees, d.Function.GetFreeVariables()...)
+	return frees
 }
 
 // replaces all occ. of each v in `vs` with corr. m in `ms`

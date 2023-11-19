@@ -27,6 +27,12 @@ const (
 	// length of judgements slice passed to second part of `Rec` did not match
 	// length of names slice passed to the first part of `Rec`
 	RecArgsLengthMismatch
+	// type already exists in constructor table
+	TypeRedef
+	// constructor already exists for given type in constructor table
+	ConstructorRedef
+	// type is not defined but tried to the type anyways
+	TypeNotDefined
 	// unification of variables succeeded, so signals that there is nothing left 
 	// to unify
 	skipUnify

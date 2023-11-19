@@ -75,12 +75,11 @@ func (c Case[T]) StrictString() string {
 		strs[i] = v.StrictString()
 	}
 
-	hiddenBinders := ""
+	caseStr := groupStringed(c.pattern.StrictString() + onMatchString() + c.expression.StrictString())
 	if len(c.binders) != 0 {
-		hiddenBinders = "Λ" + strings.Join(strs, " ") + " . "
+		caseStr = hiddenBindingString(strings.Join(strs, " "), caseStr)
 	}
-
-	return groupStringed(hiddenBinders + c.pattern.StrictString() + onMatchString() + c.expression.StrictString())
+	return caseStr
 }
 
 func (c Case[T]) Equals(cxt *Context[T], k Case[T]) bool {

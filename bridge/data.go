@@ -13,6 +13,42 @@ type Data[T nameable.Nameable] struct {
 	Members []JudgementAsExpression[T, expr.Expression[T]]
 }
 
+type Constructor[N nameable.Nameable] func(args []expr.Expression[N]) (data Data[N], success bool)
+
+func applyArg[N nameable.Nameable](constructor, arg expr.Expression[N]) expr.Expression[N] {
+	return constructor.(expr.Function[N]).Apply(arg)
+}
+
+// assumes length of `args` is the number arguments constructor takes
+func applyArgumentsToConstructor[N nameable.Nameable](constructor expr.Function[N], args []expr.Expression[N]) (data Data[N], success bool) {
+	// result of applying 0 to len(args) arguments
+	var constructed expr.Expression[N] = constructor
+
+	// check if constructor has arguments
+	if len(constructor.GetBinders()) != 0 {
+		// apply all arguments to function
+		constructed = fun.FoldLeft(constructed, args, applyArg[N])
+	} else {
+		// no arg constructor
+		constructed = constructor.GetBound()
+	}
+
+	data, success = constructed.(Data[N])
+	return data, success
+}
+
+// creates data type constructor from function
+func AsConstructor[N nameable.Nameable](f expr.Function[N]) Constructor[N] {
+	binderLength := len(f.GetBinders())
+
+	return func(args []expr.Expression[N]) (data Data[N], success bool) {
+		if success = len(args) == binderLength; success {
+			data, success = applyArgumentsToConstructor(f, args)
+		}
+		return
+	}
+}
+
 func (data Data[T]) GetTag() expr.Const[T] { return data.tag }
 
 func (data Data[T]) Flatten() []expr.Expression[T] {

@@ -289,14 +289,6 @@ func (instr Instruction[T]) UpdateVars(gt int, by int) Expression[T] {
 	}
 }
 
-var EqualityInstruction = DefineInstruction[test_named]("testEquality", 2, func(instr InstructionArgs[test_named]) Expression[test_named] {
-	e1, e2 := instr.GetArgAtIndex(0), instr.GetArgAtIndex(1)
-	if e1.StrictEquals(e2) {
-		return TrueFunction
-	}
-	return FalseFunction
-})
-
 func (ih InstructionHead[T]) MakeInstance() Instruction[T] {
 	return Instruction[T]{
 		InstructionHead: ih,

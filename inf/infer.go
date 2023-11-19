@@ -125,7 +125,7 @@ func extractJudgements[T nameable.Nameable](dti types.DependentTypeInstance[T]) 
 }
 
 // generalizes a monotype into a dependent type
-func DependentGeneralization[T nameable.Nameable](ty types.Monotyped[T]) types.DependentTyped[T] {
+func DependentGeneralization[T nameable.Nameable](ty types.DependentTyped[T]) types.DependentTyped[T] {
 	if dti, ok := ty.(types.DependentTypeInstance[T]); ok {
 		// get all kind vars in need of binding
 		binders := extractJudgements(dti)
@@ -135,13 +135,16 @@ func DependentGeneralization[T nameable.Nameable](ty types.Monotyped[T]) types.D
 }
 
 // generalizes a type: binds all free variables w/in monotype
-func (cxt *Context[T]) Gen(t types.Monotyped[T]) types.Polytype[T] {
-	// DependentGeneralization(`(t a0 .. aK; x0 .. xN)`) = `mapval (x0: X0) .. (xN: XN) . (t a0 .. aK)`
-	dep := DependentGeneralization(t)
-	// (t a0 .. aK; x0 .. xN) -> a0 .. aK
-	vs := t.GetFreeVariables()
-	// forall a0 .. aK . mapval (x0: X0) .. (xN: XN) . (t a0 .. aK)
-	return types.Forall(vs...).Bind(dep)
+func (cxt *Context[T]) Gen(ty types.Type[T]) types.Polytype[T] {
+	if t, ok := ty.(types.DependentTyped[T]); ok {
+		// DependentGeneralization(`(t a0 .. aK; x0 .. xN)`) = `mapval (x0: X0) .. (xN: XN) . (t a0 .. aK)`
+		dep := DependentGeneralization(t)
+		// (t a0 .. aK; x0 .. xN) -> a0 .. aK
+		vs := t.GetFreeVariables()
+		// forall a0 .. aK . mapval (x0: X0) .. (xN: XN) . (t a0 .. aK)
+		return types.Forall(vs...).Bind(dep)
+	}
+	return ty.(types.Polytype[T])
 }
 
 func IsVariable[T nameable.Nameable](ty types.Monotyped[T]) bool {

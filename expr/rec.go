@@ -111,9 +111,19 @@ func (rec RecIn[T]) GetContextualized() Expression[T] {
 }
 
 func (rec RecIn[T]) String() string {
-	defs := stringable.Join(rec.defs, stringable.String(" and "))
+	defs := stringable.Join(rec.defs, stringable.String(recSepString()))
 	contextualized := rec.contextualized.String()
-	return "rec " + defs + " in " + contextualized
+	return recString(defs, contextualized)
+}
+
+func (rec RecIn[T]) StrictString() string {
+	defsStrs := make([]string, len(rec.defs))
+	for i, def := range rec.defs {
+		defsStrs[i] = def.StrictString()
+	}
+	defs := strings.Join(defsStrs, recSepString())
+	contextualized := rec.contextualized.StrictString()
+	return recString(defs, contextualized)
 }
 
 func (rec RecIn[T]) Equals(cxt *Context[T], e Expression[T]) bool {
@@ -135,16 +145,6 @@ func (rec RecIn[T]) Equals(cxt *Context[T], e Expression[T]) bool {
 		}
 	}
 	return true
-}
-
-func (rec RecIn[T]) StrictString() string {
-	defsStrs := make([]string, len(rec.defs))
-	for i, def := range rec.defs {
-		defsStrs[i] = def.StrictString()
-	}
-	defs := strings.Join(defsStrs, " and ")
-	contextualized := rec.contextualized.StrictString()
-	return "rec " + defs + " in " + contextualized
 }
 
 func (rec RecIn[T]) StrictEquals(e Expression[T]) bool {

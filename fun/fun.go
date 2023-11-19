@@ -40,8 +40,17 @@ func FMapFilter[T, U any](xs []T, f func(T) (U, bool)) []U {
 	return out
 }
 
+type Wrapped[T any] interface {
+	Unwrap() T
+	Wrap(T)
+}
+
+func FlatMap[A, B any, M Wrapped[A], N Wrapped[B]](ma M, f func(A) N) N {
+	return f(ma.Unwrap())
+}
+
 // returns base if len(xs) == 0
-func FoldLeft[T any](base T, xs []T, f func(T, T) T) T {
+func FoldLeft[T, U any](base U, xs []T, f func(U, T) U) U {
 	for _, x := range xs {
 		base = f(base, x)
 	}
@@ -49,7 +58,7 @@ func FoldLeft[T any](base T, xs []T, f func(T, T) T) T {
 }
 
 // returns base if len(xs) == 0
-func FoldRight[T any](base T, xs []T, f func(T, T) T) T {
+func FoldRight[T, U any](base U, xs []T, f func(T, U) U) U {
 	for i := len(xs) - 1; i >= 0; i-- {
 		base = f(xs[i], base)
 	}

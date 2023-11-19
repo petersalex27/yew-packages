@@ -56,6 +56,7 @@ type InvariableExpression[T nameable.Nameable] interface {
 }
 
 var binder_string string = "λ"
+var hidden_binder_string string = "Λ"
 var to_string string = " . "
 var apply_string string = " "
 var list_open string = "["
@@ -90,11 +91,19 @@ func applyString(left, right string) string {
 
 func recHeadString() string { return rec_head }
 
+func recString(defs, contextualized string) string {
+	return contextualizeString(recHeadString() + defs, contextualized)
+}
+
 func recSepString() string { return rec_sep }
 
 func bindingString(binders, bound string) string {
 	return binder_string + binders + to_string + bound
 } 
+
+func hiddenBindingString(binders, bound string) string {
+	return hidden_binder_string + binders + to_string + bound
+}
 
 func contextualizeString(left, right string) string {
 	return left + contextualized_sep + right
@@ -122,6 +131,12 @@ func fixWhere(left, right string) string {
 
 func groupStringed(stringed string) string {
 	return grouping_open + stringed + grouping_close
+}
+
+func GenHiddenBinder(hiddenBinder string) func() {
+	return func() {
+		hidden_binder_string = hiddenBinder
+	}
 }
 
 func GenSetWhere(where string) func() {

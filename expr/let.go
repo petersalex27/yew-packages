@@ -138,9 +138,9 @@ func (cxt NameContext[T]) GetContextualized() Expression[T] {
 
 func assembleNameContextString(def, contextualized string, tailedContext bool) string {
 	if tailedContext {
-		return contextualized + " where " + def
+		return fixWhere(contextualized, def)
 	}
-	return "let " + def + " in " + contextualized
+	return letString(def, contextualized)
 }
 
 func (nameCxt NameContext[T]) String() string {

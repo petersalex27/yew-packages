@@ -9,5 +9,4 @@ type Monotyped[T nameable.Nameable] interface {
 	DependentTyped[T]
 	GetReferred() T
 	Replace(Variable[T], Monotyped[T]) Monotyped[T]
-	GetFreeVariables() []Variable[T]
 }

@@ -141,7 +141,7 @@ func TestAddName(t *testing.T) {
 	}{
 		{_Const("0"), _Const("0")},
 		{_Const("1"), _Apply(_Const("Succ"), _Const("0"))},
-		{_Const("id"), IdFunction},
+		{_Const("id"), idFunction},
 	}
 
 	for testIndex, test := range tests {
