@@ -33,6 +33,14 @@ const (
 	ConstructorRedef
 	// type is not defined but tried to the type anyways
 	TypeNotDefined
+	// tried to export undefined type
+	UndefinedType
+	// tried to export undefined constructor
+	UndefinedConstructor
+	// tried to export undefined function
+	UndefinedFunction
+	// tried to export an ambiguous function (has multiple definitions)
+	AmbiguousFunction
 	// unification of variables succeeded, so signals that there is nothing left 
 	// to unify
 	skipUnify

@@ -229,19 +229,97 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 	}
 }
 
-// // [Couple] rule:
-// //
-// //	𝚪 ⊢ e0: t0   ...   𝚪 ⊢ eN: tN
-// //	------------------------------ [Couple]
-// //	𝚪 ⊢ (e0, .., eN): (t0, .., tN)
-// func (cxt *Context[N]) Couple(js ...TypeJudgement[N]) Conclusion[N, expr.List[N], types.Monotyped[N]] {
+func (ecxt *ExportableContext[N]) exportConstructors(cxt *Context[N], typeName N, src consJudge[N], constructorNames []N) bool {
+	for _, name := range constructorNames {
+		constructor, found := src.Find(name)
+		if !found {
+			cxt.appendReport(makeNameReport("Export Constructor", UndefinedConstructor, expr.MakeConst(name)))
+			return false
+		}
 
+		// add constructor
+		tab, _ := ecxt.consTable.Get(typeName)
+		tab.constructors[name.GetName()] = constructor
+	}
+	return true
+}
+
+func (cxt *Context[N]) exportTypes(typeNames []N, constructorNames [][]N) *ExportableContext[N] {
+	out := NewExportableContext[N]()
+
+	for i, typeName := range typeNames {
+		cj, ok := cxt.consTable.Get(typeName)
+		if !ok {
+			cxt.appendReport(makeNameReport("Export Type", UndefinedType, expr.MakeConst(typeName)))
+			return nil
+		}
+		if !out.exportConstructors(cxt, typeName, cj, constructorNames[i]) {
+			return nil
+		}
+	}
+	return out
+}
+
+func (ecxt *ExportableContext[N]) exportNames(cxt *Context[N], names []N) *ExportableContext[N] {
+	for _, name := range names {
+		sym, ok := cxt.syms.Get(name)
+		if !ok {
+			cxt.appendReport(makeNameReport("Export Functions", UndefinedFunction, expr.MakeConst(name)))
+			return nil
+		}
+		export, exported := sym.Export()
+		if !exported {
+			cxt.appendReport(makeNameReport("Export Functions", AmbiguousFunction, expr.MakeConst(name)))
+			return nil
+		}
+		ecxt.syms.Add(name, *export)
+	}
+	return ecxt
+}
+
+
+// [Export] rule:
+//
+//	module M (x0, .., xN)    𝚪 ⊢ x0: σ0   ...   𝚪 ⊢ xN: σN
+//	------------------------------------------------------ [Export]
+//	              M = { x0: σ0, .., xN: σN } 
+func Export[N nameable.Nameable](name N, nameMaker func(string) N, names, typeNames []N, constructorNames [][]N) (*Context[N], func() *ExportableContext[N]) {
+	// precondition
+	if len(typeNames) != len(constructorNames) {
+		panic("illegal arguments: len(typeNames) != len(constructorNames)")
+	}
+
+	// initialize context
+	cxt := NewContext[N]()
+	cxt.exprContext = cxt.exprContext.SetNameMaker(nameMaker)
+	cxt.typeContext = cxt.typeContext.SetNameMaker(nameMaker)
+
+	v := cxt.typeContext.NewVar()
+	sigma := cxt.Gen(v) // simga = Gen(v) = forall v . v
+
+	// add all names as any type
+	for _, name := range names {
+		c := expr.MakeConst(name)
+		cxt.Add(c, sigma)
+	}
+
+	return cxt, func() *ExportableContext[N] {
+		// now, for each type name, export it and its constructors
+		ecxt := cxt.exportTypes(typeNames, constructorNames)
+		if ecxt == nil {
+			return nil
+		}
+		ecxt.name = name
+
+		return ecxt.exportNames(cxt, names)
+	}
+}
+
+// [Import] rule:
+//
+//	M = 𝚪∗    𝚪, 𝚪∗ ⊢ e: t
+//	---------------------- [Import]
+//	 𝚪 ⊢ import M in e: t
+// func (cxt *Context[N]) Import(qualification QualificationType, moduleName N) {
+// 	lookup(moduleName)
 // }
-
-// // [Decouple] rule:
-// //
-// //	𝚪 ⊢ (e0, .., eN): (t0, .., tN)
-// //	------------------------------ [Deouple]
-// //	         𝚪 ⊢ eI: tI
-// //	where
-// //	    0 <= I <= N

@@ -7,14 +7,13 @@ import (
 	"github.com/petersalex27/yew-packages/nameable"
 	"github.com/petersalex27/yew-packages/table"
 	"github.com/petersalex27/yew-packages/types"
-	"github.com/petersalex27/yew-packages/util/stack"
 )
 
 // Type a = Data a Int
 //
 // Data = (\x y -> Data x y): a -> Int -> Type a
 type consJudge[N nameable.Nameable] struct {
-	forType types.Polytype[N]
+	forType      types.Polytype[N]
 	constructors constructorMapType[N]
 }
 
@@ -34,19 +33,34 @@ func (constructors consJudge[N]) GetType() types.Polytype[N] {
 	if constructors.constructors == nil {
 		panic("bug: constructor map is uninitialized")
 	}
-	
+
 	return constructors.forType
 }
 
 type Context[N nameable.Nameable] struct {
-	reports       []errorReport[N]
-	typeSubs      *table.Table[types.Monotyped[N]]
-	exprSubs      *table.Table[expr.Referable[N]]
-	consTable     *table.Table[consJudge[N]]
-	syms          *table.Table[Symbol[N]]
-	removeActions *stack.Stack[N]
-	typeContext   *types.Context[N]
-	exprContext   *expr.Context[N]
+	reports     []errorReport[N]
+	typeSubs    *table.Table[types.Monotyped[N]]
+	exprSubs    *table.Table[expr.Referable[N]]
+	consTable   *table.Table[consJudge[N]]
+	syms        *table.Table[Symbol[N]]
+	typeContext *types.Context[N]
+	exprContext *expr.Context[N]
+}
+
+type ExportableContext[N nameable.Nameable] struct {
+	name      N
+	consTable *table.Table[consJudge[N]]
+	syms      *table.Table[Symbol[N]]
+}
+
+func newConsAndSymsTables[N nameable.Nameable]() (*table.Table[consJudge[N]], *table.Table[Symbol[N]]) {
+	return table.NewTable[consJudge[N]](), table.NewTable[Symbol[N]]()
+}
+
+func NewExportableContext[N nameable.Nameable]() *ExportableContext[N] {
+	cxt := new(ExportableContext[N])
+	cxt.consTable, cxt.syms = newConsAndSymsTables[N]()
+	return cxt
 }
 
 // creates new inf context
@@ -54,9 +68,7 @@ func NewContext[N nameable.Nameable]() *Context[N] {
 	cxt := new(Context[N])
 	cxt.typeSubs = table.NewTable[types.Monotyped[N]]()
 	cxt.exprSubs = table.NewTable[expr.Referable[N]]()
-	cxt.consTable = table.NewTable[consJudge[N]]()
-	cxt.removeActions = stack.NewStack[N](8) // 8 is arbitrary
-	cxt.syms = table.NewTable[Symbol[N]]()
+	cxt.consTable, cxt.syms = newConsAndSymsTables[N]()
 	cxt.exprContext = expr.NewContext[N]()
 	cxt.typeContext = types.NewContext[N]()
 	cxt.reports = []errorReport[N]{}
@@ -150,7 +162,6 @@ func (cxt *Context[N]) GetSub(m types.Monotyped[N]) (out types.Monotyped[N]) {
 	return out
 }
 
-
 // first return value is base substitution for `m` (or `m` itself when second return value is false)
 //
 // second return value is true iff `m` is a variable and `m` has a registered substitution
@@ -159,7 +170,7 @@ func (cxt *Context[N]) findSub(m types.Monotyped[N]) (out types.Monotyped[N], fo
 	if nm, ok := m.(types.Variable[N]); ok {
 		out, found = cxt.typeSubs.Get(nm)
 	}
-	
+
 	if !found {
 		out = m
 	}
@@ -174,8 +185,8 @@ func (cxt *Context[N]) findKindSub(e expr.Referable[N]) (out expr.Referable[N], 
 	found = false
 	if v, ok := e.(expr.Variable[N]); ok {
 		out, found = cxt.exprSubs.Get(v.GetReferred())
-	} 
-	
+	}
+
 	if !found {
 		out = e
 	}

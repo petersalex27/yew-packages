@@ -28,8 +28,18 @@ func (sym *Symbol[T]) Get() bridge.JudgementAsExpression[T, expr.Const[T]] {
 
 // create/shadow symbol
 func (sym *Symbol[T]) Shadow(name expr.Const[T], ty types.Type[T]) {
-	judgement := bridge.Judgement(name, types.Type[T](ty))
+	judgement := bridge.Judgement(name, ty)
 	sym.data.Push(judgement)
+}
+
+func (sym *Symbol[T]) IncludeInExport(name expr.Const[T], ty types.Type[T]) (added bool) {
+	added = sym.data.GetCount() != 0
+	if !added {
+		return
+	}
+
+	sym.Shadow(name, ty)
+	return
 }
 
 // remove/unshadow symbol
@@ -37,4 +47,15 @@ func (sym *Symbol[T]) Unshadow() (remove bool) {
 	_, _ = sym.data.Pop()
 	remove = sym.data.GetCount() == 0
 	return remove
+}
+
+// export symbol
+func (sym *Symbol[T]) Export() (export *Symbol[T], exported bool) {
+	// check if symbol should be exported
+	exported = sym.data.GetCount() == 1
+	if exported {
+		return sym, true
+	}
+	
+	return nil, false
 }
