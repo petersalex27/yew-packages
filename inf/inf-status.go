@@ -41,6 +41,8 @@ const (
 	UndefinedFunction
 	// tried to export an ambiguous function (has multiple definitions)
 	AmbiguousFunction
+	// illegal name shadowing 
+	IllegalShadow
 	// unification of variables succeeded, so signals that there is nothing left 
 	// to unify
 	skipUnify

@@ -53,6 +53,18 @@ type ExportableContext[N nameable.Nameable] struct {
 	syms      *table.Table[Symbol[N]]
 }
 
+func (ecxt *ExportableContext[N]) export(name N, sym Symbol[N]) Status {
+	// re-exported?
+	_, ok := ecxt.syms.Get(name)
+	if ok {
+		return IllegalShadow
+	}
+	
+	// add symbol to table
+	ecxt.syms.Add(name, sym)
+	return Ok
+} 
+
 func newConsAndSymsTables[N nameable.Nameable]() (*table.Table[consJudge[N]], *table.Table[Symbol[N]]) {
 	return table.NewTable[consJudge[N]](), table.NewTable[Symbol[N]]()
 }

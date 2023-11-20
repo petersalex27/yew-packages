@@ -96,7 +96,7 @@ func (cxt *Context[N]) Abs(param N) func(TypeJudgement[N]) Conclusion[N, expr.Fu
 	paramConst := expr.Const[N]{Name: param}
 	t0 := cxt.typeContext.NewVar()
 	// grow context w/ type judgement `param: t0`
-	cxt.Add(paramConst, t0)
+	cxt.Shadow(paramConst, t0)
 
 	// now, return function to allow second premise of Abs when needed
 	return func(j TypeJudgement[N]) Conclusion[N, expr.Function[N], types.Monotyped[N]] {
@@ -151,7 +151,7 @@ func (cxt *Context[N]) Let(name N, j0 TypeJudgement[N]) letAssumptionDischarge[N
 	e0, tmp0 := j0.GetExpressionAndType()
 	t0 := tmp0.(types.Monotyped[N])
 	generalized_t0 := cxt.Gen(t0)
-	cxt.Add(nameConst, generalized_t0)
+	cxt.Shadow(nameConst, generalized_t0)
 
 	return func(j1 TypeJudgement[N]) Conclusion[N, expr.NameContext[N], types.Monotyped[N]] {
 		cxt.Remove(nameConst)
@@ -188,7 +188,7 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 	for i, name := range names {
 		defs[i] = expr.Declare(name)
 		c := defs[i].GetName()
-		cxt.Add(c, vs[i])
+		cxt.Shadow(c, vs[i])
 	}
 
 	// function for discharging 𝚪ʹ or 𝚪ʹʹ
@@ -215,7 +215,7 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 			m := t.(types.Monotyped[N])
 			defs[i] = def.Instantiate(e)
 			sigma := cxt.Gen(m) // generalize
-			cxt.Add(def.GetName(), sigma)
+			cxt.Shadow(def.GetName(), sigma)
 		}
 
 		return func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
@@ -264,25 +264,26 @@ func (ecxt *ExportableContext[N]) exportNames(cxt *Context[N], names []N) *Expor
 	for _, name := range names {
 		sym, ok := cxt.syms.Get(name)
 		if !ok {
-			cxt.appendReport(makeNameReport("Export Functions", UndefinedFunction, expr.MakeConst(name)))
+			nameConst := expr.MakeConst(name)
+			cxt.appendReport(makeNameReport("Export Functions", UndefinedFunction, nameConst))
 			return nil
 		}
 		export, exported := sym.Export()
 		if !exported {
-			cxt.appendReport(makeNameReport("Export Functions", AmbiguousFunction, expr.MakeConst(name)))
+			nameConst := expr.MakeConst(name)
+			cxt.appendReport(makeNameReport("Export Functions", AmbiguousFunction, nameConst))
 			return nil
 		}
-		ecxt.syms.Add(name, *export)
+		ecxt.export(name, *export)
 	}
 	return ecxt
 }
-
 
 // [Export] rule:
 //
 //	module M (x0, .., xN)    𝚪 ⊢ x0: σ0   ...   𝚪 ⊢ xN: σN
 //	------------------------------------------------------ [Export]
-//	              M = { x0: σ0, .., xN: σN } 
+//	              M = { x0: σ0, .., xN: σN }
 func Export[N nameable.Nameable](name N, nameMaker func(string) N, names, typeNames []N, constructorNames [][]N) (*Context[N], func() *ExportableContext[N]) {
 	// precondition
 	if len(typeNames) != len(constructorNames) {
@@ -320,6 +321,8 @@ func Export[N nameable.Nameable](name N, nameMaker func(string) N, names, typeNa
 //	M = 𝚪∗    𝚪, 𝚪∗ ⊢ e: t
 //	---------------------- [Import]
 //	 𝚪 ⊢ import M in e: t
-// func (cxt *Context[N]) Import(qualification QualificationType, moduleName N) {
-// 	lookup(moduleName)
-// }
+func (cxt *Context[N]) Import(qualification QualificationType, moduleName N, as N) {
+	// export := lookup(moduleName)
+	// cxt.import(as, export)
+	// TODO
+}

@@ -1211,10 +1211,10 @@ func TestProof2Validation(t *testing.T) {
 	//	}
 
 	// add context
-	cxt.Add(zero, Uint)        // 0
-	cxt.Add(tail, tailFunc)    // tail: forall a. mapval (n: Uint). [a; Succ n] -> [a; n]
-	cxt.Add(cons, consFunc)    // (::): forall a. mapval (n: Uint). a -> [a; n] -> [a; Succ n]
-	cxt.Add(empty, emptyArrTy) // []: forall a. [a; 0]
+	cxt.Shadow(zero, Uint)        // 0
+	cxt.Shadow(tail, tailFunc)    // tail: forall a. mapval (n: Uint). [a; Succ n] -> [a; n]
+	cxt.Shadow(cons, consFunc)    // (::): forall a. mapval (n: Uint). a -> [a; n] -> [a; Succ n]
+	cxt.Shadow(empty, emptyArrTy) // []: forall a. [a; 0]
 
 	// start by building (0::(0::[]))
 

@@ -30,8 +30,25 @@ func (cxt *Context[N]) Remove(name expr.Const[N]) {
 	}
 }
 
+func (cxt *Context[N]) Add(name expr.Const[N], ty types.Type[N]) (added bool) {
+	key := name.Name
+	// attempt to look up existing symbol
+	sym, ok := cxt.syms.Get(key)
+	if ok {
+		cxt.appendReport(makeNameReport("Declare Name", IllegalShadow, name))
+		return false
+	}
+	// create new, empty symbol to be filled in
+	sym = MakeSymbol[N]()
+	// create (/shadow empty) symbol
+	sym.Shadow(name, ty)
+	// add symbol to table
+	cxt.syms.Add(name.Name, sym)
+	return true
+} 
+
 // adds judgement to context
-func (cxt *Context[N]) Add(name expr.Const[N], ty types.Type[N]) {
+func (cxt *Context[N]) Shadow(name expr.Const[N], ty types.Type[N]) {
 	key := name.Name
 	// attempt to look up existing symbol
 	sym, ok := cxt.syms.Get(key)
