@@ -33,10 +33,10 @@ const (
 	action_end_log   action_name = "action(end):"
 )
 
-func (p *loggableParser) shift() status.Status {
+func (p *loggableParser) Shift() status.Status {
 	tok, stat := p.lookAhead()
 	p.log(shift_log, "tok=%v; stat=%v", tok, stat)
-	return p.parser.shift()
+	return p.parser.Shift()
 }
 
 func (p *loggableParser) actOnRule(rule productionInterface, vars []ast.Ast) (stat status.Status, appliedRule bool) {

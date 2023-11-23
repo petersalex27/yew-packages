@@ -133,19 +133,19 @@ type letAssumptionDischarge[N nameable.Nameable] func(TypeJudgement[N]) Conclusi
 // notice that the second param adds context and the third premise no longer
 // has that context
 //
-// This rule allows for a kind of polymorphism. Here's an example given
+// This rule allows for a kind of polymorphism:
 //
 //	𝚪 = {0: Int, (λy.y): a -> a}:
 //
-//		  [ x: forall a. a -> a ]¹    Inst(forall a. a -> a)
-//		  -------------------------------------------------- [Var]
-//		                      x: v -> v                       0: Int    t0, Int = v
-//		                      ----------------------------------------------------- [App]
-//		                                              x 0: t0
-//		                                              -------- [Id]
-//		  (λy.y): a -> a                              x 0: Int
-//		1 ---------------------------------------------------- [Let]
-//		               let x = (λy.y) in x 0: Int
+//		            [ x: ∀a.a->a ]¹   Inst(∀a.a->a)        0: Int   Int=Inst(Int)
+//		            ------------------------------- [Var]  ---------------------- [Var]
+//		                                x: v->v                    0: Int        v->v = Int->t0
+//		                                ------------------------------------------------------- [App]
+//		  (λy.y): a->a   a->a=Inst(a->a)                       (x 0): t0
+//		  ------------------------------ [Var]                 ---------- [Id]
+//		           (λy.y): a->a                                (x 0): Int
+//		         1 ------------------------------------------------------ [Let]
+//		                          let x = (λy.y) in x 0: Int
 func (cxt *Context[N]) Let(name N, j0 TypeJudgement[N]) letAssumptionDischarge[N] {
 	nameConst := expr.Const[N]{Name: name}
 	e0, tmp0 := j0.GetExpressionAndType()

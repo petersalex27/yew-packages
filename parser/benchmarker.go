@@ -49,13 +49,13 @@ func (p benchmarker) reportError(t ast.Type) status.Status {
 	return p.parser.reportError(t)
 }
 
-func (p benchmarker) shift() status.Status {
-	return p.parser.shift()
+func (p benchmarker) Shift() status.Status {
+	return p.parser.Shift()
 }
 
-func (p benchmarker) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
+func (p benchmarker) Reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
 	if p.optimizedReduce {
-		return p.ground().reduce(rules)
+		return p.ground().Reduce(rules)
 	}
 
 	stat, appliedRule = status.EndAction, false

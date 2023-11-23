@@ -289,17 +289,18 @@ func TestWhen(t *testing.T) {
 	}
 }
 
-//  - check that precondition is run only when matched in the first place
-//  - check that if precondition is true, then precondition's `call` calls 
-//		wrapped production's `call`
-//	- check that correct stat is returned
+//   - check that precondition is run only when matched in the first place
+//   - check that if precondition is true, then precondition's `call` calls
+//     wrapped production's `call`
+//   - check that correct stat is returned
 //
 // think of test cases for expectApplied like a truth table:
+//
 //	----------------------------------------------
 //	|    match    |	precondition | expectApplied |
 //	|-------------|--------------|---------------|
 //	|    true     |    true      |     true      |
-//	|    true     |    false     |     false     | 
+//	|    true     |    false     |     false     |
 //	|    false    |    true      |     false     |
 //	|    false    |    false     |     false     |
 //	----------------------------------------------
@@ -325,15 +326,14 @@ func TestParameterized(t *testing.T) {
 		},
 	)
 
-
 	productions := Order(ruleDiv)
-     
+
 	tests := []struct {
-		desc   string
-		src source.StaticSource
-		input []ast.Ast
-		expectStatus status.Status
-		expectApplied bool
+		desc           string
+		src            source.StaticSource
+		input          []ast.Ast
+		expectStatus   status.Status
+		expectApplied  bool
 		expectStackRaw []ast.Ast
 	}{
 		{ // true true
@@ -342,9 +342,9 @@ func TestParameterized(t *testing.T) {
 			[]ast.Ast{ast.TokenNode(divTok), mknode(expr_t, ast.TokenNode(int0)), ast.TokenNode(int0)},
 			status.Ok, true,
 			[]ast.Ast{
-				mknode(error_t, 
-					ast.TokenNode(divTok), 
-					mknode(expr_t, ast.TokenNode(int0)), 
+				mknode(error_t,
+					ast.TokenNode(divTok),
+					mknode(expr_t, ast.TokenNode(int0)),
 					ast.TokenNode(int0),
 				),
 			},
@@ -378,9 +378,9 @@ func TestParameterized(t *testing.T) {
 			UsingReductionTable(ReductionTable{}). // empty reduction table
 			Load([]token.Token{}, test.src, nil, nil).
 			InitialStackPush(test.input...)
-		
-		actualStat, actualApplied := p.reduce(productions)
-		
+
+		actualStat, actualApplied := p.Reduce(productions)
+
 		// check for errors
 		if p.HasErrors() {
 			es := p.GetErrors()

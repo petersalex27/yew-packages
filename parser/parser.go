@@ -28,16 +28,16 @@ type Parser interface {
 	ground() *parser
 	actOnRule(productionInterface, []ast.Ast) (stat status.Status, ruleApplied bool)
 	reportError(ast.Type) status.Status
-	shift() status.Status
-	reduce(rules productionOrder) (stat status.Status, appliedRule bool)
+	Shift() status.Status
+	Reduce(rules productionOrder) (stat status.Status, appliedRule bool)
 }
 
 type parser struct {
 	loaded bool
 	knowledgeable_parser
-	stack  *stack.Stack[ast.Ast]
-	src    source.StaticSource
-	tokens []token.Token
+	stack   *stack.Stack[ast.Ast]
+	src     source.StaticSource
+	tokens  []token.Token
 	actions actionRequester
 }
 
@@ -147,7 +147,7 @@ func (p *parser) lookAhead() (tok token.Token, stat status.Status) {
 	return
 }
 
-func (p *parser) shift() status.Status {
+func (p *parser) Shift() status.Status {
 	tok, stat := p.lookAhead()
 	if stat.IsOk() {
 		p.tokens = p.tokens[1:]
@@ -216,13 +216,18 @@ func getSubset(ground *parser, rules productionOrder) (subSet []productionInterf
 }
 
 // return true
-// 		precondition check failed: appliedRule=false, stat=Ok
+//
+//	precondition check failed: appliedRule=false, stat=Ok
+//
 // return ?: (depends on rule held by precondition)
-//		precondition check success: appliedRule=?, stat=?
+//
+//	precondition check success: appliedRule=?, stat=?
+//
 // return false
-// 		error rule: appliedRule=true, stat=Ok
-// 		shift rule: appliedRule=true, stat=Shift
-// 		...       : appliedRule=true, stat=...
+//
+//	error rule: appliedRule=true, stat=Ok
+//	shift rule: appliedRule=true, stat=Shift
+//	...       : appliedRule=true, stat=...
 func continueLoop(stat status.Status, appliedRule bool) bool {
 	return !appliedRule && stat.IsOk()
 }
@@ -232,7 +237,7 @@ func initialStatAndApplied() (status.Status, bool) {
 }
 
 func (p *parser) matchThen(
-	pattern PatternInterface, 
+	pattern PatternInterface,
 	rule productionInterface,
 ) (status.Status, bool, bool) {
 	stat, appliedRule := initialStatAndApplied()
@@ -244,10 +249,10 @@ func (p *parser) matchThen(
 	return stat, appliedRule, loop
 }
 
-// Parser reduce action: replaces parse-stack handle with reduction rule
+// Parser Reduce action: replaces parse-stack handle with reduction rule
 // replacement. Returns reduction status along with the truthy-ness of whether
 // an actual rule was applied
-func (p *parser) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
+func (p *parser) Reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = initialStatAndApplied()
 
 	subSet := getSubset(p, rules)
@@ -262,8 +267,8 @@ func (p *parser) reduce(rules productionOrder) (stat status.Status, appliedRule 
 	return
 }
 
-func (p *loggableParser) reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
-	return p.ground().reduce(rules)
+func (p *loggableParser) Reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
+	return p.ground().Reduce(rules)
 }
 
 func (ty forType) actionLoop(p Parser, rules productionOrder, found bool) (stat status.Status, appliedRule bool) {
@@ -273,7 +278,7 @@ func (ty forType) actionLoop(p Parser, rules productionOrder, found bool) (stat 
 	}
 
 	for tmpApp := false; stat.IsOk(); {
-		stat, tmpApp = p.reduce(rules)
+		stat, tmpApp = p.Reduce(rules)
 		appliedRule = appliedRule || tmpApp
 	}
 	stat = ty.modify(stat, appliedRule)
@@ -296,11 +301,11 @@ func (p *parser) reportError(ty ast.Type) status.Status {
 func (ty forType) followUpRule(p Parser, rules productionOrder, stat status.Status, ruleApplied bool) status.Status {
 	if ruleApplied {
 		if stat.Is(status.DoShift) {
-			p.shift()
+			p.Shift()
 		} // else, already shifted // TODO: is this possible?
 	} else if rules.elseShift && ty != forType(ast.None) { // don't allow none to be shifted!
 		stat = status.Ok
-		p.shift()
+		p.Shift()
 	} else {
 		return p.reportError(ast.Type(ty))
 	}
