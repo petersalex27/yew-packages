@@ -4,7 +4,7 @@ import "github.com/petersalex27/yew-packages/parser/ast"
 
 type mappable interface {
 	Shift() ReductionRuleClass
-	Then(productionOrder) ReductionRuleClass
+	Then(ProductionOrder) ReductionRuleClass
 }
 
 func class(m mappable) (class ClassMapper, isClass bool) {
@@ -35,7 +35,7 @@ func (tys Mapper) Shift() ReductionRuleClass {
 	return ReductionRuleClass{tys, shiftRuleSet}
 }
 
-func (tys Mapper) Then(rs productionOrder) ReductionRuleClass {
+func (tys Mapper) Then(rs ProductionOrder) ReductionRuleClass {
 	return ReductionRuleClass{tys, rs}
 }
 
@@ -69,7 +69,7 @@ func (tys ClassMapper) Shift() ReductionRuleClass {
 	return ReductionRuleClass{tys, shiftRuleSet}
 }
 
-func (tys ClassMapper) Then(rs productionOrder) ReductionRuleClass {
+func (tys ClassMapper) Then(rs ProductionOrder) ReductionRuleClass {
 	return ReductionRuleClass{tys, rs}
 }
 

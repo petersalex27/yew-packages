@@ -1,7 +1,7 @@
 package parser
 
 // ordered collection of production rules
-type productionOrder struct {
+type ProductionOrder struct {
 	// production rules
 	rules []productionInterface
 	// Maps last type in production rule pattern to a subset of production rules.
@@ -22,8 +22,8 @@ type productionOrder struct {
 //
 // the order that each production order appears in the arguments is the order
 // they are unified in
-func Union(sets ...productionOrder) (unified productionOrder) {
-	unified = productionOrder{
+func Union(sets ...ProductionOrder) (unified ProductionOrder) {
+	unified = ProductionOrder{
 		rules:     []productionInterface{},
 		classes:   newProductionClassifier(),
 		elseShift: false,
@@ -37,7 +37,7 @@ func Union(sets ...productionOrder) (unified productionOrder) {
 }
 
 // define an order for `productions`
-func Order(productions ...productionInterface) (out productionOrder) {
+func Order(productions ...productionInterface) (out ProductionOrder) {
 	out.rules = append([]productionInterface{}, productions...)
 	out.classes = newProductionClassifier()
 	out.classes.classifyReductions(out)

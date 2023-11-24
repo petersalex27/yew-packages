@@ -49,7 +49,7 @@ func (rcm *productionClassMap) classify(production productionInterface) {
 }
 
 // classify productions in production order
-func (rcm *productionClassMap) classifyReductions(productions productionOrder) {
+func (rcm *productionClassMap) classifyReductions(productions ProductionOrder) {
 	for _, rule := range productions.rules {
 		rcm.classify(rule)
 	}

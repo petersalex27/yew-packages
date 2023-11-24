@@ -53,7 +53,7 @@ func (p benchmarker) Shift() status.Status {
 	return p.parser.Shift()
 }
 
-func (p benchmarker) Reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
+func (p benchmarker) Reduce(rules ProductionOrder) (stat status.Status, appliedRule bool) {
 	if p.optimizedReduce {
 		return p.ground().Reduce(rules)
 	}

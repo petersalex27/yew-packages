@@ -9,32 +9,32 @@ import (
 type ReductionTable struct {
 	root *combinerTrieRoot
 	// maps lookahead to an ordered list of productions
-	table map[ast.Type]productionOrder
+	table map[ast.Type]ProductionOrder
 }
 
 type ReductionRules interface {
-	GetProductionOrder() productionOrder
+	GetProductionOrder() ProductionOrder
 }
 
 // reduction rule class. reduction rules classified based on lookahead
 type ReductionRuleClass struct {
 	lookaheads mappable
-	productionOrder
+	ProductionOrder
 }
 
 // return productions in given class
-func (r ReductionRuleClass) GetProductionOrder() productionOrder {
-	return r.productionOrder
+func (r ReductionRuleClass) GetProductionOrder() ProductionOrder {
+	return r.ProductionOrder
 }
 
 // create a shift reduction rule class
 func (r ReductionRuleClass) ElseShift() ReductionRuleClass {
-	rule_set := r.productionOrder
+	rule_set := r.ProductionOrder
 	rule_set.elseShift = true
-	return ReductionRuleClass{lookaheads: r.lookaheads, productionOrder: rule_set}
+	return ReductionRuleClass{lookaheads: r.lookaheads, ProductionOrder: rule_set}
 }
 
-var shiftRuleSet productionOrder = productionOrder{rules: nil, classes: nil, elseShift: true}
+var shiftRuleSet ProductionOrder = ProductionOrder{rules: nil, classes: nil, elseShift: true}
 
 type needEndReduction ReductionTable
 
@@ -42,9 +42,9 @@ type ForTypesThrough ast.Type
 
 // Note: mapping from an element of mems that already exists in the table will overwrite
 // the previous map!
-func (m *ReductionTable) setInTable(ruleset productionOrder, rep ast.Type, mems []ast.Type) {
+func (m *ReductionTable) setInTable(ruleset ProductionOrder, rep ast.Type, mems []ast.Type) {
 	rs, found := m.table[rep]
-	var in productionOrder
+	var in ProductionOrder
 	if found {
 		in = Union(rs, ruleset)
 	} else {
@@ -60,7 +60,7 @@ func (m *ReductionTable) setInTable(ruleset productionOrder, rep ast.Type, mems 
 }
 
 func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRuleClass) needEndReduction {
-	m := ReductionTable{table: make(map[ast.Type]productionOrder)}
+	m := ReductionTable{table: make(map[ast.Type]ProductionOrder)}
 	m.root = initRoot(ast.Type(lastType))
 
 	for _, rrule := range reductionRules {
@@ -74,14 +74,14 @@ func (lastType ForTypesThrough) UseReductions(reductionRules ...ReductionRuleCla
 		}
 
 		ty := m.root.set(mp...)
-		m.setInTable(rrule.productionOrder, ty, tys)
+		m.setInTable(rrule.ProductionOrder, ty, tys)
 	}
 
 	return needEndReduction(m)
 }
 
 // production rules to apply once all tokens have been shifted
-func (m needEndReduction) Finally(rs productionOrder) ReductionTable {
+func (m needEndReduction) Finally(rs ProductionOrder) ReductionTable {
 	ty := ast.None
 	if _, found := m.table[ty]; found {
 		panic("terminal reduction rule(s) already exist(s)")

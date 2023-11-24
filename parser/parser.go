@@ -29,7 +29,7 @@ type Parser interface {
 	actOnRule(productionInterface, []ast.Ast) (stat status.Status, ruleApplied bool)
 	reportError(ast.Type) status.Status
 	Shift() status.Status
-	Reduce(rules productionOrder) (stat status.Status, appliedRule bool)
+	Reduce(rules ProductionOrder) (stat status.Status, appliedRule bool)
 }
 
 type parser struct {
@@ -54,7 +54,7 @@ type knowledgeable_parser struct {
 	cxt *ParserContext
 }
 
-// returns root of combiner trie 
+// returns root of combiner trie
 //
 // panics if parser has no context attached
 func (kp knowledgeable_parser) root() *combinerTrieRoot {
@@ -178,7 +178,7 @@ func HasErrors(p Parser) bool {
 
 func GetErrors(p Parser) []error {
 	return p.ground().GetErrors()
-} 
+}
 
 // return top element of parse stack
 //
@@ -233,7 +233,7 @@ func (p *parser) matchStack(pattern PatternInterface) (nodes []ast.Ast, matches 
 	return
 }
 
-func getSubset(ground *parser, rules productionOrder) (subSet []productionInterface) {
+func getSubset(ground *parser, rules ProductionOrder) (subSet []productionInterface) {
 	subSet = nil
 	// grab the top node and see if any subsets of rules exist w/ the top node as
 	// the last node
@@ -280,7 +280,7 @@ func (p *parser) matchThen(
 // Parser Reduce action: replaces parse-stack handle with reduction rule
 // replacement. Returns reduction status along with the truthy-ness of whether
 // an actual rule was applied
-func (p *parser) Reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
+func (p *parser) Reduce(rules ProductionOrder) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = initialStatAndApplied()
 
 	subSet := getSubset(p, rules)
@@ -295,11 +295,11 @@ func (p *parser) Reduce(rules productionOrder) (stat status.Status, appliedRule 
 	return
 }
 
-func (p *loggableParser) Reduce(rules productionOrder) (stat status.Status, appliedRule bool) {
+func (p *loggableParser) Reduce(rules ProductionOrder) (stat status.Status, appliedRule bool) {
 	return p.ground().Reduce(rules)
 }
 
-func (ty forType) actionLoop(p Parser, rules productionOrder, found bool) (stat status.Status, appliedRule bool) {
+func (ty forType) actionLoop(p Parser, rules ProductionOrder, found bool) (stat status.Status, appliedRule bool) {
 	stat, appliedRule = status.Ok, false
 	if !found {
 		return status.EndAction, false
@@ -326,7 +326,7 @@ func (p *parser) reportError(ty ast.Type) status.Status {
 	return status.Error
 }
 
-func (ty forType) followUpRule(p Parser, rules productionOrder, stat status.Status, ruleApplied bool) status.Status {
+func (ty forType) followUpRule(p Parser, rules ProductionOrder, stat status.Status, ruleApplied bool) status.Status {
 	if ruleApplied {
 		if stat.Is(status.DoShift) {
 			p.Shift()
@@ -364,7 +364,7 @@ func SetCouldNotParseError(p Parser, couldNotParse error) Parser {
 func (bp blank_parser) Load(tokenStream []token.Token, src source.StaticSource, defaultErrorGen func(source.StaticSource, token.Token) error, couldNotParse error) *parser {
 	kp := knowledgeable_parser{
 		blank_parser: bp,
-		cxt: nil,
+		cxt:          nil,
 	}
 	return kp.Load(tokenStream, src, defaultErrorGen, couldNotParse)
 }
@@ -491,7 +491,7 @@ func (p *parser) ground() *parser { return p }
 //
 // panics if parse context is not set
 func parse(p Parser) ast.AstRoot {
-	
+
 	grnd := p.ground()
 	if !grnd.loaded {
 		panic("parser must be re-loaded before calling (Parser) Parse() again")
