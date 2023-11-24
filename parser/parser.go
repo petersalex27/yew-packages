@@ -160,6 +160,14 @@ func (p *parser) HasErrors() bool { return len(p.errors) != 0 }
 
 func (p *parser) GetErrors() []error { return p.errors }
 
+func HasErrors(p Parser) bool {
+	return p.ground().HasErrors()
+}
+
+func GetErrors(p Parser) []error {
+	return p.ground().GetErrors()
+} 
+
 // pushes ast node onto parse stack only when it isn't a None node
 func (p *parser) maybePush(node ast.Ast) {
 	if node.NodeType() != ast.None {
