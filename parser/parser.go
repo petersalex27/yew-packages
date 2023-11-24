@@ -54,6 +54,10 @@ type knowledgeable_parser struct {
 	cxt *ParserContext
 }
 
+func LookAheadTokens(p Parser) []token.Token {
+	return p.ground().lookahead(p.ground())
+}
+
 // returns root of combiner trie
 //
 // panics if parser has no context attached
