@@ -58,6 +58,18 @@ func LookAheadTokens(p Parser) []token.Token {
 	return p.ground().lookahead(p.ground())
 }
 
+func (p *parser) dropNext() (dropped bool) {
+	dropped = len(p.tokens) >= 1
+	if dropped {
+		p.tokens = p.tokens[1:]
+	}
+	return
+}
+
+func DropNext(p Parser) {
+	_ = p.ground().dropNext()
+}
+
 // returns root of combiner trie
 //
 // panics if parser has no context attached
@@ -166,7 +178,7 @@ func (p *parser) lookAhead() (tok token.Token, stat status.Status) {
 func (p *parser) Shift() status.Status {
 	tok, stat := p.lookAhead()
 	if stat.IsOk() {
-		p.tokens = p.tokens[1:]
+		_ = p.dropNext()
 		p.stack.Push(ast.TokenNode(tok))
 	}
 	return stat
