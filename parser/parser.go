@@ -54,11 +54,23 @@ type knowledgeable_parser struct {
 	cxt *ParserContext
 }
 
+// returns root of combiner trie 
+//
+// panics if parser has no context attached
 func (kp knowledgeable_parser) root() *combinerTrieRoot {
+	if kp.cxt == nil {
+		panic("missing parse context")
+	}
 	return kp.cxt.currentTable.root
 }
 
+// returns current parsing table
+//
+// panics if parser has no context attached
 func (kp knowledgeable_parser) table() *ReductionTable {
+	if kp.cxt == nil {
+		panic("missing parse context")
+	}
 	return &kp.cxt.currentTable
 }
 
@@ -330,6 +342,25 @@ func (p blank_parser) UsingReductionTable(table ReductionTable) knowledgeable_pa
 	return kp
 }
 
+func SetDefaultErrorGen(p Parser, defaultErrorGen func(source.StaticSource, token.Token) error) Parser {
+	p.ground().loadDefaultErrorGen(p.ground().src, defaultErrorGen)
+	return p
+}
+
+func SetCouldNotParseError(p Parser, couldNotParse error) Parser {
+	p.ground().loadCouldNotParse(p.ground().src.GetPath(), couldNotParse)
+	return p
+}
+
+// use when parser does not have a parse table
+func (bp blank_parser) Load(tokenStream []token.Token, src source.StaticSource, defaultErrorGen func(source.StaticSource, token.Token) error, couldNotParse error) *parser {
+	kp := knowledgeable_parser{
+		blank_parser: bp,
+		cxt: nil,
+	}
+	return kp.Load(tokenStream, src, defaultErrorGen, couldNotParse)
+}
+
 func (p knowledgeable_parser) Mapping(ty ast.Type, table ReductionTable) knowledgeable_parser {
 	p.cxt.MapTable(ty, table)
 	return p
@@ -339,40 +370,48 @@ func estimateStackUse(fullElemLen int) uint {
 	return uint(fullElemLen/2) + 1 // this is just an estimate, idk; +1 is so cap != 0
 }
 
-func (p *parser) load_src_def(src source.StaticSource, def func(source.StaticSource, token.Token) error, couldNotSimplify error) *parser {
+func (p *parser) loadSource(src source.StaticSource) {
 	if src == nil {
 		src = nilsrc{}
 	}
 	p.src = src
+}
 
-	if couldNotSimplify == nil {
-		couldNotSimplify = errors.Ferr("tfm", "Syntax", src.GetPath(), "input could not be parsed")
+func (p *parser) loadCouldNotParse(path string, couldNotParse error) {
+	if couldNotParse == nil {
+		couldNotParse = errors.Ferr("tfm", "Syntax", path, "input could not be parsed")
 	}
-	p.couldNotParse = couldNotSimplify
+	p.couldNotParse = couldNotParse
+}
 
-	if def == nil {
-		def = func(src source.StaticSource, tok token.Token) error {
+func (p *parser) loadDefaultErrorGen(src source.StaticSource, defaultErrorGen func(source.StaticSource, token.Token) error) {
+	if defaultErrorGen == nil {
+		defaultErrorGen = func(src source.StaticSource, tok token.Token) error {
 			line, char := tok.GetLineChar()
 			srcline, _ := src.SourceLine(line)
 			return errors.Ferr("tflcms", "Syntax", src.GetPath(), line, char, "unexpected token", srcline)
 		}
 	}
-	p.defaultError = def
-
-	return p
+	p.defaultError = defaultErrorGen
 }
 
-func (kp knowledgeable_parser) Load(tokens []token.Token, src source.StaticSource, def func(source.StaticSource, token.Token) error, couldNotParse error) *parser {
+func (kp knowledgeable_parser) Load(tokens []token.Token, src source.StaticSource, defaultErrorGen func(source.StaticSource, token.Token) error, couldNotParse error) *parser {
 	p := new(parser)
 	p.knowledgeable_parser = kp
 
 	// init stack
 	cap := estimateStackUse(len(tokens))
 	p.stack = stack.NewStack[ast.Ast](cap)
+
 	p.tokens = tokens
 	p.loaded = true
 
-	return p.load_src_def(src, def, couldNotParse)
+	p.loadSource(src)
+
+	p.loadCouldNotParse(src.GetPath(), couldNotParse)
+	p.loadDefaultErrorGen(src, defaultErrorGen)
+
+	return p
 }
 
 // InitialStackPush pushes ast nodes onto the parse stack. This function panics
@@ -395,15 +434,21 @@ func (p *parser) Benchmarker() benchmarker {
 	return b
 }
 
-func (p *parser) Load(tokens []token.Token, src source.StaticSource, def DefaultErrorFunc, couldNotParse error) Parser {
+func (p *parser) Load(tokens []token.Token, src source.StaticSource, defaultErrorGen DefaultErrorFunc, couldNotParse error) Parser {
 	ratio := float64(p.stack.GetCapacity()) / float64(estimateStackUse(len(tokens)))
-	if ratio < 0.90 {
-		return p.knowledgeable_parser.Load(tokens, src, def, couldNotParse)
+	if ratio < 0.90 { // TODO: huh? what's going on here
+		return p.knowledgeable_parser.Load(tokens, src, defaultErrorGen, couldNotParse)
 	}
 
 	p.tokens = tokens
 	p.loaded = true
-	return p.load_src_def(src, def, couldNotParse)
+
+	p.loadSource(src)
+
+	p.loadCouldNotParse(src.GetPath(), couldNotParse)
+	p.loadDefaultErrorGen(src, defaultErrorGen)
+
+	return p
 }
 
 func default_stringType(ty ast.Type) string {
@@ -432,7 +477,13 @@ func (p *parser) LogActions() (out *loggableParser) {
 
 func (p *parser) ground() *parser { return p }
 
+// runs parser to completion or error: whichever happens first
+//
+// returns resulting AST root (which is empty on error)
+//
+// panics if parse context is not set
 func parse(p Parser) ast.AstRoot {
+	
 	grnd := p.ground()
 	if !grnd.loaded {
 		panic("parser must be re-loaded before calling (Parser) Parse() again")
