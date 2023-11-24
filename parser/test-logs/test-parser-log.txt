@@ -1,4 +1,4 @@
-init: 2023-11-24T15:36:40.265557Z
+init: 2023-11-24T16:34:40.488333Z
 lookahead: func_t(11)
 rules?: true
 rules: {[] <nil> true}
@@ -11,5 +11,5 @@ shift: tok=test_token@[1:6]:id_t=f; stat=Ok
 action(end): stack=[{test_token@[1:1]:func_t=func} {test_token@[1:6]:id_t=f}]
 lookahead: None(-1)
 rules?: true
-rules: {[{[11 7] 1 {{{function 0x100295a40}}}} {[11 3] {{{assignment 0x1002959b0}}}}] 0x14000118120 false}
+rules: {[{[11 7] 1 {{{function 0x1028adaf0}}}} {[11 3] {{{assignment 0x1028ada60}}}}] 0x14000118120 false}
 action(end): stack=[ast_test_node:assign_t=[{test_token@[1:1]:func_t=func} ast_test_node:fn_t=[{test_token@[1:6]:id_t=f}]]]

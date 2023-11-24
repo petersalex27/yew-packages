@@ -180,6 +180,14 @@ func GetErrors(p Parser) []error {
 	return p.ground().GetErrors()
 } 
 
+// return top element of parse stack
+//
+// second return value is trye iff status of peeking at stack is Ok
+func ParseStackPeek(p Parser) (ast.Ast, bool) {
+	elem, stat := p.ground().stack.Peek()
+	return elem, stat.IsOk()
+}
+
 // pushes ast node onto parse stack only when it isn't a None node
 func (p *parser) maybePush(node ast.Ast) {
 	if node.NodeType() != ast.None {
