@@ -30,6 +30,7 @@ type Parser interface {
 	reportError(ast.Type) status.Status
 	Shift() status.Status
 	Reduce(rules ProductionOrder) (stat status.Status, appliedRule bool)
+	GetSource() source.StaticSource
 }
 
 type parser struct {
@@ -39,6 +40,10 @@ type parser struct {
 	src     source.StaticSource
 	tokens  []token.Token
 	actions actionRequester
+}
+
+func (p *parser) GetSource() source.StaticSource {
+	return p.src
 }
 
 type blank_parser struct {
