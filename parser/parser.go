@@ -23,12 +23,18 @@ type RunnableParser interface {
 	Parser
 }
 
+type MakeableNode interface {
+	ast.Ast
+	MakeNode(token.Token) ast.Ast
+}
+
 type Parser interface {
 	action() status.Status
 	ground() *parser
 	actOnRule(productionInterface, []ast.Ast) (stat status.Status, ruleApplied bool)
 	reportError(ast.Type) status.Status
 	Shift() status.Status
+	SetShift(MakeableNode) status.Status
 	Reduce(rules ProductionOrder) (stat status.Status, appliedRule bool)
 	GetSource() source.StaticSource
 }
@@ -178,6 +184,16 @@ func (p *parser) lookAhead() (tok token.Token, stat status.Status) {
 
 	tok, stat = p.tokens[0], status.Ok
 	return
+}
+
+func (p *parser) SetShift(node MakeableNode) status.Status {
+	tok, stat := p.lookAhead()
+	if stat.IsOk() {
+		_ = p.dropNext()
+		in := node.MakeNode(tok)
+		p.stack.Push(in)
+	}
+	return stat
 }
 
 func (p *parser) Shift() status.Status {
