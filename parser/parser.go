@@ -176,6 +176,29 @@ func (p *parser) top() (ast.Ast, status.Status) {
 	return node, status.Ok
 }
 
+func (p *parser) topN(n int) ([]ast.Ast, stack.StackStatus) {
+	if n < 0 {
+		panic("illegal argument")
+	}
+
+	var checkNum int
+	if n > int(p.stack.GetCount()) {
+		checkNum = int(p.stack.GetCount())
+	} else {
+		checkNum = n
+	}
+
+	elems, stat := p.stack.MultiCheck(checkNum)
+	if stat.NotOk() {
+		return nil, stat
+	}
+
+	for ; checkNum < n; checkNum++ {
+		elems = append(elems, ast.Nothing{})
+	}
+	return elems, stat
+}
+
 func (p *parser) lookAhead() (tok token.Token, stat status.Status) {
 	if len(p.tokens) == 0 {
 		stat = status.EndOfTokens
@@ -262,7 +285,7 @@ func (p *parser) actOnRule(rule productionInterface, handle []ast.Ast) (stat sta
 func (p *parser) matchStack(pattern PatternInterface) (nodes []ast.Ast, matches bool) {
 	var stackStat stack.StackStatus
 	handleLength := pattern.MaxHandleLength()
-	nodes, stackStat = p.stack.MultiCheck(handleLength)
+	nodes, stackStat = p.topN(handleLength)
 	if stackStat.NotOk() {
 		return nil, false
 	}
@@ -488,7 +511,7 @@ func (p *parser) InitialStackPush(nodes ...ast.Ast) *parser {
 
 func InitialStackPush(p Parser, nodes ...ast.Ast) {
 	p.ground().InitialStackPush(nodes...)
-} 
+}
 
 func (p *parser) Benchmarker() benchmarker {
 	b := benchmarker{parser: p}
