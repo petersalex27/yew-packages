@@ -474,6 +474,10 @@ func (p *parser) InitialStackPush(nodes ...ast.Ast) *parser {
 	return p
 }
 
+func InitialStackPush(p Parser, nodes ...ast.Ast) {
+	p.ground().InitialStackPush(nodes...)
+} 
+
 func (p *parser) Benchmarker() benchmarker {
 	b := benchmarker{parser: p}
 	return b
