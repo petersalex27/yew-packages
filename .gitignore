@@ -11,3 +11,4 @@ symbol/
 parser/benchmark-test-old.txt
 inf/example/
 __pycache__/
+syntax/

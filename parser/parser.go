@@ -417,7 +417,7 @@ func estimateStackUse(fullElemLen int) uint {
 
 func (p *parser) loadSource(src source.StaticSource) {
 	if src == nil {
-		src = nilsrc{}
+		src = EmptySource{}
 	}
 	p.src = src
 }

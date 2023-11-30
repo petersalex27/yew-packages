@@ -20,4 +20,5 @@ use (
 	./table
 	./symbol
 	./inf
+	//./syntax
 )
