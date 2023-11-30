@@ -270,12 +270,24 @@ func (p *parser) matchStack(pattern PatternInterface) (nodes []ast.Ast, matches 
 	return
 }
 
+func typeableNode(node ast.Ast, stat status.Status) (ty ast.Type, typeable bool) {
+	if typeable = stat.Is(status.StackEmpty) || stat.IsOk(); typeable {
+		ty = node.NodeType()
+	}
+	return
+}
+
 func getSubset(ground *parser, rules ProductionOrder) (subSet []productionInterface) {
 	subSet = nil
+	if rules.classes == nil {
+		return
+	}
+
 	// grab the top node and see if any subsets of rules exist w/ the top node as
 	// the last node
-	if node, stat := ground.stack.Peek(); stat.IsOk() && rules.classes != nil {
-		subSet, _ = rules.classes.getClass(node.NodeType()) // subSet = nil if not found
+	nodeType, typed := typeableNode(ground.top())
+	if typed {
+		subSet, _ = rules.classes.getClass(nodeType) // subSet = nil if not found
 	}
 	return
 }
