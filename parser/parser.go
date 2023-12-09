@@ -228,6 +228,18 @@ func (p *parser) Shift() status.Status {
 	return stat
 }
 
+// if next token can be removed, remove and return it and true; otherwise, return an undefined token
+// and false
+func RemoveNext(p Parser) (token.Token, bool) {
+	ground := p.ground()
+	token, stat := ground.lookAhead()
+	if stat.NotOk() {
+		return token, false
+	}
+	_ = ground.dropNext()
+	return token, true
+}
+
 func (p *parser) HasErrors() bool { return len(p.errors) != 0 }
 
 func (p *parser) GetErrors() []error { return p.errors }
