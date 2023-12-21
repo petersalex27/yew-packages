@@ -47,6 +47,13 @@ type Context[N nameable.Nameable] struct {
 	exprContext *expr.Context[N]
 }
 
+// convenience method for a type judgment with a new, free type variable; i.e., for an expression e,
+//		e: newvar
+func (cxt *Context[N]) Judge(e expr.Expression[N]) TypeJudgment[N] {
+	var newvar types.Type[N] = cxt.typeContext.NewVar()
+	return bridge.Judgment(e, newvar)
+}
+
 type ExportableContext[N nameable.Nameable] struct {
 	name      N
 	consTable *table.Table[consJudge[N]]
