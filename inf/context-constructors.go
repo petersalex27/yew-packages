@@ -24,8 +24,8 @@ func (cxt *Context[N]) makeConsJudge(sigma types.Polytype[N]) consJudge[N] {
 	out := consJudge[N]{sigma, make(constructorMapType[N])}
 	wildcardConstructor := expr.Bind[N]().In(cxt.exprContext.NewVar())
 	// (\-> $v): σ
-	judgement := types.TypedJudge[N](wildcardConstructor, sigma)
-	out.constructors[wildcardConstructorName] = judgement
+	judgment := types.TypedJudge[N](wildcardConstructor, sigma)
+	out.constructors[wildcardConstructorName] = judgment
 	return out
 }
 
@@ -50,7 +50,6 @@ func (cxt *Context[N]) AddType(name N, ty types.Type[N]) Status {
 		cxt.appendReport(makeTypeReport("AddType", TypeRedef, ty))
 		return TypeRedef
 	}
-
 
 	ty = cxt.Gen(ty)
 
@@ -90,11 +89,11 @@ func (cxt *Context[N]) createFunction(params []types.Monotyped[N], returnType ty
 	return types.Forall(binders...).Bind(closedDeps)      // close open type vars
 }
 
-func (cxt *Context[N]) buildConstructor(data bridge.Data[N], sigma types.Polytype[N]) types.TypedJudgement[N, expr.Function[N], types.Polytype[N]] {
+func (cxt *Context[N]) buildConstructor(data bridge.Data[N], sigma types.Polytype[N]) types.TypedJudgment[N, expr.Function[N], types.Polytype[N]] {
 	// grab type of each member in data
 	memberTypes := fun.FMap(
 		data.Members,
-		func(member bridge.JudgementAsExpression[N, expr.Expression[N]]) types.Monotyped[N] {
+		func(member bridge.JudgmentAsExpression[N, expr.Expression[N]]) types.Monotyped[N] {
 			t, _ := member.TypeAndExpr()
 			return t.(types.Monotyped[N])
 		},

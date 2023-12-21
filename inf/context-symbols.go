@@ -45,9 +45,9 @@ func (cxt *Context[N]) Add(name expr.Const[N], ty types.Type[N]) (added bool) {
 	// add symbol to table
 	cxt.syms.Add(name.Name, sym)
 	return true
-} 
+}
 
-// adds judgement to context
+// adds judgment to context
 func (cxt *Context[N]) Shadow(name expr.Const[N], ty types.Type[N]) {
 	key := name.Name
 	// attempt to look up existing symbol
@@ -63,7 +63,7 @@ func (cxt *Context[N]) Shadow(name expr.Const[N], ty types.Type[N]) {
 }
 
 // tries to find symbol w/ name
-func (cxt *Context[N]) Get(name expr.Const[N]) (judgedName bridge.JudgementAsExpression[N, expr.Const[N]], found bool) {
+func (cxt *Context[N]) Get(name expr.Const[N]) (judgedName bridge.JudgmentAsExpression[N, expr.Const[N]], found bool) {
 	key := name.Name
 	var sym Symbol[N]
 	sym, found = cxt.syms.Get(key)

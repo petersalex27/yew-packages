@@ -6,61 +6,61 @@ import (
 	"github.com/petersalex27/yew-packages/types"
 )
 
-type JudgementAsExpression[T nameable.Nameable, E expr.Expression[T]] types.TypeJudgement[T, E]
+type JudgmentAsExpression[T nameable.Nameable, E expr.Expression[T]] types.TypeJudgment[T, E]
 
-func (judgement JudgementAsExpression[T, E]) Flatten() []expr.Expression[T] {
-	_, e := judgement.TypeAndExpr()
+func (judgment JudgmentAsExpression[T, E]) Flatten() []expr.Expression[T] {
+	_, e := judgment.TypeAndExpr()
 	if _, ok := expr.Expression[T](e).(expr.Variable[T]); ok {
-		return []expr.Expression[T]{judgement}
+		return []expr.Expression[T]{judgment}
 	} else if _, ok := expr.Expression[T](e).(expr.Const[T]); ok {
-		return []expr.Expression[T]{judgement}
+		return []expr.Expression[T]{judgment}
 	}
 	return e.Flatten()
 }
 
-func (judgement JudgementAsExpression[N, _]) MakeJudgement(expr.Expression[N], types.Type[N]) types.ExpressionJudgement[N, expr.Expression[N]] {
-	return judgement
+func (judgment JudgmentAsExpression[N, _]) MakeJudgment(expr.Expression[N], types.Type[N]) types.ExpressionJudgment[N, expr.Expression[N]] {
+	return judgment
 }
 
-func (judgement JudgementAsExpression[N, _]) GetExpressionAndType() (expr.Expression[N], types.Type[N]) {
-	return judgement.ToTypeJudgement().GetExpressionAndType()
+func (judgment JudgmentAsExpression[N, _]) GetExpressionAndType() (expr.Expression[N], types.Type[N]) {
+	return judgment.ToTypeJudgment().GetExpressionAndType()
 }
 
-func (judgement JudgementAsExpression[T, E]) ExtractVariables(gt int) []expr.Variable[T] {
-	_, e := judgement.TypeAndExpr()
+func (judgment JudgmentAsExpression[T, E]) ExtractVariables(gt int) []expr.Variable[T] {
+	_, e := judgment.TypeAndExpr()
 	return e.ExtractVariables(gt)
 }
 
-func (judgement JudgementAsExpression[T, E]) AsTypeJudgement() types.TypeJudgement[T, expr.Expression[T]] {
-	e, t := judgement.GetExpressionAndType()
-	return types.Judgement(expr.Expression[T](e), t)
+func (judgment JudgmentAsExpression[T, E]) AsTypeJudgment() types.TypeJudgment[T, expr.Expression[T]] {
+	e, t := judgment.GetExpressionAndType()
+	return types.Judgment(expr.Expression[T](e), t)
 }
 
-func (judgement JudgementAsExpression[T, E]) ToTypeJudgement() types.TypeJudgement[T, E] {
-	return types.TypeJudgement[T, E](judgement)
+func (judgment JudgmentAsExpression[T, E]) ToTypeJudgment() types.TypeJudgment[T, E] {
+	return types.TypeJudgment[T, E](judgment)
 }
 
-func Judgement[T nameable.Nameable, E expr.Expression[T]](e E, t types.Type[T]) JudgementAsExpression[T, E] {
-	return JudgementAsExpression[T, E](types.Judgement(e, t))
+func Judgment[T nameable.Nameable, E expr.Expression[T]](e E, t types.Type[T]) JudgmentAsExpression[T, E] {
+	return JudgmentAsExpression[T, E](types.Judgment(e, t))
 }
 
-func (judgement JudgementAsExpression[T, E]) TypeAndExpr() (types.Type[T], E) {
-	j := judgement.AsTypeJudgement()
+func (judgment JudgmentAsExpression[T, E]) TypeAndExpr() (types.Type[T], E) {
+	j := judgment.AsTypeJudgment()
 	return j.GetType(), j.GetExpression().(E)
 }
 
-func (judgement JudgementAsExpression[T, _]) String() string {
-	return judgement.AsTypeJudgement().String()
+func (judgment JudgmentAsExpression[T, _]) String() string {
+	return judgment.AsTypeJudgment().String()
 }
 
-func (judgement JudgementAsExpression[T, E]) equalsHead(e expr.Expression[T]) (e1, e2 expr.Expression[T], ok bool) {
-	judgement2, ok := e.(JudgementAsExpression[T, E])
+func (judgment JudgmentAsExpression[T, E]) equalsHead(e expr.Expression[T]) (e1, e2 expr.Expression[T], ok bool) {
+	judgment2, ok := e.(JudgmentAsExpression[T, E])
 	if !ok {
 		ok = false
 		return
 	}
 
-	j1, j2 := judgement.AsTypeJudgement(), judgement2.AsTypeJudgement()
+	j1, j2 := judgment.AsTypeJudgment(), judgment2.AsTypeJudgment()
 	return j1.GetExpression(), j2.GetExpression(), j1.GetType().Equals(j2.GetType())
 }
 
@@ -71,98 +71,98 @@ func (judgement JudgementAsExpression[T, E]) equalsHead(e expr.Expression[T]) (e
 // and
 //
 //	Expression[T].Equals(Context[T], Expression[T]) bool
-func (judgement JudgementAsExpression[T, _]) Equals(cxt *expr.Context[T], e expr.Expression[T]) bool {
-	e1, e2, ok := judgement.equalsHead(e)
+func (judgment JudgmentAsExpression[T, _]) Equals(cxt *expr.Context[T], e expr.Expression[T]) bool {
+	e1, e2, ok := judgment.equalsHead(e)
 	if !ok {
 		return false
 	}
 	return e1.Equals(cxt, e2)
 }
 
-func (judgement JudgementAsExpression[T, _]) StrictString() string {
-	return judgement.AsTypeJudgement().GetExpression().StrictString()
+func (judgment JudgmentAsExpression[T, _]) StrictString() string {
+	return judgment.AsTypeJudgment().GetExpression().StrictString()
 }
 
-func (judgement JudgementAsExpression[T, _]) StrictEquals(e expr.Expression[T]) bool {
-	e1, e2, ok := judgement.equalsHead(e)
+func (judgment JudgmentAsExpression[T, _]) StrictEquals(e expr.Expression[T]) bool {
+	e1, e2, ok := judgment.equalsHead(e)
 	if !ok {
 		return false
 	}
 	return e1.StrictEquals(e2)
 }
 
-func (judgement JudgementAsExpression[T, _]) expressionAction(f func(expr.Expression[T]) expr.Expression[T]) JudgementAsExpression[T, expr.Expression[T]] {
-	ty, e := judgement.TypeAndExpr()
-	return Judgement[T, expr.Expression[T]](f(e), ty)
+func (judgment JudgmentAsExpression[T, _]) expressionAction(f func(expr.Expression[T]) expr.Expression[T]) JudgmentAsExpression[T, expr.Expression[T]] {
+	ty, e := judgment.TypeAndExpr()
+	return Judgment[T, expr.Expression[T]](f(e), ty)
 }
 
-func (judgement JudgementAsExpression[T, _]) Replace(v expr.Variable[T], e expr.Expression[T]) (expr.Expression[T], bool) {
+func (judgment JudgmentAsExpression[T, _]) Replace(v expr.Variable[T], e expr.Expression[T]) (expr.Expression[T], bool) {
 	var res = new(bool)
-	return judgement.expressionAction(
+	return judgment.expressionAction(
 		func(eIn expr.Expression[T]) (ex expr.Expression[T]) {
 			ex, *res = eIn.Replace(v, e)
 			return
 		}), *res
 }
 
-func (judgement JudgementAsExpression[T, _]) UpdateVars(gt int, by int) expr.Expression[T] {
-	return judgement.expressionAction(
+func (judgment JudgmentAsExpression[T, _]) UpdateVars(gt int, by int) expr.Expression[T] {
+	return judgment.expressionAction(
 		func(e expr.Expression[T]) (ex expr.Expression[T]) { ex = e.UpdateVars(gt, by); return })
 }
 
-func (judgement JudgementAsExpression[T, _]) Again() (expr.Expression[T], bool) {
+func (judgment JudgmentAsExpression[T, _]) Again() (expr.Expression[T], bool) {
 	var res = new(bool)
-	return judgement.expressionAction(
+	return judgment.expressionAction(
 		func(e expr.Expression[T]) (ex expr.Expression[T]) {
 			ex, *res = e.Again()
 			return
 		}), *res
 }
 
-func (judgement JudgementAsExpression[T, _]) Bind(e expr.BindersOnly[T]) expr.Expression[T] {
-	return judgement.expressionAction(
+func (judgment JudgmentAsExpression[T, _]) Bind(e expr.BindersOnly[T]) expr.Expression[T] {
+	return judgment.expressionAction(
 		func(ex expr.Expression[T]) expr.Expression[T] { return ex.Bind(e) },
 	)
 }
 
-func (judgement JudgementAsExpression[T, _]) Find(v expr.Variable[T]) bool {
-	_, e := judgement.TypeAndExpr()
+func (judgment JudgmentAsExpression[T, _]) Find(v expr.Variable[T]) bool {
+	_, e := judgment.TypeAndExpr()
 	return e.Find(v)
 }
 
-func (judgement JudgementAsExpression[T, _]) PrepareAsRHS() expr.Expression[T] {
-	return judgement.expressionAction(
+func (judgment JudgmentAsExpression[T, _]) PrepareAsRHS() expr.Expression[T] {
+	return judgment.expressionAction(
 		func(e expr.Expression[T]) expr.Expression[T] { return e.PrepareAsRHS() },
 	)
 }
 
-func (judgement JudgementAsExpression[T, _]) Rebind() expr.Expression[T] {
-	return judgement.expressionAction(
+func (judgment JudgmentAsExpression[T, _]) Rebind() expr.Expression[T] {
+	return judgment.expressionAction(
 		func(e expr.Expression[T]) expr.Expression[T] { return e.Rebind() },
 	)
 }
 
-func (judgement JudgementAsExpression[T, _]) Copy() expr.Expression[T] {
-	return judgement.expressionAction(
+func (judgment JudgmentAsExpression[T, _]) Copy() expr.Expression[T] {
+	return judgment.expressionAction(
 		func(e expr.Expression[T]) expr.Expression[T] { return e.Copy() },
 	)
 }
 
-func (judgement JudgementAsExpression[T, _]) ForceRequest() expr.Expression[T] {
-	return judgement.expressionAction(
+func (judgment JudgmentAsExpression[T, _]) ForceRequest() expr.Expression[T] {
+	return judgment.expressionAction(
 		func(e expr.Expression[T]) expr.Expression[T] { return e.ForceRequest() },
 	)
 }
 
 // collects all Ts
-func (judgement JudgementAsExpression[T, _]) Collect() (out []T) {
-	ty, e := judgement.TypeAndExpr()
+func (judgment JudgmentAsExpression[T, _]) Collect() (out []T) {
+	ty, e := judgment.TypeAndExpr()
 	out = append([]T{}, ty.Collect()...)
 	out = append(out, e.Collect()...)
 	return out
 }
 
-func (judgement JudgementAsExpression[T, E]) BodyAbstract(v expr.Variable[T], name expr.Const[T]) expr.Expression[T] {
-	ty, e := judgement.TypeAndExpr()
-	return JudgementAsExpression[T,E](types.Judgement(e, ty))
+func (judgment JudgmentAsExpression[T, E]) BodyAbstract(v expr.Variable[T], name expr.Const[T]) expr.Expression[T] {
+	ty, e := judgment.TypeAndExpr()
+	return JudgmentAsExpression[T, E](types.Judgment(e, ty))
 }

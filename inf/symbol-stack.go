@@ -10,26 +10,26 @@ import (
 
 // shadow-able symbol
 type Symbol[T nameable.Nameable] struct {
-	data *stack.Stack[bridge.JudgementAsExpression[T, expr.Const[T]]]
+	data *stack.Stack[bridge.JudgmentAsExpression[T, expr.Const[T]]]
 }
 
 func MakeSymbol[T nameable.Nameable]() Symbol[T] {
 	// this assumes that most symbols will not be shadowed
-	const initialCapacity uint = 1 
-	stk := stack.NewStack[bridge.JudgementAsExpression[T, expr.Const[T]]](initialCapacity)
+	const initialCapacity uint = 1
+	stk := stack.NewStack[bridge.JudgmentAsExpression[T, expr.Const[T]]](initialCapacity)
 	return Symbol[T]{data: stk}
 }
 
-// get symbol (and judgement)
-func (sym *Symbol[T]) Get() bridge.JudgementAsExpression[T, expr.Const[T]] {
-	judgement, _ := sym.data.Peek()
-	return judgement
+// get symbol (and judgment)
+func (sym *Symbol[T]) Get() bridge.JudgmentAsExpression[T, expr.Const[T]] {
+	judgment, _ := sym.data.Peek()
+	return judgment
 }
 
 // create/shadow symbol
 func (sym *Symbol[T]) Shadow(name expr.Const[T], ty types.Type[T]) {
-	judgement := bridge.Judgement(name, ty)
-	sym.data.Push(judgement)
+	judgment := bridge.Judgment(name, ty)
+	sym.data.Push(judgment)
 }
 
 func (sym *Symbol[T]) IncludeInExport(name expr.Const[T], ty types.Type[T]) (added bool) {
@@ -56,6 +56,6 @@ func (sym *Symbol[T]) Export() (export *Symbol[T], exported bool) {
 	if exported {
 		return sym, true
 	}
-	
+
 	return nil, false
 }

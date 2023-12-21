@@ -18,10 +18,10 @@ func (dti DependentTypeInstance[N]) Rebuild(findMono func(Monotyped[N]) Monotype
 		dti.Application.Rebuild(findMono, findKind).(Application[N]),
 		fun.FMap(
 			dti.Indexes,
-			func(ej ExpressionJudgement[N, expr.Referable[N]]) ExpressionJudgement[N, expr.Referable[N]] {
-				eTmp, t := ej.AsTypeJudgement().GetExpressionAndType()
+			func(ej ExpressionJudgment[N, expr.Referable[N]]) ExpressionJudgment[N, expr.Referable[N]] {
+				eTmp, t := ej.AsTypeJudgment().GetExpressionAndType()
 				e := eTmp.(expr.Referable[N])
-				return Judgement(findKind(e), t)
+				return Judgment(findKind(e), t)
 			},
 		),
 	}
@@ -31,14 +31,14 @@ func (dti DependentTypeInstance[T]) FunctionAndIndexes() (function Application[T
 	return dti.Application, dti.Indexes
 }
 
-func (dti DependentTypeInstance[T]) GetIndexes() []ExpressionJudgement[T, expr.Referable[T]] {
+func (dti DependentTypeInstance[T]) GetIndexes() []ExpressionJudgment[T, expr.Referable[T]] {
 	return dti.Indexes
 }
 
 func (dti DependentTypeInstance[T]) GetFreeKindVariables() []expr.Variable[T] {
 	vars := []expr.Variable[T]{}
 	for _, index := range dti.Indexes {
-		vars = append(vars, index.AsTypeJudgement().expression.ExtractVariables(0)...)
+		vars = append(vars, index.AsTypeJudgment().expression.ExtractVariables(0)...)
 	}
 	return vars
 }
@@ -53,21 +53,21 @@ func (dti DependentTypeInstance[T]) GetReferred() T {
 	return dti.Application.GetReferred()
 }
 
-func Index[T nameable.Nameable](family Application[T], domain ...ExpressionJudgement[T, expr.Referable[T]]) DependentTypeInstance[T] {
+func Index[T nameable.Nameable](family Application[T], domain ...ExpressionJudgment[T, expr.Referable[T]]) DependentTypeInstance[T] {
 	return DependentTypeInstance[T]{
 		Application: family,
 		Indexes:     domain,
 	}
 }
 
-func (dti DependentTypeInstance[T]) AsFreeInstance(vs []TypeJudgement[T, expr.Variable[T]], replacements []expr.Referable[T]) TypeFunction[T] {
+func (dti DependentTypeInstance[T]) AsFreeInstance(vs []TypeJudgment[T, expr.Variable[T]], replacements []expr.Referable[T]) TypeFunction[T] {
 	application := dti.Application
 	if len(dti.Indexes) == 0 {
 		return DependentTypeInstance[T]{
-			application, 
+			application,
 			fun.ZipWith(
-				func(ref expr.Referable[T], old TypeJudgement[T, expr.Variable[T]]) ExpressionJudgement[T, expr.Referable[T]] {
-					return Judgement(ref, old.ty)
+				func(ref expr.Referable[T], old TypeJudgment[T, expr.Variable[T]]) ExpressionJudgment[T, expr.Referable[T]] {
+					return Judgment(ref, old.ty)
 				},
 				replacements,
 				vs,
@@ -78,13 +78,15 @@ func (dti DependentTypeInstance[T]) AsFreeInstance(vs []TypeJudgement[T, expr.Va
 		panic("dependent type cannot be indexed")
 	}
 
-	
 	indexed := fun.ZipWith(
-		func(index ExpressionJudgement[T, expr.Referable[T]], v struct{Left TypeJudgement[T, expr.Variable[T]]; Right expr.Referable[T]}) ExpressionJudgement[T, expr.Referable[T]] {
-			e := index.AsTypeJudgement().expression
+		func(index ExpressionJudgment[T, expr.Referable[T]], v struct {
+			Left  TypeJudgment[T, expr.Variable[T]]
+			Right expr.Referable[T]
+		}) ExpressionJudgment[T, expr.Referable[T]] {
+			e := index.AsTypeJudgment().expression
 			e2, _ := e.Replace(v.Left.expression, v.Right)
 			r := e2.(expr.Referable[T])
-			return Judgement(r, index.AsTypeJudgement().ty)
+			return Judgment(r, index.AsTypeJudgment().ty)
 		},
 		dti.Indexes,
 		fun.Zip(vs, replacements),
@@ -93,7 +95,7 @@ func (dti DependentTypeInstance[T]) AsFreeInstance(vs []TypeJudgement[T, expr.Va
 }
 
 // uses new kind variables of corr. type in `vs` as arguments to dependent type function
-func (dti DependentTypeInstance[T]) SubVars(preSub []TypeJudgement[T, expr.Variable[T]], postSub []expr.Referable[T]) TypeFunction[T] {
+func (dti DependentTypeInstance[T]) SubVars(preSub []TypeJudgment[T, expr.Variable[T]], postSub []expr.Referable[T]) TypeFunction[T] {
 	return dti.AsFreeInstance(preSub, postSub)
 }
 

@@ -7,14 +7,14 @@ import (
 	"github.com/petersalex27/yew-packages/stringable"
 )
 
-type Indexes[T nameable.Nameable] []ExpressionJudgement[T, expr.Referable[T]]
+type Indexes[T nameable.Nameable] []ExpressionJudgment[T, expr.Referable[T]]
 
 func (idxs Indexes[T]) GetFreeVariables() []Variable[T] {
 	// 2d slice of free variables
 	vs2d := fun.FMap(
 		idxs,
-		func(ej ExpressionJudgement[T, expr.Referable[T]]) []Variable[T] {
-			mono := ej.AsTypeJudgement().ty.(Monotyped[T]) // should always pass b/c indexes's values must be typed by monotypes
+		func(ej ExpressionJudgment[T, expr.Referable[T]]) []Variable[T] {
+			mono := ej.AsTypeJudgment().ty.(Monotyped[T]) // should always pass b/c indexes's values must be typed by monotypes
 			return mono.GetFreeVariables()
 		},
 	)

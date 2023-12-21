@@ -12,7 +12,7 @@ import (
 //			x: σ ∈ 𝚪    t = Inst(σ)
 //	   ----------------------- [Var]
 //	         𝚪 ⊢ x: t
-func (cxt *Context[N]) varBody(x bridge.JudgementAsExpression[N, expr.Const[N]]) Conclusion[N, expr.Const[N], types.Monotyped[N]] {
+func (cxt *Context[N]) varBody(x bridge.JudgmentAsExpression[N, expr.Const[N]]) Conclusion[N, expr.Const[N], types.Monotyped[N]] {
 	var t types.Monotyped[N]
 
 	tmp, xConst := x.TypeAndExpr()
@@ -27,7 +27,7 @@ func (cxt *Context[N]) varBody(x bridge.JudgementAsExpression[N, expr.Const[N]])
 
 	// replace all bound (including kind-) variables with free variables
 	t = cxt.Inst(sigma)
-	// return judgement `x: t`
+	// return judgment `x: t`
 	return Conclude[N](xConst, t)
 }
 
@@ -56,8 +56,8 @@ func (cxt *Context[N]) Var(x expr.Const[N]) Conclusion[N, expr.Const[N], types.M
 // information about type t0
 //
 // curry-howard: conditional elim
-func (cxt *Context[N]) App(j0, j1 TypeJudgement[N]) Conclusion[N, expr.Application[N], types.Monotyped[N]] {
-	// split judgements into types and expressions
+func (cxt *Context[N]) App(j0, j1 TypeJudgment[N]) Conclusion[N, expr.Application[N], types.Monotyped[N]] {
+	// split judgments into types and expressions
 	e0, tmp0 := j0.GetExpressionAndType()
 	e1, tmp1 := j1.GetExpressionAndType()
 	// get monotypes
@@ -70,7 +70,7 @@ func (cxt *Context[N]) App(j0, j1 TypeJudgement[N]) Conclusion[N, expr.Applicati
 	// premise `t0 = t1 -> t2`
 	stat := cxt.Unify(t0, t1_to_t2)
 	if stat.NotOk() {
-		terms := []TypeJudgement[N]{j0, j1}
+		terms := []TypeJudgment[N]{j0, j1}
 		report := makeReport("App", stat, terms...)
 		cxt.appendReport(report)
 		return CannotConclude[N, expr.Application[N], types.Monotyped[N]](stat)
@@ -91,19 +91,19 @@ func (cxt *Context[N]) App(j0, j1 TypeJudgement[N]) Conclusion[N, expr.Applicati
 // has that context
 //
 // curry-howard: conditional intro
-func (cxt *Context[N]) Abs(param N) func(TypeJudgement[N]) Conclusion[N, expr.Function[N], types.Monotyped[N]] {
+func (cxt *Context[N]) Abs(param N) func(TypeJudgment[N]) Conclusion[N, expr.Function[N], types.Monotyped[N]] {
 	// first, add context (this is the first premise)
 	paramConst := expr.Const[N]{Name: param}
 	t0 := cxt.typeContext.NewVar()
-	// grow context w/ type judgement `param: t0`
+	// grow context w/ type judgment `param: t0`
 	cxt.Shadow(paramConst, t0)
 
 	// now, return function to allow second premise of Abs when needed
-	return func(j TypeJudgement[N]) Conclusion[N, expr.Function[N], types.Monotyped[N]] {
+	return func(j TypeJudgment[N]) Conclusion[N, expr.Function[N], types.Monotyped[N]] {
 		// remove context added
 		cxt.Remove(paramConst)
 
-		// split judgement
+		// split judgment
 		e, tmp1 := j.GetExpressionAndType()
 		t1 := tmp1.(types.Monotyped[N])
 
@@ -122,7 +122,7 @@ func (cxt *Context[N]) Abs(param N) func(TypeJudgement[N]) Conclusion[N, expr.Fu
 	}
 }
 
-type letAssumptionDischarge[N nameable.Nameable] func(TypeJudgement[N]) Conclusion[N, expr.NameContext[N], types.Monotyped[N]]
+type letAssumptionDischarge[N nameable.Nameable] func(TypeJudgment[N]) Conclusion[N, expr.NameContext[N], types.Monotyped[N]]
 
 // [Let] rule:
 //
@@ -146,14 +146,14 @@ type letAssumptionDischarge[N nameable.Nameable] func(TypeJudgement[N]) Conclusi
 //		           (λy.y): a->a                                (x 0): Int
 //		         1 ------------------------------------------------------ [Let]
 //		                          let x = (λy.y) in x 0: Int
-func (cxt *Context[N]) Let(name N, j0 TypeJudgement[N]) letAssumptionDischarge[N] {
+func (cxt *Context[N]) Let(name N, j0 TypeJudgment[N]) letAssumptionDischarge[N] {
 	nameConst := expr.Const[N]{Name: name}
 	e0, tmp0 := j0.GetExpressionAndType()
 	t0 := tmp0.(types.Monotyped[N])
 	generalized_t0 := cxt.Gen(t0)
 	cxt.Shadow(nameConst, generalized_t0)
 
-	return func(j1 TypeJudgement[N]) Conclusion[N, expr.NameContext[N], types.Monotyped[N]] {
+	return func(j1 TypeJudgment[N]) Conclusion[N, expr.NameContext[N], types.Monotyped[N]] {
 		cxt.Remove(nameConst)
 
 		e1, t1 := j1.GetExpressionAndType()
@@ -171,12 +171,12 @@ func (cxt *Context[N]) Let(name N, j0 TypeJudgement[N]) letAssumptionDischarge[N
 //	where
 //	    𝚪ʹ = v1: t1, ..., vN: tN
 //	    𝚪ʹʹ = v1: Gen(t1), ..., vN: Gen(tN)
-func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgment[N]) func(tj TypeJudgment[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
 	// non-zero length slice of names
 	if len(names) < 1 {
 		cxt.appendReport(makeReport[N]("Rec", RecArgsLengthMismatch))
-		return func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
-			return func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+		return func(js []TypeJudgment[N]) func(tj TypeJudgment[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+			return func(tj TypeJudgment[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
 				return CannotConclude[N, expr.RecIn[N], types.Monotyped[N]](RecArgsLengthMismatch)
 			}
 		}
@@ -198,13 +198,13 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 		}
 	}
 
-	return func(js []TypeJudgement[N]) func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+	return func(js []TypeJudgment[N]) func(tj TypeJudgment[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
 		removeNames() // discharge 𝚪ʹ
 
 		if len(js) != len(names) {
 			// report error and return fail fn
 			cxt.appendReport(makeReport("Rec", RecArgsLengthMismatch, js...))
-			return func(TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+			return func(TypeJudgment[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
 				return CannotConclude[N, expr.RecIn[N], types.Monotyped[N]](RecArgsLengthMismatch)
 			}
 		}
@@ -218,7 +218,7 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgement[N]) func(tj TypeJu
 			cxt.Shadow(def.GetName(), sigma)
 		}
 
-		return func(tj TypeJudgement[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
+		return func(tj TypeJudgment[N]) Conclusion[N, expr.RecIn[N], types.Monotyped[N]] {
 			removeNames() // discharge 𝚪ʹʹ
 
 			e0, t0 := tj.GetExpressionAndType()

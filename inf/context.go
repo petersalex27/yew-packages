@@ -17,10 +17,10 @@ type consJudge[N nameable.Nameable] struct {
 	constructors constructorMapType[N]
 }
 
-type constructorMapType[N nameable.Nameable] map[string]types.TypedJudgement[N, expr.Function[N], types.Polytype[N]]
+type constructorMapType[N nameable.Nameable] map[string]types.TypedJudgment[N, expr.Function[N], types.Polytype[N]]
 
 // tries to find constructor named `constructorName` w/in construtor map receiver
-func (constructors consJudge[N]) Find(constructorName N) (constructor types.TypedJudgement[N, expr.Function[N], types.Polytype[N]], found bool) {
+func (constructors consJudge[N]) Find(constructorName N) (constructor types.TypedJudgment[N, expr.Function[N], types.Polytype[N]], found bool) {
 	if constructors.constructors == nil {
 		found = false
 	} else {
@@ -59,11 +59,11 @@ func (ecxt *ExportableContext[N]) export(name N, sym Symbol[N]) Status {
 	if ok {
 		return IllegalShadow
 	}
-	
+
 	// add symbol to table
 	ecxt.syms.Add(name, sym)
 	return Ok
-} 
+}
 
 func newConsAndSymsTables[N nameable.Nameable]() (*table.Table[consJudge[N]], *table.Table[Symbol[N]]) {
 	return table.NewTable[consJudge[N]](), table.NewTable[Symbol[N]]()
@@ -115,14 +115,14 @@ func NewTestableContext() *Context[nameable.Testable] {
 	return cxt
 }
 
-// applies kind and type substitutions to expression and type of judgement respectively
-func (cxt *Context[N]) judgementSubstitution(judge bridge.JudgementAsExpression[N, expr.Expression[N]]) bridge.JudgementAsExpression[N, expr.Expression[N]] {
+// applies kind and type substitutions to expression and type of judgment respectively
+func (cxt *Context[N]) judgmentSubstitution(judge bridge.JudgmentAsExpression[N, expr.Expression[N]]) bridge.JudgmentAsExpression[N, expr.Expression[N]] {
 	referable, monotype := GetExpressionAndType[N, expr.Referable[N], types.Monotyped[N]](judge)
 
 	var kindSubResult expr.Expression[N] = cxt.GetKindSub(referable)
 	var typeSubResult types.Type[N] = cxt.GetSub(monotype)
 
-	return bridge.Judgement(kindSubResult, typeSubResult)
+	return bridge.Judgment(kindSubResult, typeSubResult)
 }
 
 // applies kind substitutions to `postFindKind`
@@ -136,7 +136,7 @@ func (cxt *Context[N]) applyKindSubstitutions(postFindKind expr.Referable[N]) ex
 		return postFindKind
 	}
 
-	memsSubResult := fun.FMap(data.Members, cxt.judgementSubstitution)
+	memsSubResult := fun.FMap(data.Members, cxt.judgmentSubstitution)
 	return bridge.MakeData(data.GetTag(), memsSubResult...)
 }
 

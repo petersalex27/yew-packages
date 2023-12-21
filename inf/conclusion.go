@@ -7,17 +7,17 @@ import (
 )
 
 type Conclusion[N nameable.Nameable, E expr.Expression[N], T types.Type[N]] struct {
-	judgement types.TypedJudgement[N, E, T]
+	judgment types.TypedJudgment[N, E, T]
 	Status
 }
 
-func (c Conclusion[N, E, T]) Judgement() types.TypedJudgement[N, E, T] { return c.judgement }
+func (c Conclusion[N, E, T]) Judgment() types.TypedJudgment[N, E, T] { return c.judgment }
 
 func (c Conclusion[N, E, T]) String() string {
 	if c.NotOk() {
 		return "_: ⊥"
 	}
-	return c.judgement.String()
+	return c.judgment.String()
 }
 
 func Conclude[N nameable.Nameable, E expr.Expression[N], T types.Type[N]](e E, t T) Conclusion[N, E, T] {

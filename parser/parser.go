@@ -254,7 +254,7 @@ func GetErrors(p Parser) []error {
 
 // return top element of parse stack
 //
-// second return value is trye iff status of peeking at stack is Ok
+// second return value is true iff status of peeking at stack is Ok
 func ParseStackPeek(p Parser) (ast.Ast, bool) {
 	elem, stat := p.ground().stack.Peek()
 	return elem, stat.IsOk()
@@ -279,8 +279,8 @@ func (a forType) modify(stat status.Status, appliedRule bool) status.Status {
 }
 
 func (p *parser) action() status.Status {
-	toks := p.lookahead(p)
-	ty := toks.getType(p)
+	tokens := p.lookahead(p)
+	ty := tokens.getType(p)
 
 	rules, found := p.table().table[ty]
 
@@ -480,8 +480,8 @@ func (p *parser) loadDefaultErrorGen(src source.StaticSource, defaultErrorGen fu
 	if defaultErrorGen == nil {
 		defaultErrorGen = func(src source.StaticSource, tok token.Token) error {
 			line, char := tok.GetLineChar()
-			srcline, _ := src.SourceLine(line)
-			return errors.Ferr("tflcms", "Syntax", src.GetPath(), line, char, "unexpected token", srcline)
+			srcLine, _ := src.SourceLine(line)
+			return errors.Ferr("tflcms", "Syntax", src.GetPath(), line, char, "unexpected token", srcLine)
 		}
 	}
 	p.defaultError = defaultErrorGen
@@ -580,12 +580,12 @@ func (p *parser) ground() *parser { return p }
 // panics if parse context is not set
 func parse(p Parser) ast.AstRoot {
 
-	grnd := p.ground()
-	if !grnd.loaded {
+	ground := p.ground()
+	if !ground.loaded {
 		panic("parser must be re-loaded before calling (Parser) Parse() again")
 	}
 
-	grnd.loaded = false
+	ground.loaded = false
 
 	stat := status.Ok
 	for stat.IsOk() {
@@ -596,10 +596,10 @@ func parse(p Parser) ast.AstRoot {
 		return ast.AstRoot{}
 	}
 
-	grnd = p.ground()
+	ground = p.ground()
 
-	root, _ := grnd.stack.MultiCheck(int(grnd.stack.GetCount()))
-	grnd.stack.Clear(grnd.stack.GetCount())
+	root, _ := ground.stack.MultiCheck(int(ground.stack.GetCount()))
+	ground.stack.Clear(ground.stack.GetCount())
 	return ast.AstRoot(root)
 }
 

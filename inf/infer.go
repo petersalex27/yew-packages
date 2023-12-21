@@ -18,20 +18,20 @@ import (
 	"github.com/petersalex27/yew-packages/types"
 )
 
-type TypeJudgement[N nameable.Nameable] interface {
+type TypeJudgment[N nameable.Nameable] interface {
 	GetExpressionAndType() (expr.Expression[N], types.Type[N])
 }
 
-func JudgementsEqual[N nameable.Nameable](a, b TypeJudgement[N]) bool {
+func JudgmentsEqual[N nameable.Nameable](a, b TypeJudgment[N]) bool {
 	ea, ta := a.GetExpressionAndType()
 	eb, tb := b.GetExpressionAndType()
 	return ea.StrictEquals(eb) && ta.Equals(tb)
 }
 
-// like (TypeJudgement) GetExpressionAndType() (expr.Expression[N], types.Type[N]), 
+// like (TypeJudgment) GetExpressionAndType() (expr.Expression[N], types.Type[N]),
 // but does type assertions to return desired E and T types.
-func GetExpressionAndType[N nameable.Nameable, E expr.Expression[N], T types.Type[N]](judgement TypeJudgement[N]) (e E, t T) {
-	someExpression, someType := judgement.GetExpressionAndType()
+func GetExpressionAndType[N nameable.Nameable, E expr.Expression[N], T types.Type[N]](judgment TypeJudgment[N]) (e E, t T) {
+	someExpression, someType := judgment.GetExpressionAndType()
 	e, _ = someExpression.(E)
 	t, _ = someType.(T)
 	return
@@ -87,8 +87,8 @@ func (cxt *Context[T]) union(v types.Variable[T], t types.Monotyped[T]) Status {
 	return skipUnify
 }
 
-func filter[N nameable.Nameable](e expr.Expression[N]) (out types.TypeJudgement[N, expr.Variable[N]], isVarJudge bool) {
-	j, isJudge := e.(TypeJudgement[N])
+func filter[N nameable.Nameable](e expr.Expression[N]) (out types.TypeJudgment[N, expr.Variable[N]], isVarJudge bool) {
+	j, isJudge := e.(TypeJudgment[N])
 	if !isJudge {
 		return
 	}
@@ -98,37 +98,37 @@ func filter[N nameable.Nameable](e expr.Expression[N]) (out types.TypeJudgement[
 		return
 	}
 	isVarJudge = isVar
-	return types.Judgement[N, expr.Variable[N]](v, ty), isVarJudge
+	return types.Judgment[N, expr.Variable[N]](v, ty), isVarJudge
 }
 
-func filterJudgements[N nameable.Nameable](j types.ExpressionJudgement[N, expr.Referable[N]]) []types.TypeJudgement[N, expr.Variable[N]] {
-	es := bridge.JudgementAsExpression[N, expr.Referable[N]](j.AsTypeJudgement()).Flatten()
+func filterJudgments[N nameable.Nameable](j types.ExpressionJudgment[N, expr.Referable[N]]) []types.TypeJudgment[N, expr.Variable[N]] {
+	es := bridge.JudgmentAsExpression[N, expr.Referable[N]](j.AsTypeJudgment()).Flatten()
 	return fun.FMapFilter(es, filter[N])
 }
 
-func appendJudgements[T nameable.Nameable](left, right []types.TypeJudgement[T, expr.Variable[T]]) []types.TypeJudgement[T, expr.Variable[T]] {
+func appendJudgments[T nameable.Nameable](left, right []types.TypeJudgment[T, expr.Variable[T]]) []types.TypeJudgment[T, expr.Variable[T]] {
 	return append(left, right...)
 }
 
-func makeBaseJudgement[T nameable.Nameable]() []types.TypeJudgement[T, expr.Variable[T]] {
-	return []types.TypeJudgement[T, expr.Variable[T]]{}
+func makeBaseJudgment[T nameable.Nameable]() []types.TypeJudgment[T, expr.Variable[T]] {
+	return []types.TypeJudgment[T, expr.Variable[T]]{}
 }
 
-func flattenFilteredJudgements[T nameable.Nameable](filtered [][]types.TypeJudgement[T, expr.Variable[T]]) (flattened []types.TypeJudgement[T, expr.Variable[T]]) {
-	return fun.FoldLeft(makeBaseJudgement[T](), filtered, appendJudgements[T])
+func flattenFilteredJudgments[T nameable.Nameable](filtered [][]types.TypeJudgment[T, expr.Variable[T]]) (flattened []types.TypeJudgment[T, expr.Variable[T]]) {
+	return fun.FoldLeft(makeBaseJudgment[T](), filtered, appendJudgments[T])
 }
 
-func extractJudgements[T nameable.Nameable](dti types.DependentTypeInstance[T]) (binders []types.TypeJudgement[T, expr.Variable[T]]) {
+func extractJudgments[T nameable.Nameable](dti types.DependentTypeInstance[T]) (binders []types.TypeJudgment[T, expr.Variable[T]]) {
 	indexes := dti.GetIndexes()
-	filtered := fun.FMap(indexes, filterJudgements[T])
-	return flattenFilteredJudgements(filtered)
+	filtered := fun.FMap(indexes, filterJudgments[T])
+	return flattenFilteredJudgments(filtered)
 }
 
 // generalizes a monotype into a dependent type
 func DependentGeneralization[T nameable.Nameable](ty types.DependentTyped[T]) types.DependentTyped[T] {
 	if dti, ok := ty.(types.DependentTypeInstance[T]); ok {
 		// get all kind vars in need of binding
-		binders := extractJudgements(dti)
+		binders := extractJudgments(dti)
 		return types.MakeDependentType(binders, types.TypeFunction[T](dti.Application))
 	}
 	return ty
@@ -180,7 +180,7 @@ func Split[T nameable.Nameable](m types.Monotyped[T]) (c string, params []types.
 	return
 }
 
-func SplitKind[T nameable.Nameable](kind expr.Referable[T]) (c string, mems []bridge.JudgementAsExpression[T, expr.Expression[T]]) {
+func SplitKind[T nameable.Nameable](kind expr.Referable[T]) (c string, mems []bridge.JudgmentAsExpression[T, expr.Expression[T]]) {
 	if data, ok := kind.(bridge.Data[T]); ok {
 		mems = data.Members
 	}
@@ -198,7 +198,7 @@ func (cxt *Context[T]) kindUnion(v expr.Variable[T], e expr.Referable[T]) Status
 	return skipUnify
 }
 
-func checkKindStatus[T nameable.Nameable](ca, cb string, memsOfA, memsOfB []bridge.JudgementAsExpression[T, expr.Expression[T]]) Status {
+func checkKindStatus[T nameable.Nameable](ca, cb string, memsOfA, memsOfB []bridge.JudgmentAsExpression[T, expr.Expression[T]]) Status {
 	if ca != cb {
 		return KindConstantMismatch
 	}
@@ -254,10 +254,10 @@ func (cxt *Context[T]) UnifyKind(a, b expr.Referable[T]) Status {
 	return cxt.substituteKind(ea, eb).otherwiseUnifyKind(ea, eb)
 }
 
-func (cxt *Context[T]) UnifyIndex(indexOfA, indexOfB types.ExpressionJudgement[T, expr.Referable[T]]) Status {
+func (cxt *Context[T]) UnifyIndex(indexOfA, indexOfB types.ExpressionJudgment[T, expr.Referable[T]]) Status {
 	// split type and expression
-	ea, ta := indexOfA.AsTypeJudgement().GetExpressionAndType()
-	eb, tb := indexOfB.AsTypeJudgement().GetExpressionAndType()
+	ea, ta := indexOfA.AsTypeJudgment().GetExpressionAndType()
+	eb, tb := indexOfB.AsTypeJudgment().GetExpressionAndType()
 
 	// type assertions monotype
 	ma := ta.(types.Monotyped[T])

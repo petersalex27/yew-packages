@@ -1,3 +1,9 @@
+// =============================================================================
+// Author-Date: Alex Peters - 2023
+//
+// Content:
+// Application type and its methods
+// =============================================================================
 package types
 
 import (
@@ -23,7 +29,7 @@ func (a Application[T]) FunctionAndIndexes() (function Application[T], indexes I
 	return a, nil
 }
 
-func (a Application[T]) SubVars(preSub []TypeJudgement[T, expr.Variable[T]], postSub []expr.Referable[T]) TypeFunction[T] {
+func (a Application[T]) SubVars(preSub []TypeJudgment[T, expr.Variable[T]], postSub []expr.Referable[T]) TypeFunction[T] {
 	return Application[T]{
 		a.c,
 		fun.FMap(

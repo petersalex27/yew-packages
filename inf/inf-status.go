@@ -19,12 +19,12 @@ const (
 	IndexLengthMismatch
 	// data did not have same number of members as other expression being unified
 	MemsLengthMismatch
-	// unification of variable and monotype failed because variable occured w/in
+	// unification of variable and monotype failed because variable occurred w/in
 	// monotype
 	OccursCheckFailed
 	// failed to find given name in available context
 	NameNotInContext
-	// length of judgements slice passed to second part of `Rec` did not match
+	// length of judgments slice passed to second part of `Rec` did not match
 	// length of names slice passed to the first part of `Rec`
 	RecArgsLengthMismatch
 	// type already exists in constructor table

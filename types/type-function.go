@@ -8,8 +8,8 @@ import (
 // possibly indexed dependent type function
 type TypeFunction[N nameable.Nameable] interface {
 	Monotyped[N]
-	//AsFreeInstance(vs []TypeJudgement[N, expr.Variable[N]]) TypeFunction[N]
-	SubVars(preSub []TypeJudgement[N, expr.Variable[N]], postSub []expr.Referable[N]) TypeFunction[N]
+	//AsFreeInstance(vs []TypeJudgment[N, expr.Variable[N]]) TypeFunction[N]
+	SubVars(preSub []TypeJudgment[N, expr.Variable[N]], postSub []expr.Referable[N]) TypeFunction[N]
 	FunctionAndIndexes() (function Application[N], indexes Indexes[N])
 	Rebuild(findMono func(Monotyped[N]) Monotyped[N], findKind func(expr.Referable[N]) expr.Referable[N]) TypeFunction[N]
 }

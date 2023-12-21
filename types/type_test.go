@@ -16,8 +16,8 @@ func test_nameable_fn(s string) test_nameable {
 	return test_nameable(s)
 }
 
-func judgement[E expr.Expression[test_nameable]](e E, ty Type[test_nameable]) TypeJudgement[test_nameable, E] {
-	return Judgement(e, ty)
+func judgment[E expr.Expression[test_nameable]](e E, ty Type[test_nameable]) TypeJudgment[test_nameable, E] {
+	return Judgment(e, ty)
 }
 
 var base = NewContext[test_nameable]().
@@ -65,11 +65,11 @@ func TestString(t *testing.T) {
 		{in: _Forall("a").Bind(Apply[test_nameable](base.EnclosingCon(1, "[]"), _Var("a"))), expect: "forall a . [a]"},
 		// dependent types
 		{
-			in:     Index[test_nameable](_App("Array", _Con("Int")), Judgement[test_nameable, expr.Referable[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
+			in:     Index[test_nameable](_App("Array", _Con("Int")), Judgment[test_nameable, expr.Referable[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "((Array Int); (n: Uint))",
 		},
 		{
-			in:     Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), Judgement[test_nameable, expr.Referable[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
+			in:     Index[test_nameable](Apply[test_nameable](base.EnclosingCon(1, "[]"), _Con("Int")), Judgment[test_nameable, expr.Referable[test_nameable]](expr.Var(base.makeName("n")), _Con("Uint"))),
 			expect: "[Int; (n: Uint)]",
 		},
 		{
@@ -84,13 +84,13 @@ func TestString(t *testing.T) {
 						Apply[test_nameable](
 							base.EnclosingCon(1, "[]"), _Con("Int"),
 						),
-						Judgement[test_nameable, expr.Referable[test_nameable]](
+						Judgment[test_nameable, expr.Referable[test_nameable]](
 							expr.Var(base.makeName("n")),
 							_Con("Uint"),
 						),
 					),
 				),
-				Judgement[test_nameable, expr.Referable[test_nameable]](
+				Judgment[test_nameable, expr.Referable[test_nameable]](
 					expr.Var(base.makeName("n")),
 					_Con("Uint"),
 				),
@@ -99,8 +99,8 @@ func TestString(t *testing.T) {
 		},
 		{
 			in: DependentType[test_nameable]{
-				[]TypeJudgement[test_nameable, expr.Variable[test_nameable]]{
-					judgement(expr.Var(base.makeName("n")), _Con("Uint")),
+				[]TypeJudgment[test_nameable, expr.Variable[test_nameable]]{
+					judgment(expr.Var(base.makeName("n")), _Con("Uint")),
 				},
 				Index[test_nameable](_App("Array", _Var("a"))),
 			},
@@ -186,8 +186,8 @@ func TestInstantiate(t *testing.T) {
 			poly: _Forall("a").Bind(
 				Index(
 					_App("Array", _Var("a")),
-					ExpressionJudgement[test_nameable, expr.Referable[test_nameable]](
-						Judgement(
+					ExpressionJudgment[test_nameable, expr.Referable[test_nameable]](
+						Judgment(
 							expr.Referable[test_nameable](expr.Var(base.makeName("n"))),
 							Type[test_nameable](_Con("Uint")),
 						),
@@ -197,8 +197,8 @@ func TestInstantiate(t *testing.T) {
 			mono: _Con("Int"),
 			expect: Index(
 				_App("Array", _Con("Int")),
-				ExpressionJudgement[test_nameable, expr.Referable[test_nameable]](
-					Judgement(
+				ExpressionJudgment[test_nameable, expr.Referable[test_nameable]](
+					Judgment(
 						expr.Referable[test_nameable](expr.Var(base.makeName("n"))),
 						Type[test_nameable](_Con("Uint")),
 					),
@@ -216,7 +216,6 @@ func TestInstantiate(t *testing.T) {
 }
 
 // Let [t] = {a, b, ..} for any monotype a, b, and t. find(a) == t, find(b) == t, ..
-
 
 func _Function(left Monotyped[test_nameable], right Monotyped[test_nameable]) Application[test_nameable] {
 	return base.Function(left, right)

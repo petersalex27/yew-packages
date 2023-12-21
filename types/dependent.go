@@ -15,7 +15,7 @@ type DependentTyped[T nameable.Nameable] interface {
 
 // Dependent Type: `(mapval (a: A) (b: B) ..) . (F a b ..)`
 type DependentType[T nameable.Nameable] struct {
-	mapval   []TypeJudgement[T, expr.Variable[T]]
+	mapval   []TypeJudgment[T, expr.Variable[T]]
 	Function TypeFunction[T]
 }
 
@@ -28,7 +28,7 @@ func GetDependent[N nameable.Nameable](d DependentTyped[N]) Monotyped[N] {
 }
 
 // get values that create dependency for some type
-func GetDependees[N nameable.Nameable](d DependentTyped[N]) (dependee []TypeJudgement[N, expr.Variable[N]]) {
+func GetDependees[N nameable.Nameable](d DependentTyped[N]) (dependee []TypeJudgment[N, expr.Variable[N]]) {
 	if dt, ok := d.(DependentType[N]); ok {
 		dependee = dt.mapval
 	}
@@ -42,21 +42,21 @@ func GetDependees[N nameable.Nameable](d DependentTyped[N]) (dependee []TypeJudg
 // example (removing type params from call for clarity):
 //
 //	n, Uint := expr.Var("n"), MakeConst("Uint")
-//	mapval := []TypeJudgement{Judgement(n, Uint)}
+//	mapval := []TypeJudgment{Judgment(n, Uint)}
 //	ArraySelector, a := MakeConst("ArraySelector"), Var("a")
 //	ArraySelector_a := Apply(ArraySelector, a)
 //	MakeDependentType(mapval, ArraySelector_a).
 //		String() == "mapval (n: Uint) . (ArraySelector a)"
-func MakeDependentType[T nameable.Nameable](mapval []TypeJudgement[T, expr.Variable[T]], typeFunc TypeFunction[T]) DependentType[T] {
+func MakeDependentType[T nameable.Nameable](mapval []TypeJudgment[T, expr.Variable[T]], typeFunc TypeFunction[T]) DependentType[T] {
 	return DependentType[T]{
 		mapval:   mapval,
 		Function: typeFunc,
 	}
 }
 
-type mapNeedsBound[T nameable.Nameable] []TypeJudgement[T, expr.Variable[T]]
+type mapNeedsBound[T nameable.Nameable] []TypeJudgment[T, expr.Variable[T]]
 
-func Map[T nameable.Nameable](ts ...TypeJudgement[T, expr.Variable[T]]) mapNeedsBound[T] {
+func Map[T nameable.Nameable](ts ...TypeJudgment[T, expr.Variable[T]]) mapNeedsBound[T] {
 	return ts
 }
 
@@ -75,7 +75,7 @@ func (d DependentType[T]) String() string {
 // index dependent type, making it a dependent type index
 func (d DependentType[T]) FreeIndex(cxt *expr.Context[T]) TypeFunction[T] {
 	return d.Function.SubVars(
-		d.mapval, 
+		d.mapval,
 		cxt.NumNewReferable(len(d.mapval)),
 	)
 }
@@ -98,7 +98,7 @@ func (cxt *Context[T]) InstantiateKind(d DependentType[T], e expr.Referable[T]) 
 	return d
 }
 
-// This test exact equality, not judgemental equality. For example,
+// This test exact equality, not judgmental equality. For example,
 //
 //	(mapval (a: A) (b: B) . (C b)) != (mapval (b: B) . (C b))
 //	despite the two being equiv. in some (probably useful) sense.
@@ -153,7 +153,7 @@ func (d DependentType[T]) GetFreeVariables() (frees []Variable[T]) {
 	frees = fun.FoldLeft(
 		frees,
 		d.mapval,
-		func(vs []Variable[T], dependee TypeJudgement[T, expr.Variable[T]]) []Variable[T] {
+		func(vs []Variable[T], dependee TypeJudgment[T, expr.Variable[T]]) []Variable[T] {
 			if dt, ok := dependee.ty.(DependentTyped[T]); ok {
 				return append(vs, dt.GetFreeVariables()...)
 			}
@@ -166,16 +166,6 @@ func (d DependentType[T]) GetFreeVariables() (frees []Variable[T]) {
 
 // replaces all occ. of each v in `vs` with corr. m in `ms`
 func (d DependentType[T]) ReplaceDependent(vs []Variable[T], ms []Monotyped[T]) Monotyped[T] {
-	// redo kind-variable binders's types
-	// mapval := fun.FMap(
-	// 	d.mapval,
-	// 	func(tj TypeJudgement[T, expr.Variable[T]]) TypeJudgement[T, expr.Variable[T]] {
-	// 		mono, _ := tj.ty.(Monotyped[T]) // should always pass since dependent types only have monotype binders
-	// 		var ty Type[T] = mono.ReplaceDependent(vs, ms)
-	// 		return Judgement(tj.expression, ty) // updated judgement
-	// 	},
-	// )
-
 	// replace vars in type function
 	inst, _ := d.Function.ReplaceDependent(vs, ms).(TypeFunction[T])
 

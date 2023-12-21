@@ -5,28 +5,28 @@ import (
 	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type FreeJudgement[T nameable.Nameable, E expr.Expression[T]] TypeJudgement[T, E]
+type FreeJudgment[T nameable.Nameable, E expr.Expression[T]] TypeJudgment[T, E]
 
-func (j FreeJudgement[T, E]) AsTypeJudgement() TypeJudgement[T, E] {
-	return TypeJudgement[T, E](j)
+func (j FreeJudgment[T, E]) AsTypeJudgment() TypeJudgment[T, E] {
+	return TypeJudgment[T, E](j)
 }
 
-func (j FreeJudgement[_,_]) String() string {
+func (j FreeJudgment[_, _]) String() string {
 	return j.expression.String()
 }
 
-func (FreeJudgement[T, E]) MakeJudgement(e E, ty Type[T]) ExpressionJudgement[T, E] {
-	return FreeJudgement[T,E](Judgement(e, ty))
+func (FreeJudgment[T, E]) MakeJudgment(e E, ty Type[T]) ExpressionJudgment[T, E] {
+	return FreeJudgment[T, E](Judgment(e, ty))
 }
 
-// Judgement makes the trivial type judgement `𝚪, e: ty ⊢ e: ty`
-func FreeJudge[T nameable.Nameable, E expr.Expression[T]](cxt *Context[T], e E) FreeJudgement[T,E] {
-	return FreeJudgement[T,E]{
+// Judgment makes the trivial type judgment `𝚪, e: ty ⊢ e: ty`
+func FreeJudge[T nameable.Nameable, E expr.Expression[T]](cxt *Context[T], e E) FreeJudgment[T, E] {
+	return FreeJudgment[T, E]{
 		expression: e,
-		ty: cxt.NewVar(),
+		ty:         cxt.NewVar(),
 	}
 }
 
-func (j FreeJudgement[T, E]) Collect() []T {
+func (j FreeJudgment[T, E]) Collect() []T {
 	return j.expression.Collect()
 }

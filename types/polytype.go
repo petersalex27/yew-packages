@@ -9,7 +9,7 @@ import (
 // binds zero or more variables in a dependent type. Written in its
 // most general form, polytypes have the form
 //
-//	(forall t1 t2 ...) . (mapall (a1: A1) (a2: A2) ...) . T
+//	(forall t1 t2 ...) . (mapval (a1: A1) (a2: A2) ...) . T
 //
 // where; for i, j in Uint; ti is an arbitrary type variable; aj is an
 // arbitrary kind variable; Aj is an arbitrary monotype; and T is an

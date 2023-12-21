@@ -10,7 +10,7 @@ import (
 
 type Data[T nameable.Nameable] struct {
 	tag     expr.Const[T]
-	Members []JudgementAsExpression[T, expr.Expression[T]]
+	Members []JudgmentAsExpression[T, expr.Expression[T]]
 }
 
 type Constructor[N nameable.Nameable] func(args []expr.Expression[N]) (data Data[N], success bool)
@@ -52,7 +52,7 @@ func AsConstructor[N nameable.Nameable](f expr.Function[N]) Constructor[N] {
 func (data Data[T]) GetTag() expr.Const[T] { return data.tag }
 
 func (data Data[T]) Flatten() []expr.Expression[T] {
-	f := (JudgementAsExpression[T, expr.Expression[T]]).Flatten
+	f := (JudgmentAsExpression[T, expr.Expression[T]]).Flatten
 	fold := func(l, r []expr.Expression[T]) []expr.Expression[T] {
 		return append(l, r...)
 	}
@@ -67,11 +67,11 @@ func (data Data[T]) GetReferred() T {
 	return data.tag.GetReferred()
 }
 
-func MakeData[T nameable.Nameable](tag expr.Const[T], members ...JudgementAsExpression[T, expr.Expression[T]]) Data[T] {
+func MakeData[T nameable.Nameable](tag expr.Const[T], members ...JudgmentAsExpression[T, expr.Expression[T]]) Data[T] {
 	return Data[T]{tag, members}
 }
 
-func makeData[T nameable.Nameable](tag expr.Const[T], members []JudgementAsExpression[T, expr.Expression[T]]) Data[T] {
+func makeData[T nameable.Nameable](tag expr.Const[T], members []JudgmentAsExpression[T, expr.Expression[T]]) Data[T] {
 	return Data[T]{tag, members}
 }
 
@@ -90,33 +90,33 @@ func (data Data[T]) String() string {
 }
 
 func (data Data[T]) Rebind() expr.Expression[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.Rebind().(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.Rebind().(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 	return makeData(data.tag, fun.FMap(data.Members, f))
 }
 
 func (data Data[T]) Bind(bs expr.BindersOnly[T]) expr.Expression[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.Bind(bs).(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.Bind(bs).(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 	return makeData(data.tag, fun.FMap(data.Members, f))
 }
 
 func (data Data[T]) Replace(v expr.Variable[T], e expr.Expression[T]) (expr.Expression[T], bool) {
 	again := false
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
 		res, tmp := j.Replace(v, e)
 		again = again || tmp
-		return res.(JudgementAsExpression[T, expr.Expression[T]])
+		return res.(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 
 	return makeData(data.tag, fun.FMap(data.Members, f)), again
 }
 
 func (data Data[T]) UpdateVars(gt int, by int) expr.Expression[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.UpdateVars(gt, by).(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.UpdateVars(gt, by).(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 	return makeData(data.tag, fun.FMap(data.Members, f))
 }
@@ -126,8 +126,8 @@ func (data Data[T]) BodyAbstract(v expr.Variable[T], name expr.Const[T]) expr.Ex
 		return data
 	}
 
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.BodyAbstract(v, name).(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.BodyAbstract(v, name).(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 
 	return makeData(data.tag, fun.FMap(data.Members, f))
@@ -203,28 +203,28 @@ func (data Data[T]) Find(v expr.Variable[T]) bool {
 }
 
 func (data Data[T]) PrepareAsRHS() expr.Expression[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.PrepareAsRHS().(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.PrepareAsRHS().(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 	return makeData(data.tag, fun.FMap(data.Members, f))
 }
 
 func (data Data[T]) Copy() expr.Expression[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.Copy().(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.Copy().(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 	return makeData(data.tag, fun.FMap(data.Members, f))
 }
 
 func (data Data[T]) ForceRequest() expr.Expression[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) JudgementAsExpression[T, expr.Expression[T]] {
-		return j.ForceRequest().(JudgementAsExpression[T, expr.Expression[T]])
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) JudgmentAsExpression[T, expr.Expression[T]] {
+		return j.ForceRequest().(JudgmentAsExpression[T, expr.Expression[T]])
 	}
 	return makeData(data.tag, fun.FMap(data.Members, f))
 }
 
 func (data Data[T]) ExtractVariables(gt int) []expr.Variable[T] {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) []expr.Variable[T] {
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) []expr.Variable[T] {
 		return j.ExtractVariables(gt)
 	}
 	app := func(l, r []expr.Variable[T]) []expr.Variable[T] {
@@ -234,7 +234,7 @@ func (data Data[T]) ExtractVariables(gt int) []expr.Variable[T] {
 }
 
 func (data Data[T]) Collect() []T {
-	f := func(j JudgementAsExpression[T, expr.Expression[T]]) []T {
+	f := func(j JudgmentAsExpression[T, expr.Expression[T]]) []T {
 		return j.Collect()
 	}
 	app := func(l, r []T) []T {

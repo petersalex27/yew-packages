@@ -34,15 +34,15 @@ func TestVar(t *testing.T) {
 	Array_a := types.Apply[nameable.Testable](Array, a) // Array a
 	n := expr.Var(nName)                                // n
 	Uint := types.MakeConst(uintName)                   // Uint
-	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))
-	ve0_Uint := types.Judgement(expr.Referable[nameable.Testable](ve0), types.Type[nameable.Testable](Uint))
-	var_n_Uint := types.Judgement[nameable.Testable, expr.Variable[nameable.Testable]](n, Uint)
-	domain := []types.ExpressionJudgement[nameable.Testable, expr.Referable[nameable.Testable]]{n_Uint}
-	domain2 := []types.ExpressionJudgement[nameable.Testable, expr.Referable[nameable.Testable]]{ve0_Uint}
+	n_Uint := types.Judgment(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))
+	ve0_Uint := types.Judgment(expr.Referable[nameable.Testable](ve0), types.Type[nameable.Testable](Uint))
+	var_n_Uint := types.Judgment[nameable.Testable, expr.Variable[nameable.Testable]](n, Uint)
+	domain := []types.ExpressionJudgment[nameable.Testable, expr.Referable[nameable.Testable]]{n_Uint}
+	domain2 := []types.ExpressionJudgment[nameable.Testable, expr.Referable[nameable.Testable]]{ve0_Uint}
 	Array_a_n := types.Index(Array_a, domain...)       // (Array a; n)
 	Array_a_ve0 := types.Index(Array_a, domain2...)    // (Array a; x0)
 	mapval_n_Uint__Array_a := types.MakeDependentType( // mapval (n: Uint) . (Array a)
-		[]types.TypeJudgement[nameable.Testable, expr.Variable[nameable.Testable]]{var_n_Uint},
+		[]types.TypeJudgment[nameable.Testable, expr.Variable[nameable.Testable]]{var_n_Uint},
 		types.TypeFunction[nameable.Testable](types.Index(Array_a)),
 	)
 	Array_v0 := types.Apply[nameable.Testable](Array, v0)
@@ -50,47 +50,47 @@ func TestVar(t *testing.T) {
 
 	tests := []struct {
 		description string
-		input       bridge.JudgementAsExpression[nameable.Testable, expr.Const[nameable.Testable]]
+		input       bridge.JudgmentAsExpression[nameable.Testable, expr.Const[nameable.Testable]]
 		expect      Conclusion[nameable.Testable, expr.Const[nameable.Testable], types.Monotyped[nameable.Testable]]
 	}{
 		{
 			"x: Array => x: Array",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, Array),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](Array)),
 		},
 		{
 			"x: a => x: a",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, a),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, a),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](a)),
 		},
 		{
 			"x: Array a => x: Array a",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](Array_a)),
 		},
 		{
 			"x: forall a . a => x: $0",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(a)),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(a)),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](v0)),
 		},
 		{
 			"x: forall a . Array a => x: Array $0",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(Array_a)),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(Array_a)),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](Array_v0)),
 		},
 		{
 			"x: (Array a; n) => x: (Array a; n)",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a_n),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, Array_a_n),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](Array_a_n)),
 		},
 		{
 			"x: mapval (n: Uint) . (Array a) => x: (Array a; $0)",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, mapval_n_Uint__Array_a),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, mapval_n_Uint__Array_a),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](Array_a_ve0)),
 		},
 		{
 			"x: forall a . mapval (n: Uint) . (Array a) => x: (Array $0; $e0)",
-			bridge.Judgement[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(mapval_n_Uint__Array_a)),
+			bridge.Judgment[nameable.Testable, expr.Const[nameable.Testable]](x, types.Forall(a).Bind(mapval_n_Uint__Array_a)),
 			Conclude[nameable.Testable](x, types.Monotyped[nameable.Testable](Array_v0_ve0)),
 		},
 	}
@@ -99,9 +99,9 @@ func TestVar(t *testing.T) {
 		cxt := NewTestableContext()
 		actual := cxt.varBody(test.input)
 
-		eq := types.JudgementEquals[nameable.Testable, expr.Const[nameable.Testable], types.Type[nameable.Testable]](
-			actual.Judgement().AsTypeJudgement(),
-			test.expect.Judgement().AsTypeJudgement(),
+		eq := types.JudgmentEquals[nameable.Testable, expr.Const[nameable.Testable], types.Type[nameable.Testable]](
+			actual.Judgment().AsTypeJudgment(),
+			test.expect.Judgment().AsTypeJudgment(),
 		)
 		if !eq {
 			t.Fatal(
@@ -182,29 +182,29 @@ func TestApp(t *testing.T) {
 	Array_Uint := types.Apply[nameable.Testable](arrayEnclose, Uint)             // [Uint]
 
 	// var: type
-	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint)) // n: Uint
-	q_Uint := types.Judgement(expr.Referable[nameable.Testable](q), types.Type[nameable.Testable](Uint)) // q: Uint
-	w_b := types.Judgement(expr.Referable[nameable.Testable](w), types.Type[nameable.Testable](b))       // w: b
-	z_a := types.Judgement(expr.Referable[nameable.Testable](z), types.Type[nameable.Testable](a))       // z: a
+	n_Uint := types.Judgment(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint)) // n: Uint
+	q_Uint := types.Judgment(expr.Referable[nameable.Testable](q), types.Type[nameable.Testable](Uint)) // q: Uint
+	w_b := types.Judgment(expr.Referable[nameable.Testable](w), types.Type[nameable.Testable](b))       // w: b
+	z_a := types.Judgment(expr.Referable[nameable.Testable](z), types.Type[nameable.Testable](a))       // z: a
 
 	// "n: Uint"/"0: Uint"
-	en_Uint := bridge.Judgement(expr.Expression[nameable.Testable](n), types.Type[nameable.Testable](Uint))    // n: Uint
-	e0_Uint := bridge.Judgement(expr.Expression[nameable.Testable](zero), types.Type[nameable.Testable](Uint)) // 0: Uint
-	r0_Uint := types.Judgement(expr.Referable[nameable.Testable](zero), types.Type[nameable.Testable](Uint))   // 0: Uint
+	en_Uint := bridge.Judgment(expr.Expression[nameable.Testable](n), types.Type[nameable.Testable](Uint))    // n: Uint
+	e0_Uint := bridge.Judgment(expr.Expression[nameable.Testable](zero), types.Type[nameable.Testable](Uint)) // 0: Uint
+	r0_Uint := types.Judgment(expr.Referable[nameable.Testable](zero), types.Type[nameable.Testable](Uint))   // 0: Uint
 
 	// Succ1
-	Succ_n := bridge.MakeData(Succ, en_Uint)                                                                          // Succ (n: Uint)
-	Succ_0 := bridge.MakeData(Succ, e0_Uint)                                                                          // Succ (0: Uint)
-	Succ_n_Uint := types.Judgement(expr.Referable[nameable.Testable](Succ_n), types.Type[nameable.Testable](Uint))    // (Succ n): Uint
-	eSucc_n_Uint := bridge.Judgement(expr.Expression[nameable.Testable](Succ_n), types.Type[nameable.Testable](Uint)) // (Succ n): Uint
-	Succ_0_Uint := types.Judgement(expr.Referable[nameable.Testable](Succ_0), types.Type[nameable.Testable](Uint))    // (Succ 0): Uint
-	eSucc_0_Uint := bridge.Judgement(expr.Expression[nameable.Testable](Succ_0), types.Type[nameable.Testable](Uint)) // Succ (0: Uint)
+	Succ_n := bridge.MakeData(Succ, en_Uint)                                                                         // Succ (n: Uint)
+	Succ_0 := bridge.MakeData(Succ, e0_Uint)                                                                         // Succ (0: Uint)
+	Succ_n_Uint := types.Judgment(expr.Referable[nameable.Testable](Succ_n), types.Type[nameable.Testable](Uint))    // (Succ n): Uint
+	eSucc_n_Uint := bridge.Judgment(expr.Expression[nameable.Testable](Succ_n), types.Type[nameable.Testable](Uint)) // (Succ n): Uint
+	Succ_0_Uint := types.Judgment(expr.Referable[nameable.Testable](Succ_0), types.Type[nameable.Testable](Uint))    // (Succ 0): Uint
+	eSucc_0_Uint := bridge.Judgment(expr.Expression[nameable.Testable](Succ_0), types.Type[nameable.Testable](Uint)) // Succ (0: Uint)
 
 	// Succ2
-	Succ2_0 := bridge.MakeData(Succ, eSucc_0_Uint)                                                                   // Succ (Succ 0)
-	Succ2_0_Uint := types.Judgement(expr.Referable[nameable.Testable](Succ2_0), types.Type[nameable.Testable](Uint)) // (Succ (Succ 0)): Uint
-	Succ2_n := bridge.MakeData(Succ, eSucc_n_Uint)                                                                   // Succ (n: Uint)
-	Succ2_n_Uint := types.Judgement(expr.Referable[nameable.Testable](Succ2_n), types.Type[nameable.Testable](Uint)) // (Succ n): Uint
+	Succ2_0 := bridge.MakeData(Succ, eSucc_0_Uint)                                                                  // Succ (Succ 0)
+	Succ2_0_Uint := types.Judgment(expr.Referable[nameable.Testable](Succ2_0), types.Type[nameable.Testable](Uint)) // (Succ (Succ 0)): Uint
+	Succ2_n := bridge.MakeData(Succ, eSucc_n_Uint)                                                                  // Succ (n: Uint)
+	Succ2_n_Uint := types.Judgment(expr.Referable[nameable.Testable](Succ2_n), types.Type[nameable.Testable](Uint)) // (Succ n): Uint
 
 	// domains
 	domain := types.Indexes[nameable.Testable]{n_Uint}              // n: Uint
@@ -242,16 +242,16 @@ func TestApp(t *testing.T) {
 
 	tests := []struct {
 		description string
-		input0      bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
-		input1      bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		input0      bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		input1      bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
 		findIn      types.Variable[nameable.Testable]
 		findOut     types.Type[nameable.Testable]
 		expect      Conclusion[nameable.Testable, expr.Application[nameable.Testable], types.Monotyped[nameable.Testable]]
 	}{
 		{
 			"(x: a) (y: Array) => (x y): $0",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, a),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, a),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
 			a, types.Apply[nameable.Testable](arrow, Array, v0), // a = Array -> $0
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](x, y),
@@ -260,8 +260,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(y: b) (x: a) => (y x): $0",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, b),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, a),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](y, b),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, a),
 			b, types.Apply[nameable.Testable](arrow, a, v0), // b = a -> $0
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](y, x),
@@ -270,8 +270,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(tail: [a; Succ n] -> [a; n]) (x: [Uint; Succ 0]) => (tail x): [Uint; 0]",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](tail, tailFunc),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_Succ_0),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](tail, tailFunc),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_Succ_0),
 			a, Uint,
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](tail, x),
@@ -280,8 +280,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(take2: [a; Succ (Succ n)] -> [a; n]) (x: [Uint; Succ (Succ 0)]) => (take2 x): [Uint; 0]",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](take2, take2Func),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_Succ2_0),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](take2, take2Func),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_Succ2_0),
 			a, Uint,
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](take2, x),
@@ -290,8 +290,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(take1: [a; Succ (Succ n)] -> [a; Succ n]) (x: [Uint; Succ (Succ 0)]) => (take1 x): [Uint; Succ 0]",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_Succ2_0),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_Succ2_0),
 			a, Uint,
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](take1, x),
@@ -300,8 +300,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(take1: [a; Succ (Succ n)] -> [a; Succ n]) (x: [Uint; (q: Uint)]) => (take1 x): [Uint; Succ n]",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_q),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_q),
 			a, Uint,
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](take1, x),
@@ -310,8 +310,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(take1: [a; Succ (Succ n)] -> [a; Succ n]) (x: [Uint; (w: b)]) => (take1 x): [Uint; Succ n]",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_w),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_w),
 			b, Uint,
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](take1, x),
@@ -320,8 +320,8 @@ func TestApp(t *testing.T) {
 		},
 		{
 			"(take1: [a; Succ (Succ n)] -> [a; Succ n]) (x: [Uint; (z: a)]) => (take1 x): [Uint; Succ n]",
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_z),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](take1, take1Func),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array_Uint_z),
 			a, Uint,
 			Conclude[nameable.Testable](
 				expr.Apply[nameable.Testable](take1, x),
@@ -350,9 +350,9 @@ func TestApp(t *testing.T) {
 					FailMessage(test.findOut, findOutActual, i))
 		}
 
-		eq = types.JudgementEquals[nameable.Testable, expr.Application[nameable.Testable], types.Type[nameable.Testable]](
-			actual.Judgement().AsTypeJudgement(),
-			test.expect.Judgement().AsTypeJudgement(),
+		eq = types.JudgmentEquals[nameable.Testable, expr.Application[nameable.Testable], types.Type[nameable.Testable]](
+			actual.Judgment().AsTypeJudgment(),
+			test.expect.Judgment().AsTypeJudgment(),
 		)
 		if !eq {
 			t.Fatal(
@@ -394,9 +394,9 @@ func TestUnifyStatus(t *testing.T) {
 	Array_a := types.Apply[nameable.Testable](arrayEnclose, a)                   // [a]
 
 	// var: type
-	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))     // n: Uint
-	r0_Uint := types.Judgement(expr.Referable[nameable.Testable](zero), types.Type[nameable.Testable](Uint)) // 0: Uint
-	r1_Uint := types.Judgement(expr.Referable[nameable.Testable](one), types.Type[nameable.Testable](Uint))  // 1: Uint
+	n_Uint := types.Judgment(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))     // n: Uint
+	r0_Uint := types.Judgment(expr.Referable[nameable.Testable](zero), types.Type[nameable.Testable](Uint)) // 0: Uint
+	r1_Uint := types.Judgment(expr.Referable[nameable.Testable](one), types.Type[nameable.Testable](Uint))  // 1: Uint
 
 	// domains
 	domain := types.Indexes[nameable.Testable]{n_Uint}   // n: Uint
@@ -474,13 +474,13 @@ func TestAbs(t *testing.T) {
 	tests := []struct {
 		description string
 		inputParam  nameable.Testable
-		inputExpr   bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		inputExpr   bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
 		expect      Conclusion[nameable.Testable, expr.Function[nameable.Testable], types.Monotyped[nameable.Testable]]
 	}{
 		{
 			`x => y: Array => (\$0 -> y): $0 -> Array`,
 			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
 			Conclude[nameable.Testable](
 				expr.Bind[nameable.Testable](ve0).In(y),
 				types.Monotyped[nameable.Testable](types.Apply[nameable.Testable](arrow, v0, Array)),
@@ -489,7 +489,7 @@ func TestAbs(t *testing.T) {
 		{
 			`x => (x y): Array => (\$0 -> $0 y): $0 -> Array`,
 			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), Array),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), Array),
 			Conclude[nameable.Testable](
 				expr.Bind[nameable.Testable](ve0).In(expr.Apply[nameable.Testable](ve0, y)),
 				types.Monotyped[nameable.Testable](types.Apply[nameable.Testable](arrow, v0, Array)),
@@ -498,7 +498,7 @@ func TestAbs(t *testing.T) {
 		{
 			`x => (x y): a => (\$0 -> $0 y): $0 -> a`,
 			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), a),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), a),
 			Conclude[nameable.Testable](
 				expr.Bind[nameable.Testable](ve0).In(expr.Apply[nameable.Testable](ve0, y)),
 				types.Monotyped[nameable.Testable](types.Apply[nameable.Testable](arrow, v0, a)),
@@ -507,7 +507,7 @@ func TestAbs(t *testing.T) {
 		{
 			`x => (x y): Array a => (\$0 -> $0 y): $0 -> Array a`,
 			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), Array_a),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](expr.Apply[nameable.Testable](x, y), Array_a),
 			Conclude[nameable.Testable](
 				expr.Bind[nameable.Testable](ve0).In(expr.Apply[nameable.Testable](ve0, y)),
 				types.Monotyped[nameable.Testable](types.Apply[nameable.Testable](arrow, v0, Array_a)),
@@ -519,9 +519,9 @@ func TestAbs(t *testing.T) {
 		cxt := NewTestableContext()
 		actual := cxt.Abs(test.inputParam)(test.inputExpr)
 
-		eq := types.JudgementEquals[nameable.Testable, expr.Function[nameable.Testable], types.Type[nameable.Testable]](
-			actual.Judgement().AsTypeJudgement(),
-			test.expect.Judgement().AsTypeJudgement(),
+		eq := types.JudgmentEquals[nameable.Testable, expr.Function[nameable.Testable], types.Type[nameable.Testable]](
+			actual.Judgment().AsTypeJudgment(),
+			test.expect.Judgment().AsTypeJudgment(),
 		)
 		if !eq {
 			t.Fatal(
@@ -551,10 +551,10 @@ func TestGen(t *testing.T) {
 	Array_a := types.Apply[nameable.Testable](Array, a) // Array a
 	n := expr.Var(nName)                                // n
 	Uint := types.MakeConst(uintName)                   // Uint
-	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))
-	var_n_Uint := types.Judgement[nameable.Testable, expr.Variable[nameable.Testable]](n, Uint)
-	domain := []types.ExpressionJudgement[nameable.Testable, expr.Referable[nameable.Testable]]{n_Uint}
-	vs := []types.TypeJudgement[nameable.Testable, expr.Variable[nameable.Testable]]{var_n_Uint}
+	n_Uint := types.Judgment(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint))
+	var_n_Uint := types.Judgment[nameable.Testable, expr.Variable[nameable.Testable]](n, Uint)
+	domain := []types.ExpressionJudgment[nameable.Testable, expr.Referable[nameable.Testable]]{n_Uint}
+	vs := []types.TypeJudgment[nameable.Testable, expr.Variable[nameable.Testable]]{var_n_Uint}
 	Array_a_n := types.Index(Array_a, domain...) // (Array a; n)
 	Array_n := types.Index(types.Apply[nameable.Testable](Array), domain...)
 
@@ -625,15 +625,15 @@ func TestLet(t *testing.T) {
 	tests := []struct {
 		description string
 		inputParam  nameable.Testable
-		inputAssign bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
-		inputExpr   bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		inputAssign bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		inputExpr   bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
 		expect      Conclusion[nameable.Testable, expr.NameContext[nameable.Testable], types.Monotyped[nameable.Testable]]
 	}{
 		{
 			`x, y: Array => x: Array => let x = y in x: Array`,
 			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array),
 			Conclude[nameable.Testable](
 				expr.Let[nameable.Testable](x, y, x),
 				types.Monotyped[nameable.Testable](Array),
@@ -642,8 +642,8 @@ func TestLet(t *testing.T) {
 		{
 			`x, (\y -> y): a -> a => (x 0): Int => let x = (\y -> y) in x 0: Int`,
 			xName,
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](idFunc, aToA),
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x_0, Int),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](idFunc, aToA),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x_0, Int),
 			Conclude[nameable.Testable](
 				expr.Let[nameable.Testable](x, idFunc, x_0),
 				types.Monotyped[nameable.Testable](Int),
@@ -655,9 +655,9 @@ func TestLet(t *testing.T) {
 		cxt := NewTestableContext()
 		actual := cxt.Let(test.inputParam, test.inputAssign)(test.inputExpr)
 
-		eq := types.JudgementEquals[nameable.Testable, expr.NameContext[nameable.Testable], types.Type[nameable.Testable]](
-			actual.judgement.AsTypeJudgement(),
-			test.expect.judgement.AsTypeJudgement(),
+		eq := types.JudgmentEquals[nameable.Testable, expr.NameContext[nameable.Testable], types.Type[nameable.Testable]](
+			actual.judgment.AsTypeJudgment(),
+			test.expect.judgment.AsTypeJudgment(),
 		)
 		if !eq {
 			t.Fatal(
@@ -716,17 +716,17 @@ func TestRec(t *testing.T) {
 	tests := []struct {
 		description string
 		inputParams []nameable.Testable
-		inputAssign []TypeJudgement[nameable.Testable]
-		inputExpr   bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		inputAssign []TypeJudgment[nameable.Testable]
+		inputExpr   bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
 		expect      Conclusion[nameable.Testable, expr.RecIn[nameable.Testable], types.Monotyped[nameable.Testable]]
 	}{
 		{
 			`x => y: Array => x: Array => rec x = y in x: Array`,
 			[]nameable.Testable{xName},
-			[]TypeJudgement[nameable.Testable]{
-				bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
+			[]TypeJudgment[nameable.Testable]{
+				bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](y, Array),
 			},
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](x, Array),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](x, Array),
 			Conclude[nameable.Testable](
 				expr.Rec[nameable.Testable](expr.Declare(x.Name).Instantiate(y))(x),
 				types.Monotyped[nameable.Testable](Array),
@@ -735,11 +735,11 @@ func TestRec(t *testing.T) {
 		{
 			`f, g => (\x -> g x): v1->v2, (\x -> f (add x 2)): Int->v3 => f 0: v3 => rec f x = (g x) and g x = f (add x 2) in f 2: v3`,
 			[]nameable.Testable{fName, gName},
-			[]TypeJudgement[nameable.Testable]{
-				bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](composeG_x, v1_to_v2),
-				bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](add2, Int_to_v3),
+			[]TypeJudgment[nameable.Testable]{
+				bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](composeG_x, v1_to_v2),
+				bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](add2, Int_to_v3),
 			},
-			bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](fOfTwo, v3),
+			bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](fOfTwo, v3),
 			Conclude[nameable.Testable](
 				expr.Rec[nameable.Testable](
 					expr.Declare(fName).Instantiate(composeG_x),
@@ -760,9 +760,9 @@ func TestRec(t *testing.T) {
 			test.inputExpr,
 		)
 
-		eq := types.JudgementEquals[nameable.Testable, expr.RecIn[nameable.Testable], types.Type[nameable.Testable]](
-			actual.judgement.AsTypeJudgement(),
-			test.expect.judgement.AsTypeJudgement(),
+		eq := types.JudgmentEquals[nameable.Testable, expr.RecIn[nameable.Testable], types.Type[nameable.Testable]](
+			actual.judgment.AsTypeJudgment(),
+			test.expect.judgment.AsTypeJudgment(),
 		)
 		if !eq {
 			t.Fatal(
@@ -1050,12 +1050,12 @@ func TestProofValidation(t *testing.T) {
 	cxt := NewTestableContext()
 
 	Γ := struct {
-		id, zero bridge.JudgementAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
+		id, zero bridge.JudgmentAsExpression[nameable.Testable, expr.Expression[nameable.Testable]]
 	}{
 		// (λy.y): a -> a
-		id: bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](idFunc, aToA),
+		id: bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](idFunc, aToA),
 		// 0: Int
-		zero: bridge.Judgement[nameable.Testable, expr.Expression[nameable.Testable]](zero, Int),
+		zero: bridge.Judgment[nameable.Testable, expr.Expression[nameable.Testable]](zero, Int),
 	}
 
 	// step 1: add context (i.e., `x: Gen(a -> a)`) and first premise for let expression
@@ -1071,14 +1071,14 @@ func TestProofValidation(t *testing.T) {
 
 	// step 3: do App rule
 	step++
-	app_x_0_conclusion := cxt.App(var_x.judgement, Γ.zero)
+	app_x_0_conclusion := cxt.App(var_x.judgment, Γ.zero)
 
 	if cxt.HasErrors() {
 		t.Fatal(testutil.Testing("app rule errors").FailMessage(nil, cxt.GetReports(), step))
 	}
 
 	{
-		actualExpr, actualType := app_x_0_conclusion.judgement.GetExpressionAndType()
+		actualExpr, actualType := app_x_0_conclusion.judgment.GetExpressionAndType()
 		expectExpr, expectType := x_0, Int
 
 		if !expectExpr.StrictEquals(actualExpr) {
@@ -1092,9 +1092,9 @@ func TestProofValidation(t *testing.T) {
 
 	// step 4: discharge assumption and introduce let expression w/ type Int
 	step++
-	conclusion := discharge_x_assumption(app_x_0_conclusion.judgement)
+	conclusion := discharge_x_assumption(app_x_0_conclusion.judgment)
 	{
-		actualExpr, actualType := conclusion.judgement.GetExpressionAndType()
+		actualExpr, actualType := conclusion.judgment.GetExpressionAndType()
 		expectExpr, expectType := letExpr, Int
 
 		if !expectExpr.StrictEquals(actualExpr) {
@@ -1137,19 +1137,19 @@ func TestProof2Validation(t *testing.T) {
 	Array_Uint := types.Apply[nameable.Testable](arrayEnclose, Uint)             // [Uint]
 
 	// var: type
-	n_Uint := types.Judgement(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint)) // n: Uint
-	var_n_Uint := types.Judgement(n, types.Type[nameable.Testable](Uint))
+	n_Uint := types.Judgment(expr.Referable[nameable.Testable](n), types.Type[nameable.Testable](Uint)) // n: Uint
+	var_n_Uint := types.Judgment(n, types.Type[nameable.Testable](Uint))
 
 	// "n: Uint"/"0: Uint"
-	en_Uint := bridge.Judgement(expr.Expression[nameable.Testable](n), types.Type[nameable.Testable](Uint))    // n: Uint
-	r0_Uint := types.Judgement(expr.Referable[nameable.Testable](zero), types.Type[nameable.Testable](Uint))   // 0: Uint
-	e0_Uint := bridge.Judgement(expr.Expression[nameable.Testable](zero), types.Type[nameable.Testable](Uint)) // 0: Uint
+	en_Uint := bridge.Judgment(expr.Expression[nameable.Testable](n), types.Type[nameable.Testable](Uint))    // n: Uint
+	r0_Uint := types.Judgment(expr.Referable[nameable.Testable](zero), types.Type[nameable.Testable](Uint))   // 0: Uint
+	e0_Uint := bridge.Judgment(expr.Expression[nameable.Testable](zero), types.Type[nameable.Testable](Uint)) // 0: Uint
 
 	// Succ
-	Succ_n := bridge.MakeData(Succ, en_Uint)                                                                       // Succ (n: Uint)
-	Succ_n_Uint := types.Judgement(expr.Referable[nameable.Testable](Succ_n), types.Type[nameable.Testable](Uint)) // (Succ n): Uint
-	Succ_0 := bridge.MakeData(Succ, e0_Uint)                                                                       // Succ (0: Uint)
-	Succ_0_Uint := types.Judgement(expr.Referable[nameable.Testable](Succ_0), types.Type[nameable.Testable](Uint)) // (Succ 0): Uint
+	Succ_n := bridge.MakeData(Succ, en_Uint)                                                                      // Succ (n: Uint)
+	Succ_n_Uint := types.Judgment(expr.Referable[nameable.Testable](Succ_n), types.Type[nameable.Testable](Uint)) // (Succ n): Uint
+	Succ_0 := bridge.MakeData(Succ, e0_Uint)                                                                      // Succ (0: Uint)
+	Succ_0_Uint := types.Judgment(expr.Referable[nameable.Testable](Succ_0), types.Type[nameable.Testable](Uint)) // (Succ 0): Uint
 
 	// domains
 	domain := types.Indexes[nameable.Testable]{n_Uint}          // n: Uint
@@ -1252,7 +1252,7 @@ func TestProof2Validation(t *testing.T) {
 
 	// step 4: apply ((::) 0)
 	step++
-	app0 := cxt.App(varCons0.judgement, varZero0.judgement)
+	app0 := cxt.App(varCons0.judgment, varZero0.judgment)
 
 	if app0.Status.NotOk() {
 		t.Fatal(testutil.Testing("conclusion stat").FailMessage(Ok, app0.Status, step))
@@ -1262,7 +1262,7 @@ func TestProof2Validation(t *testing.T) {
 
 	// step 5: apply ((::) 0) []
 	step++
-	app1 := cxt.App(app0.judgement, varEmpty.judgement)
+	app1 := cxt.App(app0.judgment, varEmpty.judgment)
 
 	if app1.Status.NotOk() {
 		t.Fatal(testutil.Testing("conclusion stat").FailMessage(Ok, app1.Status, step))
@@ -1292,7 +1292,7 @@ func TestProof2Validation(t *testing.T) {
 
 	// step 8: apply ((::) 0)
 	step++
-	app2 := cxt.App(varCons1.judgement, varZero1.judgement)
+	app2 := cxt.App(varCons1.judgment, varZero1.judgment)
 
 	if app2.Status.NotOk() {
 		t.Fatal(testutil.Testing("conclusion stat").FailMessage(Ok, app2.Status, step))
@@ -1302,7 +1302,7 @@ func TestProof2Validation(t *testing.T) {
 
 	// step 9: apply ((::) 0 (((::) 0) []))
 	step++
-	app3 := cxt.App(app2.judgement, app1.judgement)
+	app3 := cxt.App(app2.judgment, app1.judgment)
 
 	if app3.Status.NotOk() {
 		t.Fatal(testutil.Testing("app3 stat").FailMessage(Ok, app3.Status, step))
@@ -1322,7 +1322,7 @@ func TestProof2Validation(t *testing.T) {
 
 	// step 11: apply tail ((::) 0 (((::) 0) []))
 	step++
-	conclusion := cxt.App(varTail.judgement, app3.judgement)
+	conclusion := cxt.App(varTail.judgment, app3.judgment)
 
 	if conclusion.Status.NotOk() {
 		t.Fatal(testutil.Testing("conclusion stat").FailMessage(Ok, conclusion.Status, step))
@@ -1334,7 +1334,7 @@ func TestProof2Validation(t *testing.T) {
 
 	//fmt.Printf("step %d: %v\n", step+1, conclusion)
 
-	if !JudgementsEqual[nameable.Testable](conclusion.judgement, expect) {
-		t.Fatal(testutil.Testing("conclusion equality").FailMessage(expect, conclusion.judgement, step))
+	if !JudgmentsEqual[nameable.Testable](conclusion.judgment, expect) {
+		t.Fatal(testutil.Testing("conclusion equality").FailMessage(expect, conclusion.judgment, step))
 	}
 }

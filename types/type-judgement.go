@@ -5,73 +5,52 @@ import (
 	"github.com/petersalex27/yew-packages/nameable"
 )
 
-type TypeJudgement[T nameable.Nameable, E expr.Expression[T]] struct{
+type TypeJudgment[T nameable.Nameable, E expr.Expression[T]] struct {
 	expression E
-	ty Type[T]
+	ty         Type[T]
 }
 
-func (j TypeJudgement[T, E]) AsTypeJudgement() TypeJudgement[T, E] {
+func (j TypeJudgment[T, E]) AsTypeJudgment() TypeJudgment[T, E] {
 	return j
 }
 
-func (j TypeJudgement[T,_]) GetType() Type[T] {
+func (j TypeJudgment[T, _]) GetType() Type[T] {
 	return j.ty
 }
 
-func (j TypeJudgement[_, E]) GetExpression() E {
+func (j TypeJudgment[_, E]) GetExpression() E {
 	return j.expression
 }
 
-func (j TypeJudgement[N, _]) GetExpressionAndType() (expr.Expression[N], Type[N]) {
+func (j TypeJudgment[N, _]) GetExpressionAndType() (expr.Expression[N], Type[N]) {
 	return j.expression, j.ty
 }
 
-/*
-decons: [a; n+1] -> (a, [a; n])
-decons (x::xs) = (x, xs)
-
-typeof(decons [1, 2, 3, 4])
-decons: forall a . map (Arr a)(n: Uint) . (Arr a)(n+1) -> (a, (Arr a)(n))
-[_, ..]: forall a . map (Arr a)(n: Uint) . (Arr a)(n)
-1: Int
-2: Int
-3: Int
-4: Int
-let x = [] in 
-	(Cons 1) . (Cons 2) . (Cons 3) . (Cons 4 x)
-	(Cons 4 x): (Arr Int)(1)
-	(Cons 3) . (Cons 4 x): (Arr Int)(2)
-	...
-	: (Arr Int)(4)
-decons$(Arr Int)(4): (Arr Int)(4) -> (Int, (Arr Int)(3))
-*/
-
-func (j TypeJudgement[T,_]) String() string {
+func (j TypeJudgment[T, _]) String() string {
 	return "(" + j.expression.String() + ": " + j.ty.String() + ")"
 }
 
-// Judgement makes the trivial type judgement `e: ty ⊢ e: ty`
-func Judgement[T nameable.Nameable, E expr.Expression[T]](e E, ty Type[T]) TypeJudgement[T,E] {
-	return TypeJudgement[T,E]{
+// Judgment makes the trivial type judgment `e: ty ⊢ e: ty`
+func Judgment[T nameable.Nameable, E expr.Expression[T]](e E, ty Type[T]) TypeJudgment[T, E] {
+	return TypeJudgment[T, E]{
 		expression: e,
-		ty: ty,
+		ty:         ty,
 	}
 }
 
-func (TypeJudgement[T, E]) MakeJudgement(e E, ty Type[T]) ExpressionJudgement[T, E] {
-	return Judgement[T,E](e, ty)
+func (TypeJudgment[T, E]) MakeJudgment(e E, ty Type[T]) ExpressionJudgment[T, E] {
+	return Judgment[T, E](e, ty)
 }
 
-func (j TypeJudgement[T,E]) Replace(v Variable[T], m Monotyped[T]) TypeJudgement[T,E] {
-	return Judgement(j.expression, MaybeReplace(j.ty, v, m))
+func (j TypeJudgment[T, E]) Replace(v Variable[T], m Monotyped[T]) TypeJudgment[T, E] {
+	return Judgment(j.expression, MaybeReplace(j.ty, v, m))
 }
 
-func Equals[N nameable.Nameable, T, U expr.Expression[N]](j1 TypeJudgement[N,T], j2 TypeJudgement[N,U]) bool {
-	return j1.ty.Equals(j2.ty) && 
-			j1.expression.StrictEquals(j2.expression)
-			// TODO: ??? j1.expression.Equals(j2.expression) instead???
+func Equals[N nameable.Nameable, T, U expr.Expression[N]](j1 TypeJudgment[N, T], j2 TypeJudgment[N, U]) bool {
+	return j1.ty.Equals(j2.ty) && j1.expression.StrictEquals(j2.expression)
+	// TODO: ??? j1.expression.Equals(j2.expression) instead???
 }
 
-func (j TypeJudgement[T, E]) Collect() []T {
+func (j TypeJudgment[T, E]) Collect() []T {
 	return append(j.expression.Collect(), j.ty.Collect()...)
 }

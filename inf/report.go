@@ -7,15 +7,15 @@ import (
 )
 
 type errorReport[N nameable.Nameable] struct {
-	During    string
+	During        string
 	Status        Status
-	TermsInvolved []TypeJudgement[N]
+	TermsInvolved []TypeJudgment[N]
 	Names         []expr.Const[N]
 	TypesInvolved []types.Type[N]
 }
 
 // creates an errorReport for a failed rule
-func makeReport[N nameable.Nameable](duringRule string, status Status, withTerms ...TypeJudgement[N]) errorReport[N] {
+func makeReport[N nameable.Nameable](duringRule string, status Status, withTerms ...TypeJudgment[N]) errorReport[N] {
 	return errorReport[N]{duringRule, status, withTerms, nil, nil}
 }
 
