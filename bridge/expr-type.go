@@ -18,7 +18,7 @@ func (judgment JudgmentAsExpression[T, E]) Flatten() []expr.Expression[T] {
 	return e.Flatten()
 }
 
-func (judgment JudgmentAsExpression[N, _]) MakeJudgment(expr.Expression[N], types.Type[N]) types.ExpressionJudgment[N, expr.Expression[N]] {
+func (judgment JudgmentAsExpression[N, E]) MakeJudgment(E, types.Type[N]) types.ExpressionJudgment[N, E] {
 	return judgment
 }
 
@@ -31,9 +31,9 @@ func (judgment JudgmentAsExpression[T, E]) ExtractVariables(gt int) []expr.Varia
 	return e.ExtractVariables(gt)
 }
 
-func (judgment JudgmentAsExpression[T, E]) AsTypeJudgment() types.TypeJudgment[T, expr.Expression[T]] {
+func (judgment JudgmentAsExpression[T, E]) AsTypeJudgment() types.TypeJudgment[T, E] {
 	e, t := judgment.GetExpressionAndType()
-	return types.Judgment(expr.Expression[T](e), t)
+	return types.Judgment[T, E](e.(E), t)
 }
 
 func (judgment JudgmentAsExpression[T, E]) ToTypeJudgment() types.TypeJudgment[T, E] {
@@ -46,7 +46,7 @@ func Judgment[T nameable.Nameable, E expr.Expression[T]](e E, t types.Type[T]) J
 
 func (judgment JudgmentAsExpression[T, E]) TypeAndExpr() (types.Type[T], E) {
 	j := judgment.AsTypeJudgment()
-	return j.GetType(), j.GetExpression().(E)
+	return j.GetType(), j.GetExpression()
 }
 
 func (judgment JudgmentAsExpression[T, _]) String() string {
