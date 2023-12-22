@@ -43,14 +43,15 @@ type Context[N nameable.Nameable] struct {
 	exprSubs    *table.Table[expr.Referable[N]]
 	consTable   *table.Table[consJudge[N]]
 	syms        *table.Table[Symbol[N]]
-	typeContext *types.Context[N]
-	exprContext *expr.Context[N]
+	TypeContext *types.Context[N]
+	ExprContext *expr.Context[N]
 }
 
 // convenience method for a type judgment with a new, free type variable; i.e., for an expression e,
-//		e: newvar
+//
+//	e: newvar
 func (cxt *Context[N]) Judge(e expr.Expression[N]) TypeJudgment[N] {
-	var newvar types.Type[N] = cxt.typeContext.NewVar()
+	var newvar types.Type[N] = cxt.TypeContext.NewVar()
 	return bridge.Judgment(e, newvar)
 }
 
@@ -88,8 +89,8 @@ func NewContext[N nameable.Nameable]() *Context[N] {
 	cxt.typeSubs = table.NewTable[types.Monotyped[N]]()
 	cxt.exprSubs = table.NewTable[expr.Referable[N]]()
 	cxt.consTable, cxt.syms = newConsAndSymsTables[N]()
-	cxt.exprContext = expr.NewContext[N]()
-	cxt.typeContext = types.NewContext[N]()
+	cxt.ExprContext = expr.NewContext[N]()
+	cxt.TypeContext = types.NewContext[N]()
 	cxt.reports = []errorReport[N]{}
 	return cxt
 }
@@ -102,13 +103,13 @@ func (cxt *Context[N]) Inst(sigma types.Polytype[N]) types.Monotyped[N] {
 	vs := fun.FMap(
 		typeVars,
 		func(v types.Variable[N]) types.Monotyped[N] {
-			return cxt.typeContext.NewVar()
+			return cxt.TypeContext.NewVar()
 		},
 	)
 
 	if d, ok := t.(types.DependentType[N]); ok {
 		// replace all bound expression variables w/ new expression variables
-		t = d.FreeIndex(cxt.exprContext)
+		t = d.FreeIndex(cxt.ExprContext)
 	}
 
 	// replace all bound variables w/ newly created type variables
@@ -117,8 +118,8 @@ func (cxt *Context[N]) Inst(sigma types.Polytype[N]) types.Monotyped[N] {
 
 func NewTestableContext() *Context[nameable.Testable] {
 	cxt := NewContext[nameable.Testable]()
-	cxt.typeContext = cxt.typeContext.SetNameMaker(nameable.MakeTestable)
-	cxt.exprContext = cxt.exprContext.SetNameMaker(nameable.MakeTestable)
+	cxt.TypeContext = cxt.TypeContext.SetNameMaker(nameable.MakeTestable)
+	cxt.ExprContext = cxt.ExprContext.SetNameMaker(nameable.MakeTestable)
 	return cxt
 }
 

@@ -18,8 +18,8 @@ func TestVar(t *testing.T) {
 	{
 		// block prevents accidental use of cxt
 		cxt := NewTestableContext()
-		v0 = cxt.typeContext.NewVar()
-		ve0 = cxt.exprContext.NewVar()
+		v0 = cxt.TypeContext.NewVar()
+		ve0 = cxt.ExprContext.NewVar()
 	}
 
 	xName := nameable.MakeTestable("x")
@@ -132,7 +132,7 @@ func TestApp(t *testing.T) {
 	{
 		// block prevents accidental use of cxt
 		cxt := NewTestableContext()
-		v0 = cxt.typeContext.NewVar()
+		v0 = cxt.TypeContext.NewVar()
 	}
 
 	// names
@@ -456,8 +456,8 @@ func TestAbs(t *testing.T) {
 	{
 		// block prevents accidental use of cxt
 		cxt := NewTestableContext()
-		v0 = cxt.typeContext.NewVar()
-		ve0 = cxt.exprContext.NewVar()
+		v0 = cxt.TypeContext.NewVar()
+		ve0 = cxt.ExprContext.NewVar()
 	}
 
 	xName := nameable.MakeTestable("x")

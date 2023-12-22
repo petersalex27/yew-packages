@@ -22,7 +22,7 @@ func (cxt *Context[N]) RemoveType(name N) {
 func (cxt *Context[N]) makeConsJudge(sigma types.Polytype[N]) consJudge[N] {
 	const wildcardConstructorName string = "_"
 	out := consJudge[N]{sigma, make(constructorMapType[N])}
-	wildcardConstructor := expr.Bind[N]().In(cxt.exprContext.NewVar())
+	wildcardConstructor := expr.Bind[N]().In(cxt.ExprContext.NewVar())
 	// (\-> $v): σ
 	judgment := types.TypedJudge[N](wildcardConstructor, sigma)
 	out.constructors[wildcardConstructorName] = judgment
@@ -80,7 +80,7 @@ func (cxt *Context[N]) createFunction(params []types.Monotyped[N], returnType ty
 		freeReturnType,
 		params,
 		func(left, right types.Monotyped[N]) types.Monotyped[N] {
-			return cxt.typeContext.Function(left, right)
+			return cxt.TypeContext.Function(left, right)
 		},
 	).(types.TypeFunction[N])
 
@@ -100,7 +100,7 @@ func (cxt *Context[N]) buildConstructor(data bridge.Data[N], sigma types.Polytyp
 	)
 
 	// create constructor params
-	constructorParams := cxt.exprContext.NumNewVars(len(memberTypes))
+	constructorParams := cxt.ExprContext.NumNewVars(len(memberTypes))
 	// create constructor
 	constructor := expr.Bind(constructorParams...).In(data)
 	// create kind (constructor's type) for constructor

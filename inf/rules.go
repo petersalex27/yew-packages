@@ -64,9 +64,9 @@ func (cxt *Context[N]) App(j0, j1 TypeJudgment[N]) Conclusion[N, expr.Applicatio
 	t0 := tmp0.(types.Monotyped[N])
 	t1 := tmp1.(types.Monotyped[N])
 	// premise `t2 = newvar`
-	t2 := cxt.typeContext.NewVar()
+	t2 := cxt.TypeContext.NewVar()
 	// create monotype `t1 -> t2`
-	t1_to_t2 := cxt.typeContext.Function(t1, t2)
+	t1_to_t2 := cxt.TypeContext.Function(t1, t2)
 	// premise `t0 = t1 -> t2`
 	stat := cxt.Unify(t0, t1_to_t2)
 	if stat.NotOk() {
@@ -94,7 +94,7 @@ func (cxt *Context[N]) App(j0, j1 TypeJudgment[N]) Conclusion[N, expr.Applicatio
 func (cxt *Context[N]) Abs(param N) func(TypeJudgment[N]) Conclusion[N, expr.Function[N], types.Monotyped[N]] {
 	// first, add context (this is the first premise)
 	paramConst := expr.Const[N]{Name: param}
-	t0 := cxt.typeContext.NewVar()
+	t0 := cxt.TypeContext.NewVar()
 	// grow context w/ type judgment `param: t0`
 	cxt.Shadow(paramConst, t0)
 
@@ -108,14 +108,14 @@ func (cxt *Context[N]) Abs(param N) func(TypeJudgment[N]) Conclusion[N, expr.Fun
 		t1 := tmp1.(types.Monotyped[N])
 
 		// create function body by converting param-name to param-var in e
-		v := cxt.exprContext.NewVar()
+		v := cxt.ExprContext.NewVar()
 		e = e.BodyAbstract(v, paramConst)
 
 		// actual function creation, finish abstraction of `e`
 		f := expr.Bind(v).In(e)
 
 		// create function type
-		var fnType types.Monotyped[N] = cxt.typeContext.Function(t0, t1)
+		var fnType types.Monotyped[N] = cxt.TypeContext.Function(t0, t1)
 
 		// last line of rule: `(λparam . e): t0 -> t1`
 		return Conclude[N](f, fnType)
@@ -182,7 +182,7 @@ func (cxt *Context[N]) Rec(names []N) func(js []TypeJudgment[N]) func(tj TypeJud
 		}
 	}
 
-	vs := cxt.typeContext.NumNewVars(len(names))
+	vs := cxt.TypeContext.NumNewVars(len(names))
 	defs := make([]expr.Def[N], len(names))
 	// add 𝚪ʹ to context
 	for i, name := range names {
@@ -292,10 +292,10 @@ func Export[N nameable.Nameable](name N, nameMaker func(string) N, names, typeNa
 
 	// initialize context
 	cxt := NewContext[N]()
-	cxt.exprContext = cxt.exprContext.SetNameMaker(nameMaker)
-	cxt.typeContext = cxt.typeContext.SetNameMaker(nameMaker)
+	cxt.ExprContext = cxt.ExprContext.SetNameMaker(nameMaker)
+	cxt.TypeContext = cxt.TypeContext.SetNameMaker(nameMaker)
 
-	v := cxt.typeContext.NewVar()
+	v := cxt.TypeContext.NewVar()
 	sigma := cxt.Gen(v) // simga = Gen(v) = forall v . v
 
 	// add all names as any type
