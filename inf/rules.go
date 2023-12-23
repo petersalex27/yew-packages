@@ -31,6 +31,17 @@ func (cxt *Context[N]) varBody(x bridge.JudgmentAsExpression[N, expr.Const[N]]) 
 	return Conclude[N](xConst, t)
 }
 
+// This is just the "Var" rule but for builtin primitives
+func (cxt *Context[N]) Primitive(x bridge.Prim[N]) Conclusion[N, bridge.Prim[N], types.Monotyped[N]] {
+	t := x.Val.GetType()
+	return Conclude[N](x, t)
+}
+
+// [Var] rule:
+//
+//			x: σ ∈ 𝚪    t = Inst(σ)
+//	   ----------------------- [Var]
+//	         𝚪 ⊢ x: t
 func (cxt *Context[N]) Var(x expr.Const[N]) Conclusion[N, expr.Const[N], types.Monotyped[N]] {
 	xJudge, found := cxt.Get(x)
 	if !found {
